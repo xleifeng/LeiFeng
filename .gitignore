@@ -20,7 +20,7 @@
 /UBUNTU_VIP_RETEST_REPORT.md
 
 # === 测试报告（过程产物，不入库）===
-daemon/test/regression/*.md
+apps/daemon/test/regression/*.md
 
 # === 凭据/会话文件（脱敏铁律：recon/ 下不得提交真实凭据）===
 # OAuth2 token、device flow session、登录二维码图/文均含可复用凭据
@@ -38,12 +38,12 @@ __pycache__/
 
 # === Node / WebUI 构建与测试产物 ===
 node_modules/
-webui/dist/
-webui/.vite/
-webui/coverage/
-webui/.local-assets/
-webui/test-results/
-webui/pixel-report/
+apps/webui/dist/
+apps/webui/.vite/
+apps/webui/coverage/
+apps/webui/.local-assets/
+apps/webui/test-results/
+apps/webui/pixel-report/
 test-results/
 *.tsbuildinfo
 npm-debug.log*
@@ -63,7 +63,7 @@ thunder_x/profiles/*.dat-wal
 thunder_x/program/SDK/
 
 # === thunderd daemon 运行时产物与下载输出 ===
-daemon/.runtime*/
+apps/daemon/.runtime*/
 recon/engine-semantics/.runtime/
 recon/engine-semantics/.runtime-*/
 recon/engine-semantics/*.out
