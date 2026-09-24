@@ -3,11 +3,11 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const sources = {
-  core: readFileSync(resolve(root, 'daemon/host/src/main.js'), 'utf8'),
-  stack: readFileSync(resolve(root, 'daemon/host/src/stack.js'), 'utf8'),
-  daemon: readFileSync(resolve(root, 'daemon/host/src/entry.mjs'), 'utf8'),
-  bridge: readFileSync(resolve(root, 'packages/webseed-bridge/src/main.js'), 'utf8'),
-  run: readFileSync(resolve(root, 'daemon/run.sh'), 'utf8'),
+  core: readFileSync(resolve(root, 'apps/daemon/host/src/main.js'), 'utf8'),
+  stack: readFileSync(resolve(root, 'apps/daemon/host/src/stack.js'), 'utf8'),
+  daemon: readFileSync(resolve(root, 'apps/daemon/host/src/entry.mjs'), 'utf8'),
+  bridge: readFileSync(resolve(root, 'apps/bridge/src/main.js'), 'utf8'),
+  run: readFileSync(resolve(root, 'apps/daemon/run.sh'), 'utf8'),
 };
 const checks = [
   ['core compatibility entry', sources.core.includes('entry.mjs') && sources.core.includes('thunderd-core')],

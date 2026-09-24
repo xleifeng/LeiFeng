@@ -5,16 +5,17 @@ tlei 是迅雷（Thunder）Linux 下载栈的逆向移植与产品化仓库：th
 ## Repository layout
 
 ```
-daemon/            thunderd 宿主：CJS 领域类 + Cordis 插件树装配
-  engine/          原生引擎 JS（Wine 下驱动迅雷 SDK 的 dk_addon.node）
-  host/src/        domain / services / repositories / rpc 源码；entry.mjs 为 launcher 入口
-  host/plugins/    daemon 插件定义（registry.cjs、product-services.cjs）
-  test/            unit / architecture / integration / regression
-web-api/           外部 HTTP 网关：JSON-RPC、静态 WebUI、mTLS 远程面
-webui/             原生风格 WebUI（Vue 3 + Vite + Playwright 像素验收）
+apps/
+  daemon/          thunderd 宿主：CJS 领域类 + Cordis 插件树装配
+    engine/        原生引擎 JS（Wine 下驱动迅雷 SDK 的 dk_addon.node）
+    host/src/      domain / services / repositories / rpc 源码；entry.mjs 为 launcher 入口
+    host/plugins/  daemon 插件定义（一插件一文件 + index.cjs 汇总）
+    test/          unit / architecture / integration / regression
+  web-api/         外部 HTTP 网关：JSON-RPC、静态 WebUI、mTLS 远程面
+  webui/           原生风格 WebUI（Vue 3 + Vite + Playwright 像素验收）
+  bridge/          桥：5 插件树 + Recipient 三角色 + E4 批量输入
 packages/
   runtime/         profile launcher（composeProfile / bootProfile / runCli）
-  webseed-bridge/  桥：5 插件树 + Recipient 三角色 + E4 批量输入
   daemon-client/   control socket 客户端 SDK
 vendor/cordis/     上游 pin 收编（vendor/README.md 记来源与修改日志）
 scripts/           入口守卫等门禁
@@ -33,14 +34,14 @@ npm test --workspaces --if-present     # 全量测试（daemon / web-api / runti
 npm run test:vendor                    # Cordis Fiber 生命周期用例
 npm run test:entrypoints               # 入口守卫：拒绝绕过 profile launcher 的旁路
 
-# 三 profile 启动（详见 daemon/README.md 与 packages/webseed-bridge/README.md）
-node daemon/host/src/entry.mjs --profile thunderd                  # 全量：core + Web API 子进程
-node daemon/host/src/entry.mjs --profile thunderd-core             # 裸 core
-node daemon/host/src/entry.mjs --profile thunderd --dump-config    # 脱敏装配预览（不启动、不取锁）
-node packages/webseed-bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
+# 三 profile 启动（详见 apps/daemon/README.md 与 apps/bridge/README.md）
+node apps/daemon/host/src/entry.mjs --profile thunderd                  # 全量：core + Web API 子进程
+node apps/daemon/host/src/entry.mjs --profile thunderd-core             # 裸 core
+node apps/daemon/host/src/entry.mjs --profile thunderd --dump-config    # 脱敏装配预览（不启动、不取锁）
+node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 ```
 
-旧入口（`daemon/host/src/main.js`、`stack.js`、`run.sh`）只是兼容跳转；新代码必须走 launcher，`scripts/verify-application-entrypoints.mjs` 会拦截旁路。
+旧入口（`apps/daemon/host/src/main.js`、`stack.js`、`run.sh`）只是兼容跳转；新代码必须走 launcher，`scripts/verify-application-entrypoints.mjs` 会拦截旁路。
 
 ## 在线实例与测试纪律
 
@@ -64,8 +65,8 @@ node packages/webseed-bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 
 ## 工作流程
 
 - 始终中文输出（代码注释、文档、报告、commit message 主体）。
-- 实质实现走 Superpowers 进程，不得跳步直接写代码：brainstorming 落 spec（`docs/superpowers/specs/`）→ 获批 → writing-plans 落 plan → 获批 → subagent-driven-development 实现（fresh implementer + 任务评审 + 修复循环 + 全分支终审）。进入 plan mode 前若未 brainstorm，先补 brainstorming。
-- 缺陷修复走 systematic-debugging：先根因调查，修根因不修症状，禁症状补丁。分支收尾走 finishing-a-development-branch：测绿 → 探环境 → 整合方式由用户定。
+- 实质实现前先落 spec（`docs/specs/`）并获用户批准；spec 批准后即可实施，用户明确要求跳过中间文档时遵从。
+- 缺陷修复先根因调查，修根因不修症状，禁症状补丁。
 - 工程原则——拿来主义优先：能力需求先找现成方案（npm 包、系统命令、开源移植，注明出处与许可），不从零自写；确无现成方案须在 spec 说明理由。“零 npm 依赖”只是阶段 1 daemon 宿主的历史决定，不约束后续。
 
 ## 提交与分支
@@ -80,7 +81,7 @@ node packages/webseed-bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 
 范围基线 = daemon 真实能力（云盘 / 片库 / 会员 / 企业能力不伪装可用）：
 
 - 主模型无多模态：一切视觉对比（原版截图 vs webui 同场景截图、字体度量漂移）派视觉子代理读图出报告，禁止凭文件名或经验臆断像素差异。
-- 许可线：允许 import 原版 CSS / 字体 / 3D 插画 / 蜂鸟 logo（个人使用，禁再分发）；资产放 `webui/src/assets/orig/` 并保留 NOTICE.md。
+- 许可线：允许 import 原版 CSS / 字体 / 3D 插画 / 蜂鸟 logo（个人使用，禁再分发）；资产放 `apps/webui/src/assets/orig/` 并保留 NOTICE.md。
 - 验收：Playwright 固定视口 1200×760、deviceScaleFactor=1、字体加载后截图，与 `docs/ui-reference/orig-*.png` 做 pixelmatch diff，mismatch ≤5%（threshold 0.1 容抗锯齿）；超阈值出报告人工复核。
 - 弹窗用页内 dialog 模态（`useDialog()` 单例注册表 + Teleport），组件名沿用原版 kebab；遮罩 / 圆角 / 宽高按 `orig-modal-*.png` 定死，不自适应。
 - 数据面 100% 走真实 RPC（thunder.ui.* / aria2.*），无 fallback 伪装；daemon RPC 面之外的原版设置项直接隐藏，不伪装。
@@ -93,7 +94,7 @@ node packages/webseed-bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 
 
 - 阶段 1（已交付）：daemon 双进程直连原生 SDK；HTTP/HTTPS 下载 + aria2 兼容 RPC 子集 + thunder.* 扩展；落盘名分叉已由 poller 回读 TaskDb 根治。
 - 阶段 1.5（已交付）：登录集成（OAuth2 device flow → session 注册 → 引擎通知桥链），探针依据 `recon/login-inject/RESULTS.md`。
-- 当前主线：Cordis 插件化（一切皆插件、三 profile）与桥产品化；过程 spec / plan 在 `docs/superpowers/`（本地，不入库）。
+- 当前主线：Cordis 插件化（一切皆插件、三 profile）与桥产品化；过程 spec / plan 在 `docs/`（本地，不入库）。
 
 ## Editing these instructions
 
