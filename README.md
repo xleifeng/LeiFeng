@@ -127,27 +127,59 @@ node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /pat
 
 ## 项目结构
 
+三个概念要分清：**包**（`packages/`，npm workspace，代码组织）≠ **插件**（运行时装配单元，Cordis Fiber 管生命周期）≠ **进程**（故障隔离边界）。web-api 是进程——由 daemon 的 `web-api-process` 插件托管（spawn / 崩溃自动重启 / 优雅退出都进插件生命周期）；webui 是纯静态前端，由 web-api 托管，不在 daemon 装配面上。
+
 ```
 .
 ├── daemon/                thunderd 宿主
 │   ├── engine/            引擎 JS：驱动原生下载组件
 │   ├── host/src/          领域源码：domain / services / repositories / rpc
 │   │   └── entry.mjs      profile launcher 入口
-│   ├── host/plugins/      daemon 插件定义（9 插件树）
+│   ├── host/plugins/      daemon 插件定义（见下方插件清单）
 │   ├── integration/       桌面集成（协议关联、浏览器捕获）
 │   ├── run.sh             一键启动（预检 + 前台运行）
 │   └── test/              unit / architecture / integration / regression
-├── web-api/               外部 HTTP 网关：JSON-RPC、静态 WebUI、mTLS 远程面
+├── web-api/               外部 HTTP 网关进程：JSON-RPC、静态 WebUI、mTLS 远程面
 ├── webui/                 Web 界面（Vue 3 + Vite，Playwright 像素验收）
 ├── packages/
-│   ├── runtime/           profile launcher（composeProfile / bootProfile / runCli）
-│   ├── webseed-bridge/    P2SP→BT 混合加速桥（5 插件树 + Recipient 三角色）
+│   ├── runtime/           装配框架：profile launcher（composeProfile / bootProfile / runCli）
+│   ├── webseed-bridge/    P2SP→BT 混合加速桥（领域码 + 桥插件定义）
 │   └── daemon-client/     control socket 客户端 SDK
 ├── vendor/cordis/         上游 Cordis 固定 commit 收编（来源与修改日志在内）
 ├── scripts/               门禁脚本（入口守卫等）
 ├── thunder_x/             引擎运行时（gitignored，自行放置）
 └── docs/                  本地过程文档（gitignored）
 ```
+
+## 插件清单
+
+一切运行时皆插件：14 个插件构成三 profile，声明 `provides`/`requires` 服务，缺依赖或多 provider 在启动前即失败，逆序 dispose 保证释放。
+
+**daemon 侧**（`daemon/host/plugins/`，`thunderd` = 全部 9 个，`thunderd-core` = 前 8 个）：
+
+| 插件 | 职责 | 提供 |
+|---|---|---|
+| `runtime-config` | 配置加载、目录创建、单实例锁 | `tleiConfig` |
+| `repositories` | 任务/设置/草稿/种子/SQLite 持久层 + secret stores | `tleiRepositories` |
+| `engine-driver` | 引擎进程选择（Wine/Windows 原生）、启动、TaskDb 读取 | `tleiEngine` |
+| `event-observation` | 领域事件总线、进度 poller、诊断缓冲 | `tleiObservation` |
+| `auth-vip` | 凭据钱包、OAuth2 登录管理、会员加速 | `tleiAuth` |
+| `task-core` | 任务域全量服务（创建/查询/操作/调度/策略/元数据）+ 定时器 | `tleiTasks` |
+| `product-services` | 历史、链接库、私空、媒体、捕获、通知、远程节点 | `tleiProducts` |
+| `control-rpc` | control socket + RPC 方法面（依赖齐后才对外监听） | `tleiControl` |
+| `web-api-process` | **托管 web-api 子进程**：spawn、崩溃重启、有界退出 | `tleiWebApi` |
+
+**桥侧**（`packages/webseed-bridge/src/profile-plugins.cjs`，`bridge-host`）：
+
+| 插件 | 职责 |
+|---|---|
+| `runtime-config` | 输入预检（磁力/torrent/批量，infohash 去重） |
+| `bridge-daemon-client` | daemon RPC 客户端 + 登录验收 |
+| `recipient-qbit` | 种子出口（Recipient 缝的 qbit 实现，唯一 provider） |
+| `bridge-seed-http` | BEP-19 HTTP 供种 + `/status` |
+| `bridge-orchestrator` | 会话表、恢复/监控定时器、停滞止损 |
+
+插件定义在 registry（`.cjs`）里声明 ID 与服务依赖，`packages/runtime` 负责解析、按 profile 组合、校验并逐个激活。新增能力 = 写一个插件声明 provides/requires + 注册进对应 profile，不改启动代码。
 
 ## 测试
 
