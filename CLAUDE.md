@@ -29,6 +29,7 @@
 ## 提交与分支
 
 - **commit / push 仅在用户明确要求时执行**；默认不主动提交。
+- **提交消息遵循 Conventional Commits 规范**：`<type>(<scope>?): <subject>`，type 用 feat/fix/docs/style/refactor/perf/test/build/ci/chore/revert；正文（可选）写动机与行为变化，footer（可选）写 BREAKING CHANGE / Closes #N。subject 中文、祈使语气、不加句号。
 - 实现工作在 feature 分支进行，不在 master/main 直接开发。
 - 重大不可逆操作（删除、覆盖未自创文件、外发内容）先确认，除非获持久授权。
 
