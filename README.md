@@ -1,4 +1,4 @@
-# LeiFeng (tlei)
+# LeiFeng
 
 Linux 下载服务：daemon 核心、HTTP API 与 Web 界面三层分离，下载引擎以独立进程托管，插件化运行时装配。不依赖 Electron。
 
@@ -93,10 +93,10 @@ aria2 兼容面：`aria2.addUri` / `addTorrent` / `tellStatus` 等子集可直�
 
 ## webseed-bridge（P2SP→BT 混合加速）
 
-P2SP 通道作为 qBittorrent 的 web seed：tlei 下载 + qbit swarm 双路取数，互补加速；tlei 停滞自动止损。
+P2SP 通道作为 qBittorrent 的 web seed：LeiFeng 下载 + qbit swarm 双路取数，互补加速；LeiFeng 侧停滞自动止损。
 
 ```bash
-# 磁力（tlei 与 qbit 同时下载，桥按 piece 校验后供种给 qbit）
+# 磁力（LeiFeng 与 qbit 同时下载，桥按 piece 校验后供种给 qbit）
 node packages/webseed-bridge/src/main.js hybrid \
   --magnet 'magnet:?xt=urn:btih:<hash>' --data /path/to/save
 
