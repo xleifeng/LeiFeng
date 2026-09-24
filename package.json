@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "workspaces": [
-    "daemon",
-    "web-api",
+    "apps/daemon",
+    "apps/web-api",
     "packages/daemon-client",
     "packages/runtime",
-    "packages/webseed-bridge",
+    "apps/bridge",
     "vendor/cordis/packages/core",
     "vendor/cordis/packages/loader",
     "vendor/cordis/packages/include"

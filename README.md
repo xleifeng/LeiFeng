@@ -21,8 +21,8 @@ thunderd（daemon core，Cordis 插件树）
 
 - Linux x64，Node.js ≥ 24
 - **Wine**（引擎运行环境）：`sudo apt install wine`
-- **引擎运行时**：`thunder_x/program/` 需自行准备（含 `thunder.exe`、`dk_addon.node`、`SDK/` 约 69 个文件）；`daemon/run.sh` 启动时会做完整性预检并给出缺失提示
-- qBittorrent WebUI（仅 webseed-bridge 需要）
+- **引擎运行时**：`thunder_x/program/` 需自行准备（含 `thunder.exe`、`dk_addon.node`、`SDK/` 约 69 个文件）；`apps/daemon/run.sh` 启动时会做完整性预检并给出缺失提示
+- qBittorrent WebUI（仅 apps/bridge 需要）
 
 ## 快速开始
 
@@ -31,10 +31,10 @@ thunderd（daemon core，Cordis 插件树）
 npm ci
 
 # 2. 构建 WebUI（可选——不构建则只有 JSON-RPC，无页面）
-npm --prefix webui install && npm --prefix webui run build
+npm --prefix apps/webui install && npm --prefix apps/webui run build
 
 # 3. 启动（预检 Wine/运行时/端口，前台运行）
-bash daemon/run.sh
+bash apps/daemon/run.sh
 ```
 
 看到 `[thunderd] core control socket=...` 即启动成功。打开 <http://127.0.0.1:16800/> 进入 Web 界面：新建任务、扫码登录（首次）、VIP 加速、设置、引擎诊断都在里面。
@@ -42,8 +42,8 @@ bash daemon/run.sh
 ### systemd 常驻部署
 
 ```bash
-sudo install -m 0644 daemon/thunderd.service /etc/systemd/system/
-sudo install -m 0644 web-api/thunder-web-api.service /etc/systemd/system/
+sudo install -m 0644 apps/daemon/thunderd.service /etc/systemd/system/
+sudo install -m 0644 apps/web-api/thunder-web-api.service /etc/systemd/system/
 # 按需修改 unit 内 WorkingDirectory / ExecStart 指向本仓库，然后：
 sudo systemctl enable --now thunderd thunder-web-api
 ```
@@ -55,7 +55,7 @@ sudo systemctl enable --now thunderd thunder-web-api
 首次使用建议先登录（不登录也能下 HTTP/BT，登录后才有 P2SP 与会员加速）：
 
 - WebUI 右上角头像 → 扫码登录；或 RPC `thunder.auth.startLogin`（返回的 `verificationUrl` 需自行生成二维码）
-- 凭据只存在本机 `daemon/.runtime/auth.json`（0600），不出本机
+- 凭据只存在本机 `apps/daemon/.runtime/auth.json`（0600），不出本机
 - 登录状态用 `thunder.ui.v2.account.refresh` 确认三条件：账号有效、session 已注册、引擎已收到通知
 
 ## 常用 RPC（curl）
@@ -85,9 +85,9 @@ aria2 兼容面：`aria2.addUri` / `addTorrent` / `tellStatus` 等子集可直�
 
 | profile | 用途 | 命令 |
 |---|---|---|
-| `thunderd` | 全量：core + Web API（`run.sh` 默认） | `node daemon/host/src/entry.mjs --profile thunderd` |
-| `thunderd-core` | 裸 core，供自己的应用经 daemon-client 接入 | `node daemon/host/src/entry.mjs --profile thunderd-core` |
-| `bridge-host` | webseed-bridge 独立桥进程 | `node packages/webseed-bridge/src/main.js ...` |
+| `thunderd` | 全量：core + Web API（`run.sh` 默认） | `node apps/daemon/host/src/entry.mjs --profile thunderd` |
+| `thunderd-core` | 裸 core，供自己的应用经 daemon-client 接入 | `node apps/daemon/host/src/entry.mjs --profile thunderd-core` |
+| `bridge-host` | webseed-bridge 独立桥进程 | `node apps/bridge/src/main.js ...` |
 
 `--dump-config` 输出脱敏后的最终装配树（不启动、不取锁）；`--config file.json` 以 `{"plugins":[{"id":..,"config":..}]}` 覆写插件配置。
 
@@ -97,14 +97,14 @@ P2SP 通道作为 qBittorrent 的 web seed：LeiFeng 下载 + qbit swarm 双路�
 
 ```bash
 # 磁力（LeiFeng 与 qbit 同时下载，桥按 piece 校验后供种给 qbit）
-node packages/webseed-bridge/src/main.js hybrid \
+node apps/bridge/src/main.js hybrid \
   --magnet 'magnet:?xt=urn:btih:<hash>' --data /path/to/save
 
 # 批量：混用 --magnet / --torrent / --input-file，--save-path 跟在所属项后
-node packages/webseed-bridge/src/main.js hybrid --input-file ./batch.txt --data /path/to/save
+node apps/bridge/src/main.js hybrid --input-file ./batch.txt --data /path/to/save
 
 # 给已有完整数据生成带 web seed 的种子（不触 daemon）
-node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
+node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 ```
 
 运行中 `GET /status`（默认 `127.0.0.1:7127`）查看逐项进度与校验状态。仅绑定 loopback；不打印完整磁力 URI。
@@ -115,7 +115,7 @@ node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /pat
 |---|---|---|
 | `THUNDERD_PORT` / `THUNDERD_HOST` | `16800` / `127.0.0.1` | RPC 监听地址 |
 | `THUNDERD_RPC_SECRET` | 空 | 设置后所有 RPC 需 Bearer 认证 |
-| `THUNDERD_RUNTIME_DIR` | `daemon/.runtime` | 任务数据、SQLite、凭据、socket |
+| `THUNDERD_RUNTIME_DIR` | `apps/daemon/.runtime` | 任务数据、SQLite、凭据、socket |
 | `THUNDERD_DOWNLOAD_DIR` | `./downloads` | 默认下载目录 |
 | `THUNDERD_VIP_ENABLED` | `1` | 会员试用加速开关 |
 | `THUNDERD_LEGACY_RPC` | `0` | 旧 aria2 兼容 handler，仅迁移回归用 |
@@ -123,7 +123,7 @@ node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /pat
 | `WINEPREFIX` | `~/.wine-thunder` | Wine 前缀 |
 | `THUNDERD_ENGINE_MODE` | 自动 | `wine` 或 `windows-native`（WSL 下跑 Windows 原生引擎） |
 
-完整清单见 `daemon/host/src/config.js`。
+完整清单见 `apps/daemon/host/src/config.js`。
 
 ## 项目结构
 
@@ -131,19 +131,20 @@ node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /pat
 
 ```
 .
-├── daemon/                thunderd 宿主
-│   ├── engine/            引擎 JS：驱动原生下载组件
-│   ├── host/src/          领域源码：domain / services / repositories / rpc
-│   │   └── entry.mjs      profile launcher 入口
-│   ├── host/plugins/      daemon 插件定义（见下方插件清单）
-│   ├── integration/       桌面集成（协议关联、浏览器捕获）
-│   ├── run.sh             一键启动（预检 + 前台运行）
-│   └── test/              unit / architecture / integration / regression
-├── web-api/               外部 HTTP 网关进程：JSON-RPC、静态 WebUI、mTLS 远程面
-├── webui/                 Web 界面（Vue 3 + Vite，Playwright 像素验收）
+├── apps/
+│   ├── daemon/            thunderd 宿主
+│   │   ├── engine/        引擎 JS：驱动原生下载组件
+│   │   ├── host/src/      领域源码：domain / services / repositories / rpc
+│   │   │   └── entry.mjs  profile launcher 入口
+│   │   ├── host/plugins/  daemon 插件定义（见下方插件清单）
+│   │   ├── integration/   桌面集成（协议关联、浏览器捕获）
+│   │   ├── run.sh         一键启动（预检 + 前台运行）
+│   │   └── test/          unit / architecture / integration / regression
+│   ├── web-api/           外部 HTTP 网关进程：JSON-RPC、静态 WebUI、mTLS 远程面
+│   ├── webui/             Web 界面（Vue 3 + Vite，Playwright 像素验收）
+│   └── bridge/            P2SP→BT 混合加速桥（领域码 + 桥插件定义）
 ├── packages/
 │   ├── runtime/           装配框架：profile launcher（composeProfile / bootProfile / runCli）
-│   ├── webseed-bridge/    P2SP→BT 混合加速桥（领域码 + 桥插件定义）
 │   └── daemon-client/     control socket 客户端 SDK
 ├── vendor/cordis/         上游 Cordis 固定 commit 收编（来源与修改日志在内）
 ├── scripts/               门禁脚本（入口守卫等）
@@ -155,7 +156,7 @@ node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /pat
 
 一切运行时皆插件：14 个插件构成三 profile，声明 `provides`/`requires` 服务，缺依赖或多 provider 在启动前即失败，逆序 dispose 保证释放。
 
-**daemon 侧**（`daemon/host/plugins/`，`thunderd` = 全部 9 个，`thunderd-core` = 前 8 个）：
+**daemon 侧**（`apps/daemon/host/plugins/`，`thunderd` = 全部 9 个，`thunderd-core` = 前 8 个）：
 
 | 插件 | 职责 | 提供 |
 |---|---|---|
@@ -169,7 +170,7 @@ node packages/webseed-bridge/src/main.js serve --torrent ./x.torrent --data /pat
 | `control-rpc` | control socket + RPC 方法面（依赖齐后才对外监听） | `tleiControl` |
 | `web-api-process` | **托管 web-api 子进程**：spawn、崩溃重启、有界退出 | `tleiWebApi` |
 
-**桥侧**（`packages/webseed-bridge/src/profile-plugins.cjs`，`bridge-host`）：
+**桥侧**（`apps/bridge/src/profile-plugins.cjs`，`bridge-host`）：
 
 | 插件 | 职责 |
 |---|---|
@@ -189,7 +190,7 @@ npm run test:vendor                  # vendored Cordis Fiber 生命周期
 npm run test:entrypoints             # 入口守卫（禁止绕过 launcher）
 ```
 
-进一步阅读：[ARCHITECTURE.md](ARCHITECTURE.md)（分层与依赖规则）、[daemon/README.md](daemon/README.md)（RPC 全量示例）、[packages/webseed-bridge/README.md](packages/webseed-bridge/README.md)（桥详解）、[vendor/README.md](vendor/README.md)（vendored Cordis 来源）。
+进一步阅读：[ARCHITECTURE.md](ARCHITECTURE.md)（分层与依赖规则）、[apps/daemon/README.md](apps/daemon/README.md)（RPC 全量示例）、[apps/bridge/README.md](apps/bridge/README.md)（桥详解）、[vendor/README.md](vendor/README.md)（vendored Cordis 来源）。
 
 ## 许可
 
