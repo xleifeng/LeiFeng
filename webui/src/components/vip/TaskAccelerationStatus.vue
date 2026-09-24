@@ -1,0 +1,6 @@
+<script setup lang="ts">
+import type { VipTaskState } from '../../api/contracts/v2/vip'
+defineProps<{ state: VipTaskState | null; busy?: boolean }>()
+defineEmits<{ toggle: [enabled: boolean]; retry: [] }>()
+</script>
+<template><div class="vip-status-card"><div><span>{{ state?.accelerationChannel === 'super-channel' ? '超级通道 / 会员加速' : '会员下载加速' }}</span><strong>{{ !state ? '读取中…' : state.availability === 'account-required' ? '请先登录' : state.availability === 'not-vip' ? '非会员不可用' : state.state === 'effective' ? '加速已生效' : state.state === 'injected' ? '加速已开启' : state.state === 'requesting' ? '正在开启…' : state.state === 'backoff' ? '稍后重试' : state.resourceStatus === 'blocked' ? '资源受限' : state.resourceStatus === 'cold' ? '当前资源不可加速' : '等待资源' }}</strong></div><div v-if="state?.availability === 'available'" class="vip-status-actions"><button class="secondary-button" :disabled="busy" @click="$emit('toggle', !state.enabled)">{{ state.enabled ? '关闭' : '开启' }}</button><button class="secondary-button" :disabled="busy" @click="$emit('retry')">重试</button></div><small v-if="state?.superChannelEligible">当前任务符合超级通道条件</small><small v-else-if="state?.resourceStatus === 'partial'">部分文件可使用会员加速</small><small v-if="state?.problemCode">{{ state.problemCode }}</small></div></template>

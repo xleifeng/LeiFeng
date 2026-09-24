@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Thunder Native Download Capture
+Exec=@INSTALL_DIR@/thunder-capture.sh --source-uri %u
+NoDisplay=true
+Terminal=false
+MimeType=application/x-bittorrent;x-scheme-handler/magnet;x-scheme-handler/ed2k;x-scheme-handler/thunder;
+X-KDE-Protocols=magnet;ed2k;thunder

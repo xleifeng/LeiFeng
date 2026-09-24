@@ -1,0 +1,97 @@
+/* webui/src/styles/native-shell.css — 壳层布局（对齐 orig-main-download-clean.png）
+ * 结构：顶栏横跨全宽（含品牌蜂鸟）、侧栏在顶栏下方、主内容区白底。
+ * 背景：#f6f6f6 对应原版侧栏/顶栏底色；主区白。
+ */
+.native-app-shell { display: flex; width: 100%; height: 100%; flex-direction: column; overflow: hidden; background: var(--xl-content-bg); }
+.native-shell-body { display: flex; flex: 1; min-height: 0; }
+
+/* ---- 侧栏 ---- */
+.native-sidebar { z-index: 20; display: flex; flex: 0 0 var(--xl-sidebar-width); flex-direction: column; width: var(--xl-sidebar-width); height: 100%; padding: 0 8px; background: var(--xl-content-bg); }
+.sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
+.sidebar-link { display: flex; align-items: center; min-height: 48px; padding: 0 16px; gap: 13px; border-radius: 12px; color: var(--xl-text-brand); font-size: 14px; transition: color .15s, background .15s; }
+.sidebar-link:hover { background: color-mix(in srgb, var(--xl-blue) 7%, transparent); }
+.sidebar-link.router-link-active { color: var(--xl-blue); background: var(--xl-selected-bg); font-weight: 500; }
+.sidebar-link.trash-reference-active { color: var(--xl-blue); background: var(--xl-selected-bg); font-weight: 500; }
+.sidebar-link.is-disabled { cursor: default; }
+.sidebar-link.is-disabled:hover { background: transparent; }
+.sidebar-count { margin-left: auto; color: var(--xl-text-tertiary); font-size: 11px; }
+.sidebar-divider { height: 1px; margin: 6px 8px; background: var(--xl-divider); }
+.sidebar-spacer { flex: 1; }
+.sidebar-footer { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 0 17px 24px; }
+.sidebar-bottom-link { display: inline-flex; align-items: center; gap: 6px; color: var(--xl-text-muted); font-size: 12px; }
+.sidebar-bottom-link:hover { color: var(--xl-blue); }
+.sidebar-bottom-link.router-link-active { color: var(--xl-blue); }
+.sidebar-bottom-link.is-disabled { cursor: default; }
+.settings-link { width: 100%; padding-left: 48px; text-align: left; }
+
+/* ---- 顶栏 ---- */
+.native-topbar { display: flex; flex: 0 0 var(--xl-topbar-height); height: var(--xl-topbar-height); align-items: center; padding: 0 10px 0 22px; background: var(--xl-content-bg); }
+.topbar-brand { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; margin-right: 105px; }
+.brand-bird { display: block; width: 26px; height: 26px; }
+.brand-word { color: var(--xl-text-brand); font-size: 20px; font-weight: 600; letter-spacing: 0; line-height: 1; white-space: nowrap; }
+.topbar-navgroup { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
+.topbar-navgroup .nav-refresh { --icon-btn-color: #333; }
+.topbar-search { display: flex; flex: 1 1 auto; min-width: 200px; max-width: 394px; height: 38px; margin-left: 14px; padding: 0 12px 0 15px; gap: 9px; align-items: center; border: 1px solid var(--xl-border); border-radius: 6px; color: var(--xl-search-icon); background: #fff; }
+.topbar-search:focus-within { border-color: var(--xl-blue); box-shadow: var(--xl-focus-ring); }
+.topbar-search input { flex: 1; min-width: 0; border: 0; outline: none; color: var(--xl-text-primary); background: transparent; font-size: 13px; }
+.topbar-search input::placeholder { color: var(--xl-placeholder); }
+.clear-search { display: inline-flex; color: var(--xl-text-tertiary); }
+.new-task-menu { position: relative; flex: 0 0 auto; margin-left: 11px; }
+.new-task-button { height: 36px; padding: 0 9px 0 10px; border-radius: 6px; background: var(--xl-selected-bg); color: var(--xl-blue); font-size: 14px; font-weight: 500; }
+.new-task-button:hover { background: #d3e2fb; }
+.new-task-chevron { margin-left: 1px; transition: transform .15s; }
+.new-task-button[aria-expanded='true'] .new-task-chevron { transform: rotate(180deg); }
+.new-task-popover { position: absolute; z-index: 80; top: calc(100% + 7px); right: 0; width: 224px; padding: 6px; border: 1px solid var(--xl-border); border-radius: 10px; background: var(--xl-panel-bg); box-shadow: 0 12px 34px rgb(31 35 41 / 18%); }
+.new-task-popover::before { position: absolute; left: 0; right: 0; top: -8px; height: 8px; content: ''; }
+.new-task-popover > button { display: flex; width: 100%; align-items: center; padding: 9px 10px; gap: 10px; border-radius: 7px; text-align: left; }
+.new-task-popover > button:hover, .new-task-popover > button:focus-visible { background: color-mix(in srgb, var(--xl-blue) 8%, transparent); }
+.new-task-popover > button > span:last-child { display: grid; gap: 1px; }
+.new-task-popover strong { color: var(--xl-text-primary); font-size: 12px; font-weight: 500; }
+.new-task-popover small { color: var(--xl-text-tertiary); font-size: 10px; }
+.new-task-option-icon { display: grid; flex: 0 0 32px; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: var(--xl-blue); background: color-mix(in srgb, var(--xl-blue) 10%, transparent); }
+.new-task-option-icon.bt { color: #8a58bc; background: #f1e9fa; }
+.topbar-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; margin-left: auto; --icon-btn-color: var(--xl-tool-icon); }
+.account-button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; margin-left: 10px; padding: 0; }
+.account-avatar { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; color: #a6a9b0; background: var(--xl-avatar-bg); }
+.topbar-divider { width: 1px; height: 14px; margin: 0 8px 0 20px; background: var(--xl-border); }
+
+/* ---- 主区 ---- */
+.native-main-area { display: flex; flex: 1; min-width: 0; flex-direction: column; height: 100%; background: #fff; }
+.native-main-area.is-task-surface { height: calc(100% - 8px); margin: 0 8px 8px 0; overflow: hidden; border-radius: 12px; }
+.native-breadcrumb { display: flex; align-items: center; min-height: 40px; padding: 8px 34px 0; color: var(--xl-text-secondary); font-size: 12px; }
+.engine-dot { display: inline-flex; align-items: center; gap: 5px; margin-left: 12px; color: var(--xl-success); font-size: 11px; }
+.engine-dot i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.native-content-scroll { flex: 1; min-height: 0; overflow: hidden; padding: 0 28px 24px; background: #fff; }
+.native-content-scroll.is-task-surface { padding: 0; }
+.connection-banner { display: flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 18px; gap: 15px; color: #8a5b08; background: #fff6dd; border-bottom: 1px solid #f0d998; font-size: 12px; }
+.connection-banner button { color: var(--xl-blue); font-weight: 500; }
+.feature-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 320px; color: var(--xl-text-secondary); text-align: center; }
+.feature-page h1 { margin: 12px 0 5px; color: var(--xl-text-primary); font-size: 20px; font-weight: 600; }
+.feature-page p { max-width: 400px; margin: 0; font-size: 13px; }
+.feature-page-icon { display: inline-flex; align-items: center; justify-content: center; width: 58px; height: 58px; border: 1px solid var(--xl-border); border-radius: 18px; color: var(--xl-blue); background: var(--xl-panel-bg); font-size: 26px; }
+
+/* 移动端：三键/图标隐藏，抽屉式侧栏 */
+.mobile-close { display: none; }
+.sidebar-backdrop { display: none; }
+@media (max-width: 760px) {
+  .native-sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); transition: transform .2s ease; box-shadow: 8px 0 28px rgb(0 0 0 / 12%); }
+  .native-sidebar.is-open { transform: translateX(0); }
+  .sidebar-backdrop { position: fixed; z-index: 19; inset: 0; display: block; background: rgb(0 0 0 / 28%); }
+  .mobile-close { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--xl-text-secondary); }
+  .native-topbar { padding: 0 10px 0 14px; gap: 8px; }
+  .topbar-brand { margin-right: 8px; }
+  .brand-word { font-size: 16px; }
+  .topbar-navgroup { display: none; }
+  .topbar-search { margin-left: 0; }
+  .new-task-menu { margin-left: 0; }
+  .new-task-button { padding: 0 10px; font-size: 0; }
+  .new-task-button svg { margin: 0; }
+  .new-task-button .new-task-chevron { display: none; }
+  .tb-act:not(.topbar-menu) { display: none; }
+  .topbar-divider, .window-controls { display: none; }
+  .account-button { margin-left: auto; }
+  .native-breadcrumb { padding-left: 16px; }
+  .native-main-area.is-task-surface { height: 100%; margin: 0; border-radius: 0; }
+  .native-content-scroll { padding: 0 12px 15px; }
+  .native-content-scroll.is-task-surface { padding: 0; }
+}

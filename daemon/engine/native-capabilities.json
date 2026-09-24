@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "sdkVersions": {
+    "25.0.82.1562": {
+      "flat": {
+        "startPause": "verified",
+        "recycle": "not-probed",
+        "recover": "not-probed",
+        "rename": "not-probed",
+        "move": "not-probed",
+        "redownload": "not-probed",
+        "perTaskRateLimit": "not-probed",
+        "bt.updateSelection": "not-probed",
+        "bt.sequential": "not-probed",
+        "bt.getFileRuntime": "verified",
+        "bt.getSeed": "not-probed",
+        "network.globalRateLimit": "verified",
+        "network.proxy": "not-probed",
+        "network.proxyVerify": "not-probed",
+        "network.p2pSwitch": "not-probed",
+        "network.p2sSwitch": "not-probed",
+        "network.autoMoveLowSpeed": "not-probed",
+        "account.taskVip": "verified"
+      }
+    },
+    "25.0.90.1592": {
+      "flat": {
+        "startPause": "verified",
+        "bt.getFileRuntime": "unsafe-callback"
+      }
+    }
+  }
+}
