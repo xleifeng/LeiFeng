@@ -135,12 +135,33 @@ npm run test:entrypoints             # 入口守卫（禁止绕过 launcher）
 
 进一步阅读：[ARCHITECTURE.md](ARCHITECTURE.md)（分层与依赖规则）、[daemon/README.md](daemon/README.md)（RPC 全量示例）、[packages/webseed-bridge/README.md](packages/webseed-bridge/README.md)（桥详解）、[vendor/README.md](vendor/README.md)（vendored Cordis 来源）。
 
+## 项目结构
+
+```
+.
+├── daemon/                thunderd 宿主
+│   ├── engine/            引擎 JS：Wine 下驱动迅雷 SDK 的 dk_addon.node
+│   ├── host/src/          领域源码：domain / services / repositories / rpc
+│   │   └── entry.mjs      profile launcher 入口
+│   ├── host/plugins/      daemon 插件定义（9 插件树）
+│   ├── integration/       桌面集成（协议关联、浏览器捕获）
+│   ├── run.sh             一键启动（预检 + 前台运行）
+│   └── test/              unit / architecture / integration / regression
+├── web-api/               外部 HTTP 网关：JSON-RPC、静态 WebUI、mTLS 远程面
+├── webui/                 原生风格 WebUI（Vue 3 + Vite，Playwright 像素验收）
+├── packages/
+│   ├── runtime/           profile launcher（composeProfile / bootProfile / runCli）
+│   ├── webseed-bridge/    P2SP→BT 输血桥（5 插件树 + Recipient 三角色）
+│   └── daemon-client/     control socket 客户端 SDK
+├── vendor/cordis/         上游 Cordis 固定 commit 收编（来源与修改日志在内）
+├── scripts/               门禁脚本（入口守卫等）
+├── thunder_x/             迅雷原版运行树（gitignored，自行放置）
+├── recon/                 逆向调研材料（gitignored）
+└── docs/                  本地过程文档：spec / plan / 报告（gitignored）
+```
+
 ## 法律与许可
 
 - 本仓库代码 MIT
 - 迅雷 SDK、原版界面资产（字体/插画/logo）**属迅雷公司，仅个人使用，禁止再分发**——这就是它们不入库的原因，需要自行从官方安装包获取
 - 登录走官方 OAuth2 设备流，凭据仅存本机；本项目与迅雷公司无关联
-
-## 免责声明
-
-本项目为个人学习与研究所用的逆向工程成果。使用者需自行承担合规风险，遵守所在地法律法规，仅用于合法内容下载。不支持、不鼓励任何侵犯版权或绕过付费的行为。
