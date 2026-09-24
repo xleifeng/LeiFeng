@@ -1,0 +1,12 @@
+import { remoteNodeSchema, remoteNodesResponseSchema, remotePairingSchema, remoteServerClientSchema, remoteTasksResponseSchema, type RemoteNode, type RemoteServerClient, type RemoteTask } from '../contracts/v2/remote'
+import { rpcV2 } from './client'
+
+export async function queryRemoteNodes(): Promise<RemoteNode[]> { return remoteNodesResponseSchema.parse(await rpcV2('thunder.ui.v2.remote.nodes.query')).items }
+export async function acceptRemotePairing(input: { name: string, endpoint: string, serverFingerprint: string, pairingId?: string, code?: string, requestedPermissions?: string[] }): Promise<RemoteNode> { return remoteNodeSchema.parse(await rpcV2('thunder.ui.v2.remote.nodes.acceptPairing', [input])) }
+export async function removeRemoteNode(nodeId: string): Promise<void> { await rpcV2('thunder.ui.v2.remote.nodes.remove', [{ nodeId }]) }
+export async function startRemotePairing(): Promise<{ pairingId: string, code: string, expiresAt: number, serverFingerprint?: string | null }> { return remotePairingSchema.parse(await rpcV2('thunder.ui.v2.remote.server.startPairing', [{ permissions: ['view', 'submit', 'control'] }])) }
+export async function stopRemotePairing(pairingId: string) { return rpcV2<{ stopped: boolean }>('thunder.ui.v2.remote.server.stopPairing', [{ pairingId }]) }
+export async function queryRemoteServerClients(): Promise<RemoteServerClient[]> { const result = await rpcV2<{ items: unknown[] }>('thunder.ui.v2.remote.server.clients.query'); return result.items.map((item) => remoteServerClientSchema.parse(item)) }
+export async function revokeRemoteServerClient(clientId: string) { return rpcV2<{ revoked: boolean }>('thunder.ui.v2.remote.server.clients.revoke', [{ clientId }]) }
+export async function queryRemoteTasks(nodeId: string, taskQuery: Record<string, unknown> = {}): Promise<{ items: RemoteTask[]; total?: number; nextCursor?: unknown }> { return remoteTasksResponseSchema.parse(await rpcV2('thunder.ui.v2.remote.tasks.query', [{ nodeId, taskQuery }])) }
+export async function commandRemoteTasks(compositeTaskIds: string[], command: string, options: Record<string, unknown> = {}) { return rpcV2<{ operationId: string; results: Array<{ taskId: string; ok: boolean; error?: { code?: string; message?: string } }> }>('thunder.ui.v2.remote.tasks.command', [{ compositeTaskIds, command, options, idempotencyKey: globalThis.crypto?.randomUUID?.() || `remote-${Date.now().toString(36)}` }]) }

@@ -1,0 +1,27 @@
+{
+  "name": "tlei-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "daemon",
+    "web-api",
+    "packages/daemon-client",
+    "packages/runtime",
+    "packages/webseed-bridge",
+    "vendor/cordis/packages/core",
+    "vendor/cordis/packages/loader",
+    "vendor/cordis/packages/include"
+  ],
+  "scripts": {
+    "postinstall": "npm run build:vendor",
+    "build:vendor": "node vendor/cordis/build.mjs",
+    "test:vendor": "node --test vendor/cordis/test/*.test.mjs",
+    "test:entrypoints": "node scripts/verify-application-entrypoints.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "esbuild": "0.25.12",
+    "typescript": "5.9.3"
+  }
+}

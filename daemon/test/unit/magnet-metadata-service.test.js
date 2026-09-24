@@ -1,0 +1,9 @@
+'use strict';
+const test = require('node:test'); const assert = require('node:assert/strict'); const fs = require('fs'); const os = require('os'); const path = require('path');
+const { DraftRepository } = require('../../host/src/repositories/draft-repository'); const { SeedStore } = require('../../host/src/repositories/seed-store'); const { MagnetMetadataService } = require('../../host/src/services/magnet-metadata-service');
+
+test('magnet metadata transitions draft to BT-ready after a validated torrent appears', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnet-meta-v2-')); const drafts = new DraftRepository({ filePath: path.join(dir, 'drafts.json'), idFactory: () => 'draft-magnet' }); drafts.load(); const draft = drafts.create({ kind: 'magnet', state: 'metadata', normalizedSource: 'magnet:?xt=urn:btih:abc', displayName: 'magnet.torrent', options: { infoHash: 'abc' } });
+  const metadataDir = path.join(dir, 'metadata', draft.draftId); fs.mkdirSync(metadataDir, { recursive: true }); const driver = { createTask: async () => 88, startTasks: async () => {}, stopTasks: async () => {}, deleteTasks: async () => {}, parseTaskInfo: async () => ({ infoId: 'info-1', fileLists: [{ realIndex: 0, fileName: 'file.bin', fileSize: 10, fileOffset: 0 }] }) }; const service = new MagnetMetadataService({ drafts, driver, seedStore: new SeedStore({ rootDir: path.join(dir, 'seeds') }), runtimeDir: dir });
+  drafts.mutate(draft.draftId, draft.revision, { metadataJob: { engineId: 88, infoHash: 'abc', deadlineAt: Date.now() + 10000 } }); fs.writeFileSync(path.join(metadataDir, 'abc.torrent'), Buffer.alloc(128, 0x64)); const ready = await service.pollOnce(draft.draftId); assert.equal(ready.state, 'ready'); assert.equal(ready.files[0].relativePath, 'file.bin'); assert.equal(ready.seedRef.startsWith('sha256:'), true);
+});

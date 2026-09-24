@@ -1,0 +1,22 @@
+{
+  "name": "thunderd-host",
+  "private": true,
+  "version": "0.4.0",
+  "type": "commonjs",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "test": "npm run test:unit && npm run test:architecture && npm run test:web-api",
+    "test:unit": "node --test test/unit/*.test.js",
+    "test:architecture": "node --test test/architecture/*.test.js",
+    "test:web-api": "node --test ../web-api/test/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "setup:remote": "node host/bin/setup-remote-pki.js",
+    "monitor:ubuntu-vip": "node monitor-ubuntu-vip.js"
+  },
+  "dependencies": {
+    "archiver": "8.0.0",
+    "better-sqlite3": "13.0.2",
+    "luxon": "3.7.2",
+    "mime-types": "3.0.2"
+  }
+}

@@ -1,0 +1,32 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { TaskRepository } = require('../../host/src/repositories/task-repository');
+const { DraftRepository } = require('../../host/src/repositories/draft-repository');
+const { PathService } = require('../../host/src/services/path-service');
+const { CreateDraftService } = require('../../host/src/services/create-draft-service');
+const { FtpSecretStore } = require('../../host/src/secrets/ftp-secret-store');
+
+test('FTP draft DTO and repository never contain URL credentials', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ftp-draft-'));
+  const tasks = new TaskRepository({ filePath: path.join(root, 'tasks.json') }); tasks.load();
+  const draftsPath = path.join(root, 'drafts.json');
+  const drafts = new DraftRepository({ filePath: draftsPath }); drafts.load();
+  const secrets = new FtpSecretStore({ filePath: path.join(root, 'secrets', 'ftp.json') }); secrets.load();
+  const service = new CreateDraftService({ drafts, tasks, ftpSecrets: secrets, pathService: new PathService({ defaultPath: root }) });
+  const result = await service.preflight({ inputs: ['ftp://alice:p%40ss@example.test/releases/a.iso'], savePath: root });
+  const draft = result.results[0].draft;
+  assert.equal(draft.kind, 'ftp');
+  assert.equal(draft.normalizedSource, 'ftp://example.test/releases/a.iso');
+  assert.equal(JSON.stringify(draft).includes('p@ss'), false);
+  assert.equal(JSON.stringify(draft).includes('ftpSecretRef'), false);
+  const persisted = fs.readFileSync(draftsPath, 'utf8');
+  assert.equal(persisted.includes('p@ss'), false);
+  assert.equal(persisted.includes('alice@'), false);
+  assert.equal(Object.keys(secrets.snapshot()).length, 1);
+  await service.cancel({ draftIds: [draft.draftId] });
+  assert.equal(Object.keys(secrets.snapshot()).length, 0);
+});

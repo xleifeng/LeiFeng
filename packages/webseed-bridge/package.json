@@ -1,0 +1,16 @@
+{
+  "name": "@tlei/webseed-bridge",
+  "version": "0.2.0",
+  "description": "BEP-19 web seed 桥：把 tlei 落盘数据经 sha1 逐 piece 校验后以 HTTP web seed 形态供给本机 qBittorrent",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=22.12.0" },
+  "dependencies": {
+    "parse-torrent": "^11.0.24",
+    "bencode": "^4.0.1"
+  }
+}

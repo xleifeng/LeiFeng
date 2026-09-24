@@ -1,0 +1,96 @@
+# 迅雷 Linux 移植 — .gitignore
+
+# === 顶层非源码目录 ===
+# 当前仓库只把 daemon/ 与 webui/ 作为产品源码树；下列目录是分析材料、
+# 解包/安装产物、运行时数据、下载文件或本地工作账本，不参与源码跟踪。
+/.browser-test/
+/.runtime*/
+/.superpowers/
+/docs/
+!/docs/
+/docs/*
+!/docs/superpowers/
+/docs/superpowers/*
+!/docs/superpowers/specs/
+!/docs/superpowers/plans/
+/docs/superpowers/specs/*
+/docs/superpowers/plans/*
+!/docs/superpowers/specs/2026-09-24-cordis-plugin-architecture-design.md
+!/docs/superpowers/plans/2026-09-24-cordis-plugin-architecture.md
+!/docs/superpowers/plans/2026-09-24-cordis-plugin-inventory.md
+/downloads/
+/.p0/
+/*login-qr*.png
+/recon/
+/thunder_x/
+
+# 顶层安装包与分析报告同样不是源码。
+/ThunderSetup*.exe
+/recon-report.md
+
+# === 凭据/会话文件（脱敏铁律：recon/ 下不得提交真实凭据）===
+# OAuth2 token、device flow session、登录二维码图/文均含可复用凭据
+recon/login-inject/token.json
+recon/login-inject/session.json
+recon/login-inject/qr.png
+recon/login-inject/qr.txt
+
+# === 临时探针/输出（非交付物）===
+/tmp/
+
+# === Python ===
+__pycache__/
+*.pyc
+
+# === Node / WebUI 构建与测试产物 ===
+node_modules/
+webui/dist/
+webui/.vite/
+webui/coverage/
+webui/.local-assets/
+webui/test-results/
+webui/pixel-report/
+test-results/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# === SDD 账本（gitignored by superpowers convention）===
+.superpowers/sdd/
+
+# === Wine/运行时产物 ===
+*.bak
+*.tmp
+thunder_x/profiles/*.dat-shm
+thunder_x/profiles/*.dat-wal
+
+# === 迅雷专有下载 SDK（属迅雷，不可再分发；51MB，静默安装补齐）===
+thunder_x/program/SDK/
+
+# === thunderd daemon 运行时产物与下载输出 ===
+daemon/.runtime*/
+recon/engine-semantics/.runtime/
+recon/engine-semantics/.runtime-*/
+recon/engine-semantics/*.out
+recon/engine-semantics/*.runner.log
+# 顶部目录的下载输出目录（锚定，避免误伤 webui/src/views/downloads/ 源码）
+/downloads/
+
+# === 浏览器隔离测试产物（截图、临时 profile、fixture、下载落盘）===
+.browser-test/
+
+# === 迅雷桌面运行时动态数据（非源码/非研究证据）===
+thunder_x/reshub/
+thunder_x/profiles/TaskSpeedInfo/
+thunder_x/profiles/pan-plugin/
+thunder_x/profiles/mainWndData.ini
+thunder_x/profiles/xlaccount/**/logs/*.log
+
+# === 常见编辑器/系统噪音 ===
+.DS_Store
+.idea/
+.vscode/
+
+.runtime-probe-mag2/
+.runtime-phase3-probe/

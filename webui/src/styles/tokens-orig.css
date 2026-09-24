@@ -1,0 +1,63 @@
+/* webui/src/styles/tokens-orig.css — 原版设计令牌覆盖层
+ * 来源：docs/ui-reference/README.md 对照表（与迅雷 Linux 客户端原版 renderer 视觉对照）
+ * 加载顺序：tokens.css 在前，tokens-orig.css 在后；同名变量在 cascade 中后写入者胜出，实现"覆盖层"语义。
+ * 暗色主题由 :root[data-theme='dark'] 切换；任务 1 之前所有 UI 组件应当用语义变量（--xl-*），避免硬编码色值。
+ */
+
+:root {
+  /* 主色 — 迅雷蓝（#226df5，接近 #3F85FF 的稍深色；侧栏激活、链接、按钮 hover 用 hover 色） */
+  --xl-blue: #226df5;
+  --xl-blue-hover: #1a5fd8;
+
+  /* 文字 — 三级灰阶 */
+  --xl-text-primary: #272e3b;
+  --xl-text-secondary: #86909c;
+  --xl-text-tertiary: #c9cdd4;
+
+  /* 像素复刻令牌（Task 2 实测原版 orig-main-download-clean.png） */
+  --xl-text-brand: #101217;      /* 顶栏品牌/侧栏导航文字（原版近黑） */
+  --xl-selected-bg: #e0ebff;     /* 侧栏选中项底 + 顶栏「新建」按钮底 */
+  --xl-placeholder: #a3a8b3;     /* 搜索框 placeholder */
+  --xl-search-icon: #b0b3b8;     /* 搜索框放大镜 */
+  --xl-text-muted: #8a8f99;      /* 侧栏底部次要文字 */
+  --xl-tool-icon: #3a3d42;       /* 顶栏右侧功能图标 */
+  --xl-avatar-bg: #f0f1f4;       /* 头像圆底 */
+  --xl-divider: #ececef;         /* 侧栏分隔线 */
+
+  /* 描边与背景 */
+  --xl-border: #e5e6eb;
+  --xl-content-bg: #f6f6f6; /* 原版实渲染顶栏/侧栏底色（像素实测 #f6f6f6） */
+  --xl-panel-bg: #fff;
+
+  /* 状态色 */
+  --xl-danger: #ff4d4f;
+  --xl-success: #1bd08d;
+
+  /* 字体 — 数字 / 度量首选 D-DIN-PRO（来源：thunder_x/program/static/font），退化 PingFang/雅黑 */
+  --xl-font-num: 'D-DIN-PRO', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* 字号 */
+  --xl-font-size-12: 12px;
+  --xl-font-size-13: 13px;
+  --xl-font-size-14: 14px;
+  --xl-font-size-16: 16px;
+  --xl-font-size-20: 20px;
+
+  /* 圆角 */
+  --xl-radius-control: 8px;
+  --xl-radius-panel: 12px;
+  --xl-radius-small: 4px;
+
+  /* 组件专用 */
+  --xl-tab-underline: 2px solid #226df5;
+  --xl-vip-banner-grad: linear-gradient(90deg, #3F85FF 0%, #AAA3FF 100%);
+  --xl-dialog-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+}
+
+:root[data-theme='dark'] {
+  --xl-content-bg: #181a1f;
+  --xl-panel-bg: #23262d;
+  --xl-text-primary: #f3f4f6;
+  --xl-text-secondary: #a7adb8;
+  --xl-border: #343841;
+}
