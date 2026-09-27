@@ -7,7 +7,16 @@ function pathError(code, message, details) { const error = new Error(message); e
 
 class SafePathResolver {
   constructor({ allowedRoots = [], fsImpl = fs } = {}) { this.fs = fsImpl; this.allowedRoots = [...new Set(allowedRoots.map((root) => path.resolve(root)))]; if (!this.allowedRoots.length) throw new Error('SafePathResolver requires allowedRoots'); }
-  _inside(target) { const resolved = path.resolve(target); return this.allowedRoots.some((root) => resolved === root || resolved.startsWith(`${root}${path.sep}`)); }
+  // win32（NTFS/默认 ReFS）路径不区分大小写：引擎/客户端回传的盘符或目录大小写可能与
+  // 配置根不一致（C:\dl vs c:\DL），严格比较会误拒合法目标。POSIX 保持精确比较。
+  _inside(target) {
+    const resolved = path.resolve(target);
+    if (process.platform === 'win32') {
+      const lowered = resolved.toLowerCase();
+      return this.allowedRoots.some((root) => { const lroot = root.toLowerCase(); return lowered === lroot || lowered.startsWith(`${lroot}${path.sep}`); });
+    }
+    return this.allowedRoots.some((root) => resolved === root || resolved.startsWith(`${root}${path.sep}`));
+  }
   assertInsideAllowedRoots(target) { if (!this._inside(target)) throw pathError('UNSAFE_PATH', '目标路径不在允许的下载目录内'); return path.resolve(target); }
   _assertNoSymlink(target) { let current = path.resolve(target); const missing = []; while (!this.fs.existsSync(current)) { missing.push(current); const parent = path.dirname(current); if (parent === current) break; current = parent; } while (current) { const stat = this.fs.lstatSync(current); if (stat.isSymbolicLink()) throw pathError('SYMLINK_PATH', '目标路径包含符号链接'); const parent = path.dirname(current); if (parent === current) break; current = parent; } return missing; }
   // SDK 下载中写 <name>.xltd 部分文件（+ .xltd.cfg 边车），完成后才改名最终名

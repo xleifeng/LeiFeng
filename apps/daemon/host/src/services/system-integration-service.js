@@ -6,9 +6,15 @@ const { ProcessRunner } = require('../adapters/process-runner');
 const { FileManagerAdapter } = require('../adapters/file-manager-adapter');
 
 class SystemIntegrationService {
-  constructor({ resolver, tasks = null, processRunner = new ProcessRunner(), fileManager = null, opener = 'xdg-open' } = {}) { if (!resolver) throw new Error('SystemIntegrationService resolver is required'); this.resolver = resolver; this.tasks = tasks; this.processRunner = processRunner; this.fileManager = fileManager || new FileManagerAdapter({ processRunner, opener }); }
+  constructor({ resolver, tasks = null, processRunner = new ProcessRunner(), fileManager = null, opener } = {}) { if (!resolver) throw new Error('SystemIntegrationService resolver is required'); this.resolver = resolver; this.tasks = tasks; this.processRunner = processRunner; this.fileManager = fileManager || new FileManagerAdapter({ processRunner, opener }); }
 
-  getCapabilities() { const desktop = Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY) && Boolean(process.env.DBUS_SESSION_BUS_ADDRESS); return { openOnHost: desktop, showInFolder: desktop, headless: !desktop }; }
+  // 桌面能力探测平台分流：Linux 看 DISPLAY/WAYLAND+DBUS 会话；Windows 桌面会话恒可用
+  //（服务进程跑在用户会话内，shell 即桌面）。headless Linux 服务器上保持原 false 语义。
+  getCapabilities() {
+    if (process.platform === 'win32') return { openOnHost: true, showInFolder: true, headless: false };
+    const desktop = Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY) && Boolean(process.env.DBUS_SESSION_BUS_ADDRESS);
+    return { openOnHost: desktop, showInFolder: desktop, headless: !desktop };
+  }
 
   _requireTask(taskId) { if (!this.tasks) { const error = new Error('任务服务不可用'); error.code = 'SYSTEM_INTEGRATION_UNAVAILABLE'; throw error; } return this.tasks.require(taskId); }
 

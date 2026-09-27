@@ -82,8 +82,9 @@ test('addTorrent：重复 infoId+savePath → 返回已有 gid', async () => {
 test('addTorrent：file:/// 前缀剥离', async () => {
   const { handler, driver, dir } = makeHandler();
   await handler('aria2.addTorrent', ['file:///srv/tlei-test/x.torrent', { dir }]);
-  // parseTaskInfo 收到 Linux 路径（driver 转 Wine）
-  assert.strictEqual(driver.lastParsedData, '/srv/tlei-test/x.torrent');
+  // parseTaskInfo 收到剥前缀后的本机形态路径（driver 转 Wine）：POSIX 保持斜杠，win32 统一反斜杠
+  if (process.platform === 'win32') assert.strictEqual(driver.lastParsedData, '\\srv\\tlei-test\\x.torrent');
+  else assert.strictEqual(driver.lastParsedData, '/srv/tlei-test/x.torrent');
 });
 
 test('toAria2Status BT files 报清单（名/大小/index）', async () => {

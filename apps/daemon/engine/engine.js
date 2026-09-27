@@ -13,7 +13,9 @@ const { createNetworkControlHandlers } = require('./network-control');
 const arg = (name, def) => { const i = process.argv.indexOf('--' + name); return i >= 0 ? process.argv[i + 1] : def; };
 const PORT = Number(arg('port', 0));
 const PROFILE = arg('profile', 'Z:\\tmp\\thunderd-runtime');
-const ADDON = arg('addon', null) || path.resolve(path.dirname(process.argv[1]), '..\\..\\thunder_x\\program\\dk_addon.node');
+// 回退默认仅兜底手动调试：正常路径由 driver 显式传 --addon。平台中立拼接（原 '..\\..'
+// 字面量在 POSIX 分隔符下拼出错误路径）。
+const ADDON = arg('addon', null) || path.resolve(path.dirname(process.argv[1]), '..', '..', 'thunder_x', 'program', 'dk_addon.node');
 if (!PORT) { console.error('[engine] missing --port'); process.exit(1); }
 
 const log = (...a) => console.log('[engine]', ...a);

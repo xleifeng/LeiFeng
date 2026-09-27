@@ -10,6 +10,7 @@ const { mapNativeError } = require('../domain/task-errors');
 const { normalizeTorrentHash, parseFtp } = require('../domain/protocol-parser');
 const { buildNativeBtInfo } = require('../domain/native-bt-info');
 const { normalizeComparableEnginePath } = require('../engine-path');
+const { fromFileUrl } = require('../file-url');
 
 function error(code, message, details) { const value = new Error(message); value.code = code; value.details = details; return value; }
 
@@ -61,7 +62,7 @@ function fetchContentLength(url, timeoutMs = 5000) {
 
 function materializeTorrent(input, runtimeDir) {
   if (typeof input !== 'string' || !input) throw error('INVALID_ARGUMENT', 'torrentInput 不能为空');
-  const maybe = input.startsWith('file://') ? input.slice(7) : input;
+  const maybe = fromFileUrl(input);
   if (fs.existsSync(maybe)) return { path: maybe, temporary: false };
   const normalized = maybe.replace(/-/g, '+').replace(/_/g, '/');
   let bytes;

@@ -30,13 +30,16 @@ class CredentialWallet {
     }
     if (!obj || typeof obj !== 'object' || obj.version !== 1) { this.data = EMPTY(); return false; }
     this.data = { ...EMPTY(), ...obj };
-    try {
-      const st = fs.statSync(this.filePath);
-      if ((st.mode & 0o777) !== 0o600) {
-        fs.chmodSync(this.filePath, 0o600);
-        console.error('[auth-wallet] wallet permission corrected to 0600');
-      }
-    } catch {}
+    // POSIX 权限位仅在非 win32 有意义：NTFS 恒报 0666，检查+chmod 只会产生误报日志。
+    if (process.platform !== 'win32') {
+      try {
+        const st = fs.statSync(this.filePath);
+        if ((st.mode & 0o777) !== 0o600) {
+          fs.chmodSync(this.filePath, 0o600);
+          console.error('[auth-wallet] wallet permission corrected to 0600');
+        }
+      } catch {}
+    }
     return this.hasSession();
   }
   saveSync() {
@@ -44,7 +47,7 @@ class CredentialWallet {
     const tmp = this.filePath + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(this.data, null, 1));
     fs.renameSync(tmp, this.filePath);
-    try { fs.chmodSync(this.filePath, 0o600); } catch {}
+    if (process.platform !== 'win32') { try { fs.chmodSync(this.filePath, 0o600); } catch {} }
   }
   clear() {
     this.data = EMPTY();

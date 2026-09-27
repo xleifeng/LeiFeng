@@ -17,7 +17,9 @@ test('system integration resolves task target and invokes fixed argv without she
   const task = { savePath, displayName: 'file.bin' };
   assert.deepEqual(await service.open(task), { target: file });
   assert.deepEqual(await service.showInFolder(task), { target: file, directory: savePath });
-  assert.deepEqual(calls, [['fake-opener', [file]], ['fake-opener', [savePath]]]);
+  // win32 的 showInFolder 用 explorer /select,<file>（选中文件）；POSIX 打开所在目录
+  if (process.platform === 'win32') assert.deepEqual(calls, [['fake-opener', [file]], ['fake-opener', [`/select,${file}`]]]);
+  else assert.deepEqual(calls, [['fake-opener', [file]], ['fake-opener', [savePath]]]);
 });
 
 test('system integration reports desktop capability without exposing arbitrary paths', () => {

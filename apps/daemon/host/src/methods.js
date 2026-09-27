@@ -6,6 +6,7 @@ const https = require('https');
 const { isTerminal, normalizeFileIndices } = require('./registry');
 const { normalizeTorrentHash } = require('./domain/protocol-parser');
 const { buildNativeBtInfo } = require('./domain/native-bt-info');
+const { fromFileUrl } = require('./file-url');
 const RESERVED = new Set([]); // 兼容 RPC 的方法已全部实现。
 
 class RpcError extends Error {
@@ -58,7 +59,7 @@ function resolveCollision(dir, name) {
 // bytes as base64. Materialize uploads in the daemon runtime so the existing
 // native parser/driver path can consume both forms.
 function materializeTorrentInput(input, runtimeDir) {
-  let torrentPath = input.startsWith('file://') ? input.replace(/^file:\/\//, '') : input;
+  let torrentPath = fromFileUrl(input);
   torrentPath = torrentPath.replace(/^Z:/, '');
 
   // Accept both standard base64 and base64url payloads.
