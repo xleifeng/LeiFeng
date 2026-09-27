@@ -6,8 +6,7 @@ const { TaskRegistry } = require('../src/registry');
 const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
 const { createMethodHandler } = require('../src/methods');
-const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
-const { createWindowsTaskDbReader } = require('../src/windows-taskdb-reader');
+const { hasSqlite, readVipTasks, readNativeBtTasks, createNodeSqliteTaskDbReader } = require('../src/taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
 const { CLIENT_ID, CLIENT_SECRET } = require('../src/xunlei-client-config');
@@ -83,28 +82,52 @@ const { plugin } = require('./shared.cjs');
 const engineDriver = plugin('tlei-engine-driver', ['tleiConfig'], (ctx) => {
   const { appConfig, runtimeDir, repoRoot, env } = ctx.tleiConfig;
   const crashInfoPath = env.THUNDERD_XLSDK_CRASHINFO || '';
-  const sdkPeer = readSdkPeerId({ explicitPath: crashInfoPath || undefined, winePrefix: appConfig.winePrefix });
-  let driver;
-  let taskDbReaders = { readVipTasks, readNativeBtTasks };
-  if (appConfig.engineMode === 'windows-native') {
-    if (!appConfig.windowsProgramDir || !fs.existsSync(path.join(appConfig.windowsProgramDir, 'thunder.exe'))) {
-      throw new Error('Windows native engine program directory is missing');
+  const winePrefix = appConfig.winePrefix;
+  // native 的 program 目录探测：显式 THUNDERD_PROGRAM_DIR → %LOCALAPPDATA%\tlei-sdk\Thunder-*\program → 仓库内 thunder_x/program。
+  function discoverNativeProgramDir() {
+    if (appConfig.programDir) return appConfig.programDir;
+    const localAppData = env.LOCALAPPDATA ? path.join(env.LOCALAPPDATA, 'tlei-sdk') : '';
+    if (localAppData) {
+      try {
+        const candidates = fs.readdirSync(localAppData)
+          .filter((name) => /^Thunder-\d/i.test(name))
+          .sort()
+          .map((name) => path.join(localAppData, name, 'program'))
+          .reverse(); // 取最新版本
+        const hit = candidates.find((dir) => fs.existsSync(path.join(dir, 'thunder.exe')));
+        if (hit) return hit;
+      } catch { /* 目录不存在：继续回退 */ }
     }
-    if (!appConfig.windowsPythonExe || !fs.existsSync(appConfig.windowsPythonExe)) {
-      throw new Error('Windows Python is required for native TaskDb observation');
-    }
-    driver = new WindowsNodeDriver({
-      repoRoot, programDir: appConfig.windowsProgramDir, profileDir: appConfig.windowsProfileRoot,
-      engineMirrorDir: appConfig.windowsEngineMirrorDir, distroName: appConfig.wslDistroName,
-      sdkVersionName: appConfig.windowsSdkVersionName, sdkVersionCode: appConfig.windowsSdkVersionCode,
-      sdkPlatform: appConfig.windowsSdkPlatform,
-      sdkGuid: appConfig.windowsSdkGuid || (sdkPeer.ok ? sdkPeer.peerId : ''),
-    });
-    taskDbReaders = createWindowsTaskDbReader({ pythonExe: appConfig.windowsPythonExe, distroName: appConfig.wslDistroName });
-  } else {
-    driver = new WineNodeDriver({ repoRoot, profileDir: runtimeDir, winePrefix: appConfig.winePrefix });
+    return path.join(repoRoot, 'thunder_x', 'program');
   }
-  ctx.provide('tleiEngine', { driver, taskDbReaders, crashInfoPath, start: () => driver.start() });
+  let driver;
+  let taskDbReaders;
+  // peer id（crashinfo.ini）候选目录：wine 扫 prefix 的各用户 Temp；native 扫 %LOCALAPPDATA%\Temp 与系统 Temp。
+  let peerIdCandidates;
+  if (appConfig.engineMode === 'native') {
+    const programDir = discoverNativeProgramDir();
+    if (!fs.existsSync(path.join(programDir, 'thunder.exe'))) {
+      throw new Error(`native engine program directory is missing: ${programDir}`);
+    }
+    peerIdCandidates = [env.LOCALAPPDATA, env.TEMP, env.SystemRoot && path.join(env.SystemRoot, 'Temp')]
+      .filter(Boolean).map((dir) => path.join(dir, 'Thunder Network', 'XLSDK'));
+    const sdkPeer = readSdkPeerId({ explicitPath: crashInfoPath || undefined, candidateDirs: peerIdCandidates });
+    driver = new WindowsNodeDriver({
+      repoRoot, programDir, profileDir: runtimeDir,
+      sdkVersionName: appConfig.sdkVersionName, sdkVersionCode: appConfig.sdkVersionCode,
+      sdkPlatform: appConfig.sdkPlatform,
+      sdkGuid: env.THUNDERD_SDK_GUID || (sdkPeer.ok ? sdkPeer.peerId : ''),
+    });
+    taskDbReaders = createNodeSqliteTaskDbReader();
+    if (!taskDbReaders.available) {
+      console.error('[thunderd] WARN: node:sqlite unavailable; native TaskDb observation degrades');
+    }
+  } else {
+    driver = new WineNodeDriver({ repoRoot, profileDir: runtimeDir, winePrefix });
+    taskDbReaders = { readVipTasks, readNativeBtTasks };
+    peerIdCandidates = [winePrefix];
+  }
+  ctx.provide('tleiEngine', { driver, taskDbReaders, crashInfoPath, peerIdCandidates, start: () => driver.start() });
   return async () => driver.shutdown();
 });
 

@@ -7,7 +7,6 @@ const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
 const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
-const { createWindowsTaskDbReader } = require('../src/windows-taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
 const { CLIENT_ID, CLIENT_SECRET } = require('../src/xunlei-client-config');
@@ -78,7 +77,7 @@ const { createThunderUiV2Methods } = require('../src/rpc/thunder-ui-v2-methods')
 const { DaemonControlServer } = require('../src/control/server');
 const { DaemonControlDispatcher } = require('../src/control/dispatcher');
 const { productServices } = require('./product-services.cjs');
-const { plugin } = require('./shared.cjs');
+const { plugin, repoRoot } = require('./shared.cjs');
 
 const runtimeConfig = plugin('tlei-runtime-config', [], (ctx, options = {}) => {
   const env = { ...process.env, ...(options.env || {}) };

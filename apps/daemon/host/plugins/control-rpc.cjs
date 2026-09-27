@@ -7,7 +7,6 @@ const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
 const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
-const { createWindowsTaskDbReader } = require('../src/windows-taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
 const { CLIENT_ID, CLIENT_SECRET } = require('../src/xunlei-client-config');

@@ -103,7 +103,7 @@ test('登录后 wallet 写入 credentials/session/vip + 0600', async () => {
   const { fx, am, wallet } = await setup();
   await am.startLogin();
   await waitFor(() => am.sessionRt.registered);
-  assert.strictEqual(fs.statSync(wallet.filePath).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.strictEqual(fs.statSync(wallet.filePath).mode & 0o777, 0o600);
   assert.strictEqual(wallet.data.credentials.accessToken, 'at-1');
   assert.strictEqual(wallet.data.session.sessionId, 'sid-1');
   assert.strictEqual(wallet.data.vip.isVip, true);

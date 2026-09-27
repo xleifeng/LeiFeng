@@ -8,7 +8,7 @@
     "./profiles": "./src/profiles.mjs"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "mkdir -p \"${TMPDIR:-$HOME/tmp}\"; TMPDIR=\"${TMPDIR:-$HOME/tmp}\" node --test test/*.test.mjs"
   },
   "dependencies": {
     "@tlei/cordis": "file:../../vendor/cordis/packages/core"

@@ -10,7 +10,20 @@ class SafePathResolver {
   _inside(target) { const resolved = path.resolve(target); return this.allowedRoots.some((root) => resolved === root || resolved.startsWith(`${root}${path.sep}`)); }
   assertInsideAllowedRoots(target) { if (!this._inside(target)) throw pathError('UNSAFE_PATH', '目标路径不在允许的下载目录内'); return path.resolve(target); }
   _assertNoSymlink(target) { let current = path.resolve(target); const missing = []; while (!this.fs.existsSync(current)) { missing.push(current); const parent = path.dirname(current); if (parent === current) break; current = parent; } while (current) { const stat = this.fs.lstatSync(current); if (stat.isSymbolicLink()) throw pathError('SYMLINK_PATH', '目标路径包含符号链接'); const parent = path.dirname(current); if (parent === current) break; current = parent; } return missing; }
-  resolveTaskRoot(task) { if (!task || typeof task.savePath !== 'string' || !task.savePath || typeof task.displayName !== 'string' || !task.displayName) throw pathError('UNSAFE_PATH', '任务保存位置无效'); const base = this.assertInsideAllowedRoots(task.savePath); const target = this.assertInsideAllowedRoots(path.join(base, task.displayName)); this._assertNoSymlink(base); this._assertNoSymlink(target); return target; }
+  // SDK 下载中写 <name>.xltd 部分文件（+ .xltd.cfg 边车），完成后才改名最终名
+  //（create-task-service hasNativePartialData 同认知）。任务根解析：最终名存在用最终名，
+  // 否则 .xltd 部分文件也算任务根，进行中任务的 move/rename/delete 才能对准真实落盘物。
+  resolveTaskRoot(task) {
+    if (!task || typeof task.savePath !== 'string' || !task.savePath || typeof task.displayName !== 'string' || !task.displayName) throw pathError('UNSAFE_PATH', '任务保存位置无效');
+    const base = this.assertInsideAllowedRoots(task.savePath);
+    const target = this.assertInsideAllowedRoots(path.join(base, task.displayName));
+    this._assertNoSymlink(base);
+    if (this.fs.existsSync(target)) { this._assertNoSymlink(target); return target; }
+    const partial = this.assertInsideAllowedRoots(`${target}.xltd`);
+    if (this.fs.existsSync(partial)) { this._assertNoSymlink(partial); return partial; }
+    this._assertNoSymlink(target);
+    return target;
+  }
   resolveTaskFile(task, fileIndex) {
     const root = this.resolveTaskRoot(task);
     if (fileIndex === undefined || fileIndex === null) return root;

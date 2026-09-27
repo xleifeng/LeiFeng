@@ -14,7 +14,7 @@ test('FTP secret store persists credentials in a private file and exposes only r
   assert.match(ref, /^ftp:/);
   assert.deepEqual(store.get(ref), { username: 'alice', password: 'secret', createdAt: store.get(ref).createdAt });
   assert.deepEqual(Object.keys(store.snapshot()), [ref]);
-  assert.equal(fs.statSync(filePath).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.equal(fs.statSync(filePath).mode & 0o777, 0o600);
   assert.equal(store.delete(ref), true);
   assert.equal(store.get(ref), null);
 });

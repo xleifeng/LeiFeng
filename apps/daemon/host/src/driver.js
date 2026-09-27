@@ -6,14 +6,11 @@ const path = require('path');
 const { spawn, execFile } = require('child_process');
 const { EngineClient } = require('./engine-client');
 const { repairTorrentSdkResult } = require('./domain/native-text');
-const { linuxToWindowsPath } = require('./windows-path');
 
 const DEFAULT_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 32000, 60000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function linuxToWinePath(p) { return 'Z:' + p.replace(/\//g, '\\'); }
-
-function quoteCmd(value) { return `"${String(value).replace(/"/g, '""')}"`; }
 
 function execFilePromise(execFileImpl, command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -70,24 +67,23 @@ async function createTcpEngineListener() {
   return { port, connected, fail, close: () => server.close() };
 }
 
-class WineNodeDriver extends EventEmitter {
+// 平台无关基座：启动状态机（boot/退避重试/崩溃 respawn/受控 restart）、命令通道、
+// 全部引擎 API 方法。子类负责平台差异：路径可见性（toEnginePath）、引擎进程拉起
+// （_spawnEngine）、SDK 孤儿进程识别与清理（_sdkBeforeSnapshot/_sdkReadyWait/_sdkPidsTake/_cleanupSdkPids）。
+class EngineDriverBase extends EventEmitter {
   constructor(opts) {
     super();
     this.repoRoot = opts.repoRoot;
     this.programDir = opts.programDir || path.join(opts.repoRoot, 'thunder_x', 'program');
     this.thunderExe = path.join(this.programDir, 'thunder.exe'); // Electron-as-Node 运行时
-    this.engineScript = opts.engineScript || path.join(opts.repoRoot, 'daemon', 'engine', 'engine.js');
+    this.engineScript = opts.engineScript || path.join(opts.repoRoot, 'apps', 'daemon', 'engine', 'engine.js');
     this.profileDir = opts.profileDir;
     this.logFile = opts.logFile || path.join(opts.profileDir, 'engine.log');
-    this.wineExe = opts.wineExe || 'wine';
-    this.winePrefix = opts.winePrefix || process.env.WINEPREFIX || '';
-    this.toEnginePath = opts.toEnginePath || linuxToWinePath;
-    this.engineMode = 'wine';
+    this.toEnginePath = opts.toEnginePath || ((value) => value);
+    this.engineMode = opts.engineMode || 'wine';
     this.taskDbPath = path.join(this.profileDir, 'profile', 'TaskDb.dat');
     this.spawnImpl = opts.spawnImpl || ((cmd, args, o) => spawn(cmd, args, o));
     this.backoffMs = opts.backoffMs || DEFAULT_BACKOFF_MS;
-    this.sdkReadyCheck = opts.sdkReadyCheck || defaultSdkReadyCheck;
-    this.sdkPidFinder = opts.sdkPidFinder || discoverSdkPids;
     this.listenerFactory = opts.listenerFactory || createTcpEngineListener;
     this.client = new EngineClient();
     this.child = null;
@@ -102,7 +98,6 @@ class WineNodeDriver extends EventEmitter {
     this._stopping = false;
     this._started = false;
     this._starting = false;
-    this._sdkPids = new Set();
     this.nativeCapabilities = {};
   }
 
@@ -145,7 +140,7 @@ class WineNodeDriver extends EventEmitter {
   async _bootOnce() {
     this._stopping = false;
     const gen = ++this._generation;
-    const sdkBefore = new Set(await this.sdkPidFinder().catch(() => []));
+    const sdkBefore = await this._sdkBeforeSnapshot();
     fs.mkdirSync(this.profileDir, { recursive: true });
     let listener = null;
     let socket = null;
@@ -156,13 +151,7 @@ class WineNodeDriver extends EventEmitter {
       const port = listener.port;
       this._rotateEngineLog();
       logFd = fs.openSync(this.logFile, 'a');
-      const env = { ...process.env,
-        ELECTRON_RUN_AS_NODE: '1', WINEDEBUG: '-all', WINEESYNC: '1',
-        '01KVYZS23XBRBTN7XTFFPAXQNV_SDK_Platform': '64' };
-      if (this.winePrefix) env.WINEPREFIX = this.winePrefix;
-      child = this.spawnImpl(this.wineExe,
-        [linuxToWinePath(this.thunderExe), linuxToWinePath(this.engineScript), '--port', String(port), '--profile', linuxToWinePath(this.profileDir)],
-        { env, cwd: this.programDir, stdio: ['ignore', logFd, logFd] });
+      child = this._spawnEngine(port, logFd);
       fs.closeSync(logFd);
       logFd = undefined; // 已关，标记避免 catch 重复关
       this.child = child;
@@ -172,14 +161,12 @@ class WineNodeDriver extends EventEmitter {
       this.client.attach(socket);
       this.client.once('close', () => this._onEngineDown(gen));
       await this.ping(); // transportReady
-      const readiness = await this.sdkReadyCheck(30000);
-      const readyPids = Array.isArray(readiness) ? readiness : readiness && Array.isArray(readiness.pids) ? readiness.pids : [];
-      this.sdkReady = readiness === true || (readiness && readiness.ready === true) || readyPids.length > 0;
+      this.sdkReady = await this._sdkReadyWait(sdkBefore, 30000);
       if (!this.sdkReady) throw new Error('sdkReady timeout (30s): DownloadSDKServer.exe not observed');
       try { this.nativeCapabilities = await this._call('getNativeCapabilities', {}, 5000); }
       catch { this.nativeCapabilities = {}; }
-      // 只记录本代 boot 后出现的、且再次通过 cmdline 身份校验的 SDK PID；不触碰既有用户进程。
-      this._sdkPids = new Set(readyPids.map(Number).filter((pid) => !sdkBefore.has(pid) && isVerifiedSdkPid(pid)));
+      // 只记录本代 boot 后出现的、且再次通过身份校验的 SDK PID；不触碰既有用户进程。
+      await this._sdkPidsTake(sdkBefore);
       this._healthy = true;
       this._started = true; // 首次 healthy 后置位：使 _onEngineDown 重 spawn 生效（对齐 start()/restart() 语义）
       this._backoffIdx = 0;
@@ -209,7 +196,7 @@ class WineNodeDriver extends EventEmitter {
     if (this.child && !this.child.killed) { try { this.child.kill(); } catch {} }
     this.client.close(); // destroy 旧 socket，断掉迟到 close 来源
     // 清理 SDK 自动 spawn 的 DownloadSDKServer.exe 孤儿（Wine 下 SIGKILL thunder.exe 后可残留；
-    // 残留时新代 sdkReadyCheck 的 pgrep 不区分代际会匹配旧代孤儿而提前判 ready）。单实例授权此清理。
+    // 残留时新代 ready 检查不区分代际会匹配旧代孤儿而提前判 ready）。单实例授权此清理。
     this._cleanupSdkPids().catch(() => {});
     if (was) this.emit('down');
     if (this._respawnTimer || !this._started) return;
@@ -220,20 +207,8 @@ class WineNodeDriver extends EventEmitter {
       try { this.restarts++; await this.boot(); }
       catch { this._onEngineDown(this._generation); } // 失败 → 下一轮退避
     }, delay);
-    if (this._respawnTimer.unref) this._respawnTimer.unref();
-  }
-
-  async _cleanupSdkPids() {
-    const pids = [...this._sdkPids];
-    this._sdkPids.clear();
-    for (const pid of pids) {
-      if (isVerifiedSdkPid(pid)) { try { process.kill(pid, 'SIGTERM'); } catch {} }
-    }
-    if (!pids.length) return;
-    await sleep(100);
-    for (const pid of pids) {
-      if (isVerifiedSdkPid(pid)) { try { process.kill(pid, 'SIGKILL'); } catch {} }
-    }
+    // respawn 定时器必须保活事件循环：unref 会在事件循环排空（如引擎死亡、无其他
+    // 句柄）时直接丢掉重启，进程退出而引擎永不复活；保活由 shutdown() 清理兜底。
   }
 
   // 命令通道：超时 → 本代标记 down 并触发受控重 spawn
@@ -248,21 +223,21 @@ class WineNodeDriver extends EventEmitter {
   ping() { return this._call('ping'); }
   getNativeCapabilities() { return this._call('getNativeCapabilities'); }
   // BT.seedFile 与磁力 metadata 目录必须转换到实际引擎可见的路径。
-  static withEnginePaths(taskType, info, convert = linuxToWinePath) {
+  static withEnginePaths(taskType, info, convert = ((value) => value)) {
     if (taskType === 2 && info && info.seedFile) return { ...info, seedFile: convert(info.seedFile) };
     if (taskType === 5 && info && info.torrentFilePath) return { ...info, torrentFilePath: convert(info.torrentFilePath) };
     return info;
   }
-  static withWinePaths(taskType, info) { return WineNodeDriver.withEnginePaths(taskType, info, linuxToWinePath); }
+  static withWinePaths(taskType, info) { return EngineDriverBase.withEnginePaths(taskType, info, linuxToWinePath); }
   async createTask({ taskType, savePath, taskName, info }) {
     const taskInfo = { background: false, taskBaseInfo: { savePath: this.toEnginePath(savePath), taskName, openOnComplete: 0, origin: 'thunderd' } };
-    const engineInfo = WineNodeDriver.withEnginePaths(taskType, info, this.toEnginePath);
+    const engineInfo = EngineDriverBase.withEnginePaths(taskType, info, this.toEnginePath);
     const r = await this._call('createTask', { taskType, taskInfo, info: engineInfo });
     if (!r || typeof r.engineId !== 'number' || r.engineId <= 0) throw new Error('engine createTask failed');
     return r.engineId;
   }
   async parseTaskInfo({ kind, data }) {
-    // torrent kind 的 data 是文件路径 → 转 Wine；其他 kind（magnet/ed2k/thunder/urltype）data 是字符串不转
+    // torrent kind 的 data 是文件路径 → 转引擎可见路径；其他 kind（magnet/ed2k/thunder/urltype）data 是字符串不转
     const engineData = kind === 'torrent' && data ? this.toEnginePath(data) : data;
     const parsed = await this._call('parseTaskInfo', { kind, data: engineData });
     return kind === 'torrent' ? repairTorrentSdkResult(parsed) : parsed;
@@ -370,7 +345,7 @@ class WineNodeDriver extends EventEmitter {
     try { if (this.client.isConnected()) await this.client.request('shutdown', {}, 3000); } catch {}
     this.client.close();
     if (this.child) { try { this.child.kill(); } catch {} this.child = null; }
-    // 与引擎失联路径一致，清理 Wine 下不会随 thunder.exe 自动回收的 DownloadSDKServer.exe。
+    // 与引擎失联路径一致，清理不会随 thunder.exe 自动回收的 DownloadSDKServer.exe。
     await this._cleanupSdkPids();
     this._healthy = false;
     this.sdkReady = false;
@@ -379,22 +354,75 @@ class WineNodeDriver extends EventEmitter {
   static linuxToWinePath(p) { return linuxToWinePath(p); }
 }
 
+// Linux：宿主经 Wine 拉起 thunder.exe。引擎路径经 Z: 盘映射（linuxToWinePath），
+// SDK 孤儿用 /proc cmdline 身份校验后 SIGTERM/SIGKILL。
+class WineNodeDriver extends EngineDriverBase {
+  constructor(opts) {
+    super({ ...opts, engineMode: opts.engineMode || 'wine', toEnginePath: opts.toEnginePath || linuxToWinePath });
+    this.wineExe = opts.wineExe || 'wine';
+    this.winePrefix = opts.winePrefix || process.env.WINEPREFIX || '';
+    this.sdkReadyCheck = opts.sdkReadyCheck || defaultSdkReadyCheck;
+    this.sdkPidFinder = opts.sdkPidFinder || discoverSdkPids;
+    this._sdkPids = new Set();
+  }
+
+  async _sdkBeforeSnapshot() { return new Set(await this.sdkPidFinder().catch(() => [])); }
+
+  async _sdkReadyWait(_sdkBefore, deadlineMs) {
+    const readiness = await this.sdkReadyCheck(deadlineMs);
+    const readyPids = Array.isArray(readiness) ? readiness : readiness && Array.isArray(readiness.pids) ? readiness.pids : [];
+    return readiness === true || (readiness && readiness.ready === true) || readyPids.length > 0;
+  }
+
+  async _sdkPidsTake(sdkBefore) {
+    const readiness = await this.sdkPidFinder().catch(() => []);
+    this._sdkPids = new Set(readiness.map(Number).filter((pid) => !sdkBefore.has(pid) && isVerifiedSdkPid(pid)));
+  }
+
+  async _cleanupSdkPids() {
+    const pids = [...this._sdkPids];
+    this._sdkPids = new Set();
+    for (const pid of pids) {
+      if (isVerifiedSdkPid(pid)) { try { process.kill(pid, 'SIGTERM'); } catch {} }
+    }
+    if (!pids.length) return;
+    await sleep(100);
+    for (const pid of pids) {
+      if (isVerifiedSdkPid(pid)) { try { process.kill(pid, 'SIGKILL'); } catch {} }
+    }
+  }
+
+  _spawnEngine(port, logFd) {
+    const env = { ...process.env,
+      ELECTRON_RUN_AS_NODE: '1', WINEDEBUG: '-all', WINEESYNC: '1',
+      '01KVYZS23XBRBTN7XTFFPAXQNV_SDK_Platform': '64' };
+    if (this.winePrefix) env.WINEPREFIX = this.winePrefix;
+    // --addon 显式传递：engine.js 的默认回退基于旧目录布局（..\..\thunder_x），
+    // monorepo apps/ 布局下已不可靠；显式值消除对 cwd/相对层级 的依赖。
+    return this.spawnImpl(this.wineExe,
+      [linuxToWinePath(this.thunderExe), linuxToWinePath(this.engineScript), '--port', String(port),
+        '--profile', linuxToWinePath(this.profileDir), '--addon', linuxToWinePath(path.join(this.programDir, 'dk_addon.node'))],
+      { env, cwd: this.programDir, stdio: ['ignore', logFd, logFd] });
+  }
+}
+
 function powershellLiteral(value) { return `'${String(value).replace(/'/g, "''")}'`; }
 
+// Windows 进程枚举/终止：Get-CimInstance 按 programDir 前缀过滤，taskkill /T /F 终止。
+// powershellExe/taskkillExe 默认走 PATH 解析（纯 Windows 无 /mnt/c 挂载路径）。
 class WindowsProgramProcessController {
-  constructor({ programDir, distroName, execFileImpl = execFile,
-    powershellExe = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-    taskkillExe = '/mnt/c/Windows/System32/taskkill.exe' } = {}) {
+  constructor({ programDir, execFileImpl = execFile,
+    powershellExe = process.env.THUNDERD_POWERSHELL || 'powershell.exe',
+    taskkillExe = process.env.THUNDERD_TASKKILL || 'taskkill.exe' } = {}) {
     if (!programDir) throw new Error('Windows program directory is required');
     this.programDir = programDir;
-    this.windowsProgramDir = linuxToWindowsPath(programDir, { distroName }).replace(/[\\/]+$/, '');
     this.execFileImpl = execFileImpl;
     this.powershellExe = powershellExe;
     this.taskkillExe = taskkillExe;
   }
 
   async list() {
-    const root = `${this.windowsProgramDir}\\`;
+    const root = `${this.programDir.replace(/[\\/]+$/, '')}\\`;
     const script = `$root=${powershellLiteral(root)}; @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($root,[System.StringComparison]::OrdinalIgnoreCase) } | Select-Object @{n='pid';e={$_.ProcessId}},@{n='name';e={$_.Name}},@{n='path';e={$_.ExecutablePath}}) | ConvertTo-Json -Compress`;
     const stdout = await execFilePromise(this.execFileImpl, this.powershellExe,
       ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', timeout: 10000, maxBuffer: 1024 * 1024 });
@@ -429,26 +457,17 @@ class WindowsProgramProcessController {
   }
 }
 
-class WindowsNodeDriver extends WineNodeDriver {
+// Windows 原生：宿主即 Windows，thunder.exe 以 Electron-as-Node 直跑。路径恒等，
+// SDK 版本变量与 engine.js 读取的 THUNDERD_SDK_* 对齐（无 WSLENV 转发、无 PATH 重置）。
+class WindowsNodeDriver extends EngineDriverBase {
   constructor(opts) {
-    const distroName = opts.distroName || process.env.WSL_DISTRO_NAME || 'Ubuntu';
-    super({ ...opts, toEnginePath: (value) => linuxToWindowsPath(value, { distroName }) });
-    this.engineMode = 'windows-native';
-    this.distroName = distroName;
+    super({ ...opts, engineMode: opts.engineMode || 'native', toEnginePath: opts.toEnginePath || ((value) => value) });
     this.sdkVersionName = opts.sdkVersionName || '25.0.90.1592';
-    this.sdkVersionCode = Number(opts.sdkVersionCode) || 2500901592;
+    this.sdkVersionCode = Number(opts.sdkVersionCode) || versionCodeFromSdkName(this.sdkVersionName);
     this.sdkPlatform = String(opts.sdkPlatform ?? '0');
     this.sdkGuid = String(opts.sdkGuid || '');
-    this.engineSourceDir = opts.engineSourceDir || path.join(opts.repoRoot, 'daemon', 'engine');
-    this.engineMirrorDir = opts.engineMirrorDir || path.join(this.profileDir, 'engine');
-    this.engineScript = opts.engineScript || path.join(this.engineMirrorDir, 'engine.js');
-    this.syncEngineBundle = opts.syncEngineBundle || (() => {
-      fs.mkdirSync(this.engineMirrorDir, { recursive: true });
-      fs.cpSync(this.engineSourceDir, this.engineMirrorDir, { recursive: true, force: true });
-    });
     this.processController = opts.processController || new WindowsProgramProcessController({
       programDir: this.programDir,
-      distroName,
       execFileImpl: opts.execFileImpl || execFile,
       powershellExe: opts.powershellExe,
       taskkillExe: opts.taskkillExe,
@@ -457,106 +476,66 @@ class WindowsNodeDriver extends WineNodeDriver {
   }
 
   _launchEnvironment() {
-    const forwarded = [
-      'ELECTRON_RUN_AS_NODE/w',
-      'THUNDERD_SDK_VERSION_NAME/w',
-      'THUNDERD_SDK_VERSION_CODE/w',
-      'THUNDERD_SDK_PLATFORM/w',
-      'THUNDERD_SDK_GUID/w',
-    ];
     return {
-      PATH: '/usr/bin:/bin',
       ELECTRON_RUN_AS_NODE: '1',
       THUNDERD_SDK_VERSION_NAME: this.sdkVersionName,
       THUNDERD_SDK_VERSION_CODE: String(this.sdkVersionCode),
       THUNDERD_SDK_PLATFORM: this.sdkPlatform,
       THUNDERD_SDK_GUID: this.sdkGuid,
-      WSLENV: forwarded.join(':'),
     };
   }
 
   _launchArguments(port) {
     return [
-      this.toEnginePath(this.engineScript),
+      this.engineScript,
       '--port', String(port),
-      '--profile', this.toEnginePath(this.profileDir),
-      '--addon', this.toEnginePath(path.join(this.programDir, 'dk_addon.node')),
+      '--profile', this.profileDir,
+      '--addon', path.join(this.programDir, 'dk_addon.node'),
     ];
   }
-  async _bootOnce() {
-    this._stopping = false;
-    const generation = ++this._generation;
-    const beforeRows = await this.processController.list().catch(() => []);
-    const beforePids = new Set(beforeRows.map((row) => row.pid));
-    fs.mkdirSync(this.profileDir, { recursive: true });
-    this.syncEngineBundle();
-    let listener = null;
-    let socket = null;
-    let child = null;
-    let logFd;
-    try {
-      listener = await this.listenerFactory({ generation, mode: this.engineMode });
-      const port = listener.port;
-      this._rotateEngineLog();
-      logFd = fs.openSync(this.logFile, 'a');
-      child = this.spawnImpl(this.thunderExe, this._launchArguments(port), {
-        env: this._launchEnvironment(), cwd: this.programDir, stdio: ['ignore', logFd, logFd],
-      });
-      fs.closeSync(logFd);
-      logFd = undefined;
-      this.child = child;
-      child.once('exit', (code, signal) => {
-        listener?.fail?.(new Error(`Windows native engine exited before connect (code=${code}, signal=${signal || 'none'})`));
-        this._onEngineDown(generation, `pre-connect-exit code=${code} signal=${signal || 'none'}`);
-      });
-      child.once('error', (error) => {
-        listener?.fail?.(error);
-        this.emit('spawnError', error);
-      });
 
-      socket = await listener.connected;
-      this.client.attach(socket);
-      this.client.once('close', () => this._onEngineDown(generation));
-      await this.ping();
-      const createdRows = await this.processController.waitForSdk(beforePids, 30000);
-      if (!createdRows.length) throw new Error('sdkReady timeout (30s): Windows DownloadSDKServer.exe not observed');
-      this._windowsPids = new Set(createdRows.map((row) => row.pid));
-      this.sdkReady = true;
-      try { this.nativeCapabilities = await this._call('getNativeCapabilities', {}, 5000); }
-      catch { this.nativeCapabilities = {}; }
-      this._healthy = true;
-      this._started = true;
-      this._backoffIdx = 0;
-      this.bootedAt = Date.now();
-      console.error(`[engine-up] gen=${this._generation} restarts=${this.restarts} pid=${this.child && this.child.pid}`);
-      this.emit('up', { generation });
-    } catch (error) {
-      if (logFd !== undefined) { try { fs.closeSync(logFd); } catch {} }
-      this.client.close();
-      if (child) { try { child.kill(); } catch {} }
-      let createdRows = [];
-      try { createdRows = (await this.processController.list()).filter((row) => !beforePids.has(row.pid)); } catch {}
-      await this.processController.terminate(createdRows.map((row) => row.pid));
-      this.sdkReady = false;
-      throw error;
-    } finally {
-      listener?.close?.({ connected: Boolean(socket) });
-    }
+  _spawnEngine(port, logFd) {
+    const child = this.spawnImpl(this.thunderExe, this._launchArguments(port), {
+      env: this._launchEnvironment(), cwd: this.programDir, stdio: ['ignore', logFd, logFd],
+    });
+    child.once('error', (error) => { this.emit('spawnError', error); });
+    return child;
   }
+
+  async _sdkBeforeSnapshot() {
+    const rows = await this.processController.list().catch(() => []);
+    return new Set(rows.map((row) => row.pid));
+  }
+
+  async _sdkReadyWait(sdkBefore, deadlineMs) {
+    const createdRows = await this.processController.waitForSdk(sdkBefore, deadlineMs);
+    if (!createdRows.length) return false;
+    this._windowsPids = new Set(createdRows.map((row) => row.pid));
+    return true;
+  }
+
+  async _sdkPidsTake() { /* 已在 _sdkReadyWait 记录 */ }
 
   async _cleanupSdkPids() {
     const pids = [...this._windowsPids];
-    this._windowsPids.clear();
+    this._windowsPids = new Set();
     await this.processController.terminate(pids);
   }
 }
 
+// 与 engine.js 的 sdkVersionCode() 保持同一编码规则（25.0.90.1592 → 2500901592）。
+function versionCodeFromSdkName(versionName) {
+  const parts = String(versionName || '').split('.');
+  if (parts.length !== 4 || parts.some((part) => !/^\d+$/.test(part))) return 2500821562;
+  return Number(parts[0].padStart(2, '0') + parts[1].padStart(2, '0') + parts[2].padStart(2, '0') + parts[3].padStart(4, '0'));
+}
+
 module.exports = {
+  EngineDriverBase,
   WineNodeDriver,
   WindowsNodeDriver,
   WindowsProgramProcessController,
   linuxToWinePath,
-  linuxToWindowsPath,
   defaultSdkReadyCheck,
   discoverSdkPids,
   isVerifiedSdkPid,

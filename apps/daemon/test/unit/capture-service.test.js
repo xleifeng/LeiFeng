@@ -25,7 +25,7 @@ test('desktop capture provisioning writes a private client config and rotates th
   const firstConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   assert.equal(first.endpoint, 'http://127.0.0.1:16800');
   assert.equal(firstConfig.origin, 'app://thunder-desktop');
-  assert.equal(fs.statSync(configPath).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.equal(fs.statSync(configPath).mode & 0o777, 0o600);
   assert.equal(service.authenticate(firstConfig.token, firstConfig.origin).id, first.clientId);
   const second = service.provisionDesktopCapture();
   const secondConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));

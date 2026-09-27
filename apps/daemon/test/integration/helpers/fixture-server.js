@@ -7,7 +7,11 @@ const crypto = require('crypto');
 function startFixture({ bytes, throttleChunk = 0, throttleMs = 0, path: urlPath = 'fixture.bin', hang = false }) {
   const data = crypto.randomBytes(bytes);
   const sha = crypto.createHash('sha256').update(data).digest('hex');
+  // keep-alive 必须关：引擎异常退出（SIGKILL/崩溃）后其对端 socket 在本侧滞留
+  // CLOSE_WAIT，server.close() 只停监听不断存量连接 → 事件循环清不空，node --test
+  // runner 挂死（实测挂 18 分钟直到人工 kill）。keepAliveTimeout=0 也不够，逐连接禁用才彻底。
   const server = http.createServer((req, res) => {
+    res.setHeader('connection', 'close');
     const u = req.url.split('?')[0];
     if (u === '/notfound') { res.writeHead(404); return res.end('nope'); }
     if (u === '/redirect') { res.writeHead(302, { location: '/' + urlPath }); return res.end(); }
@@ -34,6 +38,7 @@ function startFixture({ bytes, throttleChunk = 0, throttleMs = 0, path: urlPath 
     }, throttleMs);
     req.on('close', () => clearInterval(timer));
   });
+  server.keepAliveTimeout = 0; // 禁 idle keep-alive 回收定时器（也防 runner 空转挂等）
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () =>
     resolve({ server, sha, size: data.length, url: `http://127.0.0.1:${server.address().port}/${urlPath}` })));
 }

@@ -31,11 +31,18 @@ class DaemonControlServer {
 
   start() {
     if (this.server) return this.server;
-    fs.mkdirSync(path.dirname(this.socketPath), { recursive: true, mode: 0o700 });
-    try { fs.rmSync(this.socketPath, { force: true }); } catch {}
+    // Windows named pipe（\\.\pipe\ 前缀）：管道由 listen 创建，无文件系统实体，
+    // mkdir/rm/chmod 无语义且会抛错。
+    const isNamedPipe = this.socketPath.startsWith('\\\\.\\pipe\\');
+    if (!isNamedPipe) {
+      fs.mkdirSync(path.dirname(this.socketPath), { recursive: true, mode: 0o700 });
+      try { fs.rmSync(this.socketPath, { force: true }); } catch {}
+    }
     this.server = net.createServer((socket) => this._accept(socket));
     this.server.listen(this.socketPath, () => {
-      try { fs.chmodSync(this.socketPath, 0o600); } catch {}
+      if (!isNamedPipe) {
+        try { fs.chmodSync(this.socketPath, 0o600); } catch {}
+      }
     });
     return this.server;
   }
@@ -76,7 +83,9 @@ class DaemonControlServer {
     for (const connection of this.connections) connection.socket.destroy();
     await new Promise((resolve) => this.server.close(resolve));
     this.server = null;
-    try { fs.rmSync(this.socketPath, { force: true }); } catch {}
+    if (!this.socketPath.startsWith('\\\\.\\pipe\\')) {
+      try { fs.rmSync(this.socketPath, { force: true }); } catch {}
+    }
   }
 }
 

@@ -30,3 +30,17 @@ test('safe path resolver rejects symlink components and detects file changes', (
   fs.writeFileSync(file, 'after');
   assert.throws(() => resolver.assertUnchanged(snapshot, file), (error) => error.code === 'FILE_CHANGED_DURING_OPERATION');
 });
+
+test('resolveTaskRoot 回退 .xltd 部分文件（SDK 下载中形态）', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-path-xltd-'));
+  const resolver = new SafePathResolver({ allowedRoots: [root] });
+  const task = { savePath: root, displayName: 'movie.bin' };
+  // 磁盘上只有下载中部分文件：任务根应解析到 .xltd，删/移/改名对准真实落盘物
+  fs.writeFileSync(path.join(root, 'movie.bin.xltd'), 'partial');
+  assert.equal(resolver.resolveTaskRoot(task), path.join(root, 'movie.bin.xltd'));
+  // 完成后改名最终名：任务根回到最终名
+  fs.renameSync(path.join(root, 'movie.bin.xltd'), path.join(root, 'movie.bin'));
+  assert.equal(resolver.resolveTaskRoot(task), path.join(root, 'movie.bin'));
+  // 两者都不存在（未开始下载）：返回最终名占位（调用方自行报 FILE_NOT_FOUND）
+  assert.equal(resolver.resolveTaskRoot({ savePath: root, displayName: 'ghost.bin' }), path.join(root, 'ghost.bin'));
+});

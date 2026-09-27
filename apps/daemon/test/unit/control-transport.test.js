@@ -17,7 +17,9 @@ test('control framing survives fragmented and adjacent messages', () => {
 });
 
 test('daemon client multiplexes requests over a private control socket', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-control-')); const socketPath = path.join(root, 'control.sock');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-control-'));
+  // win32 用 named pipe（Unix domain socket 文件在 Windows 不可 listen）；权限断言仅 POSIX 平台有效
+  const socketPath = process.platform === 'win32' ? `\\\\.\\pipe\\thunderd-test-${process.pid}-${Date.now()}` : path.join(root, 'control.sock');
   const server = new DaemonControlServer({ socketPath, dispatch: async (method, params) => { if (method === 'fail') throw Object.assign(new Error('expected failure'), { code: 'EXPECTED', details: { value: 1 } }); await new Promise((resolve) => setTimeout(resolve, params.delay || 0)); return { method, value: params.value }; } });
   const listening = once(server.start(), 'listening'); await listening;
   const client = new DaemonClient({ socketPath });
@@ -27,5 +29,5 @@ test('daemon client multiplexes requests over a private control socket', async (
   assert.deepEqual(slow, { method: 'slow', value: 1 }); assert.deepEqual(fast, { method: 'fast', value: 2 });
   assert.deepEqual(completion, ['fast', 'slow']);
   await assert.rejects(client.call('fail'), (error) => error.code === 'EXPECTED' && error.details.value === 1);
-  assert.equal(fs.statSync(socketPath).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.equal(fs.statSync(socketPath).mode & 0o777, 0o600);
 });

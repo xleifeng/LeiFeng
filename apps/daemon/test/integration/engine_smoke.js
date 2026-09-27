@@ -6,8 +6,8 @@ const http = require('http');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const runtime = path.join(repoRoot, 'daemon', '.runtime-smoke');
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
+const runtime = path.join(repoRoot, 'apps', 'daemon', '.runtime-smoke');
 const saveDir = path.join(runtime, 'save');
 const winePath = (p) => 'Z:' + p.replace(/\//g, '\\');
 const FNAME = 'smoke.bin';
@@ -16,6 +16,11 @@ let child = null, fixture = null;
 const cleanup = (code) => {
   try { child && child.kill('SIGKILL'); } catch {}
   try { fixture && fixture.close(); } catch {}
+  // 清理自建隔离 WINEPREFIX
+  try {
+    const prefix = path.join(process.env.HOME, 'tmp', `tlei-it-wine-smoke-${process.pid}`);
+    if (prefix.startsWith(path.join(process.env.HOME, 'tmp', 'tlei-it-wine-'))) fs.rmSync(prefix, { recursive: true, force: true });
+  } catch {}
   setTimeout(() => process.exit(code), 300);
 };
 const fail = (msg) => { console.error('SMOKE FAIL:', msg); cleanup(1); };
@@ -41,12 +46,14 @@ async function main() {
     server.once('connection', (s) => { clearTimeout(t); res(s); });
   });
 
-  const engineScript = path.join(repoRoot, 'daemon', 'engine', 'engine.js');
+  const engineScript = path.join(repoRoot, 'apps', 'daemon', 'engine', 'engine.js');
   const thunderExe = path.join(repoRoot, 'thunder_x', 'program', 'thunder.exe');
   const logFd = fs.openSync(path.join(runtime, 'engine.log'), 'a');
   child = spawn('wine', [winePath(thunderExe), winePath(engineScript), '--port', String(tcpPort), '--profile', winePath(runtime)], {
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', WINEDEBUG: '-all', WINEESYNC: '1',
-      WINEPREFIX: process.env.WINEPREFIX || path.join(process.env.HOME, '.wine-thunder'),
+      // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
+      WINEPREFIX: process.env.THUNDERD_IT_WINEPREFIX
+        || path.join(process.env.HOME, 'tmp', `tlei-it-wine-smoke-${process.pid}`),
       '01KVYZS23XBRBTN7XTFFPAXQNV_SDK_Platform': '64' },
     cwd: path.join(repoRoot, 'thunder_x', 'program'), stdio: ['ignore', logFd, logFd],
   });

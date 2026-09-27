@@ -39,6 +39,22 @@ bash apps/daemon/run.sh
 
 看到 `[thunderd] core control socket=...` 即启动成功。打开 <http://127.0.0.1:16800/> 进入 Web 界面：新建任务、扫码登录（首次）、VIP 加速、设置、引擎诊断都在里面。
 
+### Windows 快速开始（native 模式）
+
+Windows 宿主无需 Wine，引擎经 Node 直接驱动迅雷原生组件：
+
+```powershell
+# 1. 安装依赖（workspace + vendor 构建一步完成）
+npm ci
+
+# 2. 启动（win32 平台自动解析为 native 模式；也可显式 THUNDERD_ENGINE_MODE=native）
+node apps\daemon\host\src\entry.mjs --profile thunderd
+```
+
+- `THUNDERD_PROGRAM_DIR` 未设时自动探测迅雷安装目录；探测失败时显式指定（含 `thunder.exe` 与 `dk_addon.node`）。
+- Wine 路径形态（`Z:\...`）与 Windows 盘符路径在内部归一比较，`wine` 模式的 TaskDb / 会话数据不直接迁移复用。
+- Windows 侧冒烟验收清单见 `docs/specs/2026-09-24-windows-native-and-config-file-design.md` §9 切片 4。
+
 ### systemd 常驻部署
 
 ```bash
@@ -120,8 +136,9 @@ node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 | `THUNDERD_VIP_ENABLED` | `1` | 会员试用加速开关 |
 | `THUNDERD_LEGACY_RPC` | `0` | 旧 aria2 兼容 handler，仅迁移回归用 |
 | `THUNDERD_CSRF` | `1` | 浏览器 mutation 的 CSRF 校验 |
-| `WINEPREFIX` | `~/.wine-thunder` | Wine 前缀 |
-| `THUNDERD_ENGINE_MODE` | 自动 | `wine` 或 `windows-native`（WSL 下跑 Windows 原生引擎） |
+| `WINEPREFIX` | `~/.wine-thunder` | Wine 前缀（仅 `wine` 模式） |
+| `THUNDERD_ENGINE_MODE` | 自动 | 两态：`wine`（Linux 宿主经 Wine）或 `native`（Windows 宿主直跑，无需 Wine）；`auto` 按平台解析（win32 → native，其余 → wine） |
+| `THUNDERD_PROGRAM_DIR` | 自动探测 | 迅雷安装目录（含 thunder.exe 与 dk_addon.node）；两态引擎共用的程序树定位 |
 
 完整清单见 `apps/daemon/host/src/config.js`。
 

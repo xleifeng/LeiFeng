@@ -9,7 +9,7 @@ const { sourceFingerprint } = require('../repositories/task-repository');
 const { mapNativeError } = require('../domain/task-errors');
 const { normalizeTorrentHash, parseFtp } = require('../domain/protocol-parser');
 const { buildNativeBtInfo } = require('../domain/native-bt-info');
-const { normalizeComparableEnginePath } = require('../windows-path');
+const { normalizeComparableEnginePath } = require('../engine-path');
 
 function error(code, message, details) { const value = new Error(message); value.code = code; value.details = details; return value; }
 
@@ -79,15 +79,16 @@ function removeTemporary(materialized) {
   try { fs.rmSync(path.dirname(materialized.path), { recursive: true, force: true }); } catch {}
 }
 
-// 引擎侧 Wine 路径 → 本机 Linux 路径（保留大小写；existsSync 必须用这个，
+// 引擎侧路径 → 宿主可用文件系统路径（保留大小写；existsSync 必须用这个，
 // normalizeComparableEnginePath 为比较而小写化，直接喂给 fs 会误判目录不存在）。
-function engineSavePathToLinux(value) {
+// Linux 宿主（wine 模式）：Z:\ → /，C:\ → /mnt/c/；Windows 宿主（native 模式）：盘符路径即本机路径。
+function engineSavePathToHost(value) {
   let s = String(value || '').replace(/\\/g, '/');
   s = s.replace(/^\/{1,2}wsl(?:\.localhost|\$)\/[^/]+/, '');
   const z = s.match(/^z:\/(.*)$/i);
-  if (z) return '/' + z[1];
+  if (z) return process.platform === 'win32' ? null : '/' + z[1];
   const drive = s.match(/^([a-z]):\/(.*)$/i);
-  if (drive) return '/mnt/' + drive[1].toLowerCase() + '/' + drive[2];
+  if (drive) return process.platform === 'win32' ? drive[0] : '/mnt/' + drive[1].toLowerCase() + '/' + drive[2];
   return s && s.startsWith('/') ? s : null;
 }
 
@@ -331,7 +332,7 @@ class CreateTaskService {
           if (effective.some((item) => ![8, 9].includes(Number(item.status))) && options.orphansReleased !== true) {
             const hostOwned = new Set();
             if (typeof this.tasks.list === 'function') for (const item of this.tasks.list()) { if (Number.isSafeInteger(Number(item.engineId)) && Number(item.engineId) > 0) hostOwned.add(Number(item.engineId)); }
-            const engineSaveRoot = (item) => { const linux = engineSavePathToLinux(item.savePath); return linux && linux !== '/' ? linux : null; };
+            const engineSaveRoot = (item) => { const linux = engineSavePathToHost(item.savePath); return linux && linux !== '/' ? linux : null; };
             const orphans = effective.filter((item) => {
               if (hostOwned.has(Number(item.engineId))) return false;
               if (Number(item.failureErrorCode || 0) !== 0) return false;
@@ -453,7 +454,7 @@ class CreateTaskService {
                 const status = Number(item.status);
                 if (status === 7) return true;
                 if (status !== 5) return false;
-                const linux = engineSavePathToLinux(item.savePath);
+                const linux = engineSavePathToHost(item.savePath);
                 if (!linux || linux === '/') return false;
                 try {
                   if (!fs.existsSync(linux)) return true;

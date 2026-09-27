@@ -45,19 +45,19 @@ curl -s -H 'Authorization: Bearer my-secret' -H 'Content-Type: application/x-bit
   --data-binary @sample.torrent http://127.0.0.1:16800/api/v2/create-drafts/torrent
 ```
 
-真实创建验收（仅使用 loopback tracker/seeder 和 `/tmp`）：
+真实创建验收（仅使用 loopback tracker/seeder 与家目录隔离区，禁 `/tmp`）。引擎类文件必须串行跑：node --test 默认按文件并行，4 个文件同时 wineboot 全新 WINEPREFIX 会抢磁盘/CPU 致引擎 boot 30s×3 轮超时，刚 boot 完建 BT 任务即报 nativeCode 20000（2026-09-26 实测）：
 
 ```bash
 THUNDERD_RUN_CREATE_V2_IT=1 THUNDERD_CREATE_V2_PORT=16920 \
-  node --test apps/daemon/test/integration/create-v2.it.test.js
+  node --test --test-concurrency=1 apps/daemon/test/integration/create-v2.it.test.js
 THUNDERD_RUN_CREATE_V2_BT_IT=1 THUNDERD_CREATE_V2_BT_PORT=16921 \
-  node --test apps/daemon/test/integration/create-v2-bt.it.test.js
+  node --test --test-concurrency=1 apps/daemon/test/integration/create-v2-bt.it.test.js
 # 真实 HTTP 文件操作矩阵（临时目录：rename → move → recycle → permanent delete）
 THUNDERD_RUN_TASK_OPERATIONS_IT=1 THUNDERD_TASK_OPERATIONS_PORT=16945 \
-  node --test apps/daemon/test/integration/task-operations-v2.it.test.js
+  node --test --test-concurrency=1 apps/daemon/test/integration/task-operations-v2.it.test.js
 # 真实 daemon 策略持久化与 native 应用问题报告
 THUNDERD_RUN_POLICIES_IT=1 THUNDERD_POLICIES_PORT=16950 \
-  node --test apps/daemon/test/integration/policies-v2.it.test.js
+  node --test --test-concurrency=1 apps/daemon/test/integration/policies-v2.it.test.js
 # 资料库/账号/私人空间单元回归
 node --test apps/daemon/test/unit/local-data-domains.test.js apps/daemon/test/unit/account-data-rpc.test.js
 ```

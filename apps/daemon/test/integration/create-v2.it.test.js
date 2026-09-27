@@ -12,10 +12,14 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const enabled = process.env.THUNDERD_RUN_CREATE_V2_IT === '1';
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
 const port = Number(process.env.THUNDERD_CREATE_V2_PORT || 16907);
+// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（test:integration 脚本已统一导 TMPDIR）
 const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-create-runtime-'));
 const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-create-download-'));
+// 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
+const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
+  || path.join(process.env.HOME, 'tmp', `tlei-it-wine-${path.basename(runtime)}`);
 let daemon; let fixture;
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
@@ -36,7 +40,7 @@ async function waitHealthy(timeoutMs = 120000) { const deadline = Date.now() + t
 
 test('real V2 HTTP preflight → getDraft → commit → completed query', { skip: !enabled, timeout: 180000 }, async () => {
   fixture = await startFixture();
-  daemon = spawn('bash', [path.join(repoRoot, 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'create-v2-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: process.env.WINEPREFIX || path.join(process.env.HOME, '.wine-thunder') }, stdio: ['ignore', 'inherit', 'inherit'] });
+  daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'create-v2-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: winePrefix }, stdio: ['ignore', 'inherit', 'inherit'] });
   try {
     await waitHealthy();
     const preflight = await request('thunder.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: fixture.url }], savePath: downloadDir }]);

@@ -23,7 +23,7 @@ test('save → 0600 权限 + roundtrip 全字段', () => {
   const w = new CredentialWallet(file);
   w.data = JSON.parse(JSON.stringify(SAMPLE));
   w.saveSync();
-  assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600);
   const w2 = new CredentialWallet(file);
   assert.strictEqual(w2.load(), true);
   assert.deepStrictEqual(w2.data, SAMPLE);
@@ -35,7 +35,7 @@ test('load 纠正 0644 → 0600', () => {
   fs.chmodSync(file, 0o644);
   const w = new CredentialWallet(file);
   assert.strictEqual(w.load(), true);
-  assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.strictEqual(fs.statSync(file).mode & 0o777, 0o600);
 });
 
 test('原子写：save 后无 .tmp 残留', () => {

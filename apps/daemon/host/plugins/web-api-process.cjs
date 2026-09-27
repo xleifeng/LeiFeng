@@ -7,7 +7,6 @@ const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
 const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
-const { createWindowsTaskDbReader } = require('../src/windows-taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
 const { CLIENT_ID, CLIENT_SECRET } = require('../src/xunlei-client-config');
@@ -86,9 +85,12 @@ const webApiProcess = plugin('tlei-web-api-process', ['tleiConfig', 'tleiControl
   let child = null;
   let timer = null;
   let stopping = false;
+  // 控制通道路径必须显式下发：win32 的 named pipe 由 appConfig 推导（THUNDERD_CONTROL_SOCKET
+  // 常未设置），不传则子进程回退拼 runtime 下的 .sock 文件路径，永远连不上 daemon。
+  const childEnv = { ...env, THUNDERD_CONTROL_SOCKET: ctx.tleiConfig.appConfig.controlSocketPath };
   function start() {
     if (stopping) return;
-    child = spawn(process.execPath, [entry], { cwd: repoRoot, env, stdio: 'inherit' });
+    child = spawn(process.execPath, [entry], { cwd: repoRoot, env: childEnv, stdio: 'inherit' });
     child.on('exit', (code, signal) => {
       child = null;
       if (stopping) return;

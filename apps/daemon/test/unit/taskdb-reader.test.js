@@ -83,3 +83,55 @@ test('readNativeBtTasks finds persisted BT rows and filters by native path/name'
     { engineId: 11, status: 5, savePath: 'Z:\\srv\\tlei-test\\downloads', name: 'ubuntu.iso', totalReceiveSize: 100, resourceSize: 1000, failureErrorCode: 0 },
   ]);
 });
+
+// ---- node:sqlite reader（Windows native 模式）----
+const { createNodeSqliteTaskDbReader } = require('../../host/src/taskdb-reader');
+const { DatabaseSync } = require('node:sqlite');
+
+test('node:sqlite reader 与 CLI reader 行为对齐（tasks/vip/native-bt）', async () => {
+  // 构造与 CLI 测试同构的 TaskDb fixture（含 BtFile 缺表降级场景由 try/catch 覆盖）
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'node-sqlite-reader-'));
+  const dbPath = path.join(dir, 'TaskDb.dat');
+  const setup = new DatabaseSync(dbPath);
+  setup.exec(`
+    CREATE TABLE TaskBase (TaskId INTEGER PRIMARY KEY, Type INTEGER, Status INTEGER, Url TEXT, Name TEXT,
+      ResourceSize INTEGER, Cid BLOB, Gcid BLOB, VipReceiveSize INTEGER, FreeDcdnReceiveSize INTEGER,
+      VipResourceEnableNecessary INTEGER, Forbidden INTEGER, TotalReceiveSize INTEGER,
+      FailureErrorCode INTEGER, SavePath TEXT);
+    CREATE TABLE BtTask (TaskId INTEGER PRIMARY KEY, InfoId BLOB);
+    CREATE TABLE BtFile (BtTaskId INTEGER, FileIndex INTEGER, Download INTEGER, FileName TEXT, FileSize INTEGER, Cid BLOB, Gcid BLOB);
+    INSERT INTO TaskBase VALUES (7, 2, 5, 'magnet:?x', 'bundle', 1024, x'AA', x'BB', 64, 8, 1, 0, 128, 0, 'C:\\d');
+    INSERT INTO TaskBase VALUES (8, 5, 5, '', 'other', 10, NULL, NULL, 0, 0, 0, 0, 10, 0, 'C:\\d');
+    INSERT INTO BtTask VALUES (7, x'${'AA'.repeat(20)}');
+    INSERT INTO BtTask VALUES (8, x'${'CC'.repeat(20)}');
+    INSERT INTO BtFile VALUES (7, 3, 1, 'file.bin', 1024, x'CC', x'DD');
+  `);
+  setup.close();
+
+  const reader = createNodeSqliteTaskDbReader({ DatabaseSync });
+  assert.equal(reader.available, true);
+
+  const tasks = await reader.readTasks(dbPath, [7, 7, -1]);
+  assert.deepEqual(tasks.get(7), { status: 5, totalReceiveSize: 128, resourceSize: 1024, failureErrorCode: 0, name: 'bundle' });
+
+  const vip = await reader.readVipTasks(dbPath, [7]);
+  assert.equal(vip.get(7).vipReceiveSize, 64);
+  assert.equal(vip.get(7).cid, 'AA');
+  assert.deepEqual(vip.get(7).btFiles[0], { fileIndex: 3, download: 1, fileName: 'file.bin', fileSize: 1024, cid: 'CC', gcid: 'DD' });
+
+  const bt = await reader.readNativeBtTasks(dbPath, 'aa'.repeat(20), { savePath: 'c:\\D', taskName: 'bundle' });
+  assert.equal(bt.length, 1);
+  assert.equal(bt[0].engineId, 7);
+
+  // 缺库返回空而非抛错（引擎尚未建 TaskDb 的窗口期）
+  const empty = await reader.readTasks(path.join(dir, 'missing.dat'), [7]);
+  assert.equal(empty.size, 0);
+  // 只读连接拒绝写入（防误操作 SDK 数据库）
+  assert.throws(() => { const ro = new DatabaseSync(dbPath, { readOnly: true }); try { ro.exec('DELETE FROM TaskBase'); } finally { ro.close(); } });
+});
+
+test('node:sqlite reader 在模块不可用时报告不可用', async () => {
+  const reader = createNodeSqliteTaskDbReader({ DatabaseSync: null });
+  assert.equal(reader.available, false);
+  await assert.rejects(reader.readTasks('/tmp/whatever.dat', [1]), (e) => e.code === 'TASKDB_READER_UNAVAILABLE');
+});

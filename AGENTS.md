@@ -45,9 +45,9 @@ node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 
 ## 在线实例与测试纪律
 
-- 真机常驻实例：daemon 16800、桥 7127、qbit 8085。测试一律用隔离端口与临时 runtime（`THUNDERD_RUNTIME_DIR` / `THUNDERD_PORT` 指到 /tmp），不得重启或清理在线实例与 `.p0/a1-hybrid` 基线。
+- 真机常驻实例：daemon 16800、桥 7127、qbit 8085。测试一律用隔离端口与临时 runtime（`THUNDERD_RUNTIME_DIR` / `THUNDERD_PORT` 指到 `/home/yj/tmp/tlei-<用途>` 等家目录下隔离目录，**禁用 /tmp**），不得重启或清理在线实例与 `.p0/a1-hybrid` 基线。
 - 换版部署先记录 PID / 端口 / 磁盘余量并给出回退步骤，获用户授权后才执行。
-- 磁盘配额打满时 SQLite 报 `disk I/O error`，会造成大面积假性测试失败——先查配额再查代码。
+- 磁盘配额打满时 SQLite 报 `disk I/O error`，会造成大面积假性测试失败——先查配额再查代码。`/tmp` 是有用户配额的 tmpfs，写满还会让 Claude Code 的 Bash 工具全线失灵（2026-09-24 实测），故一切测试临时写入走家目录。
 
 ## 登录与凭据纪律
 

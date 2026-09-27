@@ -167,10 +167,15 @@ function safeDeleteTaskFiles(r) {
   const base = path.resolve(r.savePath || '');
   const name = safeTaskName(r.taskName, '');
   if (!base || !name || base === path.parse(base).root) throw new RpcError(1, 'unsafe task path');
-  const target = path.resolve(base, name);
-  if (target === base || !target.startsWith(`${base}${path.sep}`)) throw new RpcError(1, 'unsafe task target');
-  try { fs.rmSync(target, { recursive: true, force: true }); }
-  catch (e) { throw new RpcError(1, `delete local files failed: ${e.message}`); }
+  // SDK 下载中写 <name>.xltd 部分文件 + .xltd.cfg 边车，完成后才改名最终名
+  //（create-task-service hasNativePartialData 同认知）：进行中任务被删时磁盘上是
+  // 部分文件名而非最终名，两个候选都要删，否则 removeAndDelete 删不掉进行中任务的文件。
+  const targets = [path.resolve(base, name), path.resolve(base, `${name}.xltd`), path.resolve(base, `${name}.xltd.cfg`)];
+  for (const target of targets) {
+    if (target === base || !target.startsWith(`${base}${path.sep}`)) throw new RpcError(1, 'unsafe task target');
+    try { fs.rmSync(target, { recursive: true, force: true }); }
+    catch (e) { throw new RpcError(1, `delete local files failed: ${e.message}`); }
+  }
 }
 
 function createMethodHandler({ registry, driver, config, auth, vip, v2Methods = null, taskService = null, createTaskService = null, settingsService = null, contentLengthProbe = fetchContentLength, legacyRpcEnabled = true }) {

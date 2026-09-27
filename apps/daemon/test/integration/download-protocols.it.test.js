@@ -15,10 +15,13 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { startFixture, rpc } = require('./helpers/fixture-server');
 
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
 const PORT = 16898; // 与 daemon.it.test.js（16899）错开，同机并行不撞端口
-// 默认放在仓库文件系统；需要长期保留证据时可通过 THUNDERD_IT_SAVE 指向独立目录。
-const SAVE = process.env.THUNDERD_IT_SAVE || path.join(repoRoot, '.runtime-integration-it');
+// 每轮 mkdtemp 隔离：固定目录跨轮残留旧 fixture.bin，引擎撞名落 fixture(1).bin，
+// sha 断言读到旧文件必假性失败（2026-09-24 实测）。需要保留证据时导 THUNDERD_IT_SAVE
+// 指向独立目录。/tmp 是配额 tmpfs，隔离目录走家目录。
+const tmpBase = process.env.THUNDERD_IT_TMP || path.join(process.env.HOME, 'tmp');
+const SAVE = process.env.THUNDERD_IT_SAVE || fs.mkdtempSync(path.join(tmpBase, 'thunderd-dlproto-'));
 const runtime = path.join(SAVE, '.runtime');
 const downloadDir = path.join(SAVE, 'downloads');
 let daemon = null;
@@ -60,17 +63,34 @@ async function waitStatus(gid, want, timeoutMs = 60000) {
 
 test.before(async () => {
   fs.mkdirSync(downloadDir, { recursive: true });
-  daemon = spawn('bash', [path.join(repoRoot, 'daemon', 'run.sh')], {
+  // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0；
+  // 前缀放家目录（/tmp 是配额 tmpfs，禁用）
+  const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
+    || path.join(process.env.HOME, 'tmp', `tlei-it-wine-dlproto-${process.pid}`);
+  daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], {
     env: { ...process.env, THUNDERD_PORT: String(PORT), THUNDERD_RUNTIME_DIR: runtime,
       THUNDERD_DOWNLOAD_DIR: downloadDir,
       THUNDERD_LEGACY_RPC: '1',
-      WINEPREFIX: process.env.WINEPREFIX || path.join(process.env.HOME, '.wine-thunder') },
+      WINEPREFIX: winePrefix },
     stdio: ['ignore', 'inherit', 'inherit'],
   });
   await waitEngineHealthy();
-}, { timeout: 120000 });
+}, { timeout: 180000 });
 
-test.after(() => { try { daemon && daemon.kill('SIGTERM'); } catch {} });
+test.after(() => {
+  try { daemon && daemon.kill('SIGTERM'); } catch {}
+  // 清理自建隔离 WINEPREFIX
+  try {
+    const prefix = path.join(process.env.HOME, 'tmp', `tlei-it-wine-dlproto-${process.pid}`);
+    if (prefix.startsWith(path.join(process.env.HOME, 'tmp', 'tlei-it-wine-'))) fs.rmSync(prefix, { recursive: true, force: true });
+  } catch {}
+  // 清理本轮自建的 SAVE 隔离目录（外部 THUNDERD_IT_SAVE 指定的证据目录不动）
+  try {
+    if (!process.env.THUNDERD_IT_SAVE && SAVE.startsWith(path.join(process.env.HOME, 'tmp', 'thunderd-dlproto-'))) {
+      fs.rmSync(SAVE, { recursive: true, force: true });
+    }
+  } catch {}
+});
 
 // ---- HTTP 冒烟（可跑，验 daemon 协议扩展后 仍能下 HTTP）----
 test('http-download: addUri → complete → sha256（协议扩展后 回归）', { timeout: 90000 }, async () => {

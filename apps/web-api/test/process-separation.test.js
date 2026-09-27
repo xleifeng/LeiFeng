@@ -17,7 +17,9 @@ async function waitForHttp(port) { const deadline = Date.now() + 10000; while (D
 async function stop(child) { if (!child || child.exitCode !== null) return; child.kill('SIGTERM'); await once(child, 'exit'); }
 
 test('restarting Web API preserves daemon-owned state and control process', { timeout: 30000 }, async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'web-api-restart-')); const socketPath = path.join(root, 'control.sock'); const port = await freePort(); let value = 0;
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'web-api-restart-'));
+  // win32 下 Unix socket 文件不可 listen，改用 named pipe（无文件系统实体）
+  const socketPath = process.platform === 'win32' ? `\\\\.\\pipe\\thunderd-test-${process.pid}-${Date.now()}` : path.join(root, 'control.sock'); const port = await freePort(); let value = 0;
   const control = new DaemonControlServer({ socketPath, dispatch: async (method, params) => { if (method === 'daemon.v1.health') return { pid: process.pid, daemonVersion: 'test' }; if (method === 'daemon.v1.web.invoke') { if (params.method === 'test.increment') { value += 1; return { value }; } if (params.method === 'test.get') return { value }; } throw Object.assign(new Error(method), { code: 'METHOD_NOT_FOUND' }); } });
   await once(control.start(), 'listening');
   const entry = path.join(__dirname, '../src/main.js'); const env = { ...process.env, THUNDERD_CONTROL_SOCKET: socketPath, THUNDERD_RUNTIME_DIR: root, THUNDERD_PORT: String(port), THUNDERD_HOST: '127.0.0.1', THUNDERD_WEBUI_DIR: path.join(root, 'missing-webui') };

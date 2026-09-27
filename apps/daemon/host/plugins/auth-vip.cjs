@@ -7,7 +7,6 @@ const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
 const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
-const { createWindowsTaskDbReader } = require('../src/windows-taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
 const { CLIENT_ID, CLIENT_SECRET } = require('../src/xunlei-client-config');
@@ -83,10 +82,10 @@ const { plugin } = require('./shared.cjs');
 const authVip = plugin('tlei-auth-vip', ['tleiConfig', 'tleiRepositories', 'tleiEngine', 'tleiObservation'], (ctx) => {
   const { appConfig, runtimeDir, env } = ctx.tleiConfig;
   const { registry } = ctx.tleiRepositories;
-  const { driver, taskDbReaders, crashInfoPath } = ctx.tleiEngine;
+  const { driver, taskDbReaders, crashInfoPath, peerIdCandidates } = ctx.tleiEngine;
   const wallet = new CredentialWallet(path.join(runtimeDir, 'auth.json'));
   const winePrefix = appConfig.winePrefix;
-  const xlconfigPath = path.join(winePrefix, 'drive_c', 'users', 'Public', 'Thunder Network', 'Thunder', 'xlconfig.ini');
+  const xlconfigPath = appConfig.xlconfigPath; // config 层按平台定型：wine prefix 拼接 / %PUBLIC% 拼接
   const auth = new AuthManager({
     wallet, driver, apiOrigin: env.THUNDERD_AUTH_API_ORIGIN || 'https://xluser-ssl.xunlei.com',
     xlconfigPath, clientId: CLIENT_ID, clientSecret: CLIENT_SECRET,
@@ -97,9 +96,9 @@ const authVip = plugin('tlei-auth-vip', ['tleiConfig', 'tleiRepositories', 'tlei
     log: (entry) => console.error('[vip-speedup]', JSON.stringify(entry)) });
   const vipManager = new VipAccelerationManager({
     registry, driver, auth, readVipTasks: taskDbReaders.readVipTasks,
-    readBtFileRuntime: driver.engineMode === 'windows-native' ? null : (engineId) => driver.getBtFileRuntime(engineId),
+    readBtFileRuntime: driver.engineMode === 'native' ? null : (engineId) => driver.getBtFileRuntime(engineId),
     taskDbPath: driver.taskDbPath,
-    peerIdProvider: () => readSdkPeerId({ explicitPath: crashInfoPath || undefined, winePrefix }),
+    peerIdProvider: () => readSdkPeerId({ explicitPath: crashInfoPath || undefined, candidateDirs: peerIdCandidates }),
     speedupClient, enabled: envBool(env.THUNDERD_VIP_ENABLED, true),
     scanMs: Math.min(Math.max(Number(env.THUNDERD_VIP_SCAN_MS) || 2000, 500), 30000),
     maxBackoffMs: Math.min(Math.max((Number(env.THUNDERD_VIP_MAX_BACKOFF_SEC) || 300) * 1000, 30000), 1800000),

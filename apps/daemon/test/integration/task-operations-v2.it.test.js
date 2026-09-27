@@ -11,11 +11,15 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 
 const enabled = process.env.THUNDERD_RUN_TASK_OPERATIONS_IT === '1';
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
 const port = Number(process.env.THUNDERD_TASK_OPERATIONS_PORT || 16940);
+// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（test:integration 脚本已统一导 TMPDIR）
 const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-ops-runtime-'));
 const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-ops-download-'));
 const targetDir = path.join(downloadDir, 'moved');
+// 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
+const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
+  || path.join(process.env.HOME, 'tmp', `tlei-it-wine-${path.basename(runtime)}`);
 let daemon; let fixture;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,7 +41,7 @@ async function waitTask(taskId, predicate) { const deadline = Date.now() + 90000
 
 test('real V2 task operations rename → move → recycle → permanent delete', { skip: !enabled, timeout: 240000 }, async () => {
   fixture = await startFixture();
-  daemon = spawn('bash', [path.join(repoRoot, 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'task-ops-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: process.env.WINEPREFIX || path.join(process.env.HOME, '.wine-thunder') }, stdio: ['ignore', 'inherit', 'inherit'] });
+  daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'task-ops-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: winePrefix }, stdio: ['ignore', 'inherit', 'inherit'] });
   try {
     await waitHealthy();
     const preflight = await rpc('thunder.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: fixture.url }], savePath: downloadDir }]);

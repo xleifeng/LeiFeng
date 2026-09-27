@@ -27,7 +27,8 @@ class EngineClient extends EventEmitter {
         err.code = 'ETIMEDOUT'; // I3: Driver 按 code 判定受控重启，禁文案匹配
         reject(err);
       }, timeoutMs);
-      if (timer.unref) timer.unref();
+      // 超时定时器保活事件循环：挂起的请求必须最终 reject（ETIMEDOUT → 驱动受控重启），
+      // unref 会让进程在事件循环排空时带着 pending promise 直接退出。
       this._pending.set(id, { resolve, reject, timer });
       this._sock.write(JSON.stringify({ id, method, params }) + '\n');
     });

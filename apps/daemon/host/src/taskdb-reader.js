@@ -159,4 +159,149 @@ async function readVipTasks(dbPath, ids, timeoutMs = 5000) {
   return map;
 }
 
-module.exports = { readTasks, readVipTasks, readNativeBtTasks, hasSqlite };
+// ---- Windows native 模式：node:sqlite 只读直读 ----
+// 与 CLI reader 行为对齐（同一组查询语义与降级路径），宿主内直读不再依赖外部命令。
+// 查询 SQL 与上面 CLI 版共享常量，防两份漂移。
+const TASKS_COLUMNS = 'TaskId,Status,TotalReceiveSize,ResourceSize,FailureErrorCode,Name';
+const VIP_BASE_COLUMNS = 'TaskId,Type,Status,Url,Name,ResourceSize,' +
+  "NULLIF(hex(Cid),'') AS CidHex,NULLIF(hex(Gcid),'') AS GcidHex," +
+  'VipReceiveSize,FreeDcdnReceiveSize,VipResourceEnableNecessary,Forbidden';
+const VIP_FILE_COLUMNS = 'BtTaskId,FileIndex,Download,FileName,FileSize,' +
+  "NULLIF(hex(Cid),'') AS CidHex,NULLIF(hex(Gcid),'') AS GcidHex";
+const NATIVE_BT_SQL = 'SELECT b.TaskId, t.Status, t.SavePath, t.Name, t.TotalReceiveSize, t.ResourceSize, t.FailureErrorCode ' +
+  'FROM BtTask b JOIN TaskBase t ON t.TaskId=b.TaskId WHERE upper(hex(b.InfoId)) = ? ' +
+  'ORDER BY t.TotalReceiveSize DESC, b.TaskId ASC';
+
+function createNodeSqliteTaskDbReader({ DatabaseSync } = {}) {
+  // 显式传入 null 表示"无实现"（测试用）；undefined 时尝试 node:sqlite。
+  const Sqlite = DatabaseSync === undefined ? (() => {
+    try { return require('node:sqlite').DatabaseSync; } catch { return null; }
+  })() : DatabaseSync;
+  const available = Boolean(Sqlite);
+
+  function open(dbPath) {
+    if (!available) {
+      const problem = new Error('node:sqlite unavailable');
+      problem.code = 'TASKDB_READER_UNAVAILABLE';
+      throw problem;
+    }
+    if (!dbPath) {
+      const problem = new Error('TaskDb path is required');
+      problem.code = 'BT_NATIVE_STATE_UNAVAILABLE';
+      throw problem;
+    }
+    return new Sqlite(dbPath, { readOnly: true }); // 引擎持有写权，宿主只读快照
+  }
+
+  function withDatabase(dbPath, timeoutMs, fn) {
+    let db;
+    try { db = open(dbPath); }
+    catch (e) {
+      if (e.code === 'SQLITE_CANTOPEN' || /unable to open/i.test(e.message || '')) return null; // TaskDb 尚未建库
+      throw e;
+    }
+    try {
+      db.exec(`PRAGMA busy_timeout = ${Math.max(0, Math.min(timeoutMs || 5000, 30000))}`);
+      return fn(db);
+    } finally { try { db.close(); } catch {} }
+  }
+
+  async function readTasks(dbPath, ids, timeoutMs = 5000) {
+    const map = new Map();
+    const selected = [...new Set((Array.isArray(ids) ? ids : []).map(Number).filter((id) => Number.isSafeInteger(id) && id > 0))];
+    if (!selected.length) return map;
+    const rows = withDatabase(dbPath, timeoutMs, (db) =>
+      db.prepare(`SELECT ${TASKS_COLUMNS} FROM TaskBase WHERE TaskId IN (${selected.map(() => '?').join(',')})`).all(...selected)) || [];
+    for (const row of rows) {
+      const id = Number(row.TaskId);
+      if (!Number.isSafeInteger(id) || id <= 0) continue;
+      map.set(id, {
+        status: numberOrZero(row.Status),
+        totalReceiveSize: numberOrZero(row.TotalReceiveSize),
+        resourceSize: numberOrZero(row.ResourceSize),
+        failureErrorCode: numberOrZero(row.FailureErrorCode),
+        name: row.Name || null, // 引擎真实落盘名；NULL/空串 → null
+      });
+    }
+    return map;
+  }
+
+  async function readVipTasks(dbPath, ids, timeoutMs = 5000) {
+    const map = new Map();
+    const selected = [...new Set((Array.isArray(ids) ? ids : []).map(Number).filter((id) => Number.isSafeInteger(id) && id > 0))];
+    if (!selected.length) return map;
+    const baseRows = withDatabase(dbPath, timeoutMs, (db) =>
+      db.prepare(`SELECT ${VIP_BASE_COLUMNS} FROM TaskBase WHERE TaskId IN (${selected.map(() => '?').join(',')})`).all(...selected)) || [];
+    for (const row of baseRows) {
+      map.set(Number(row.TaskId), {
+        engineId: Number(row.TaskId),
+        type: numberOrZero(row.Type),
+        status: numberOrZero(row.Status),
+        url: row.Url || '',
+        name: row.Name || null,
+        resourceSize: numberOrZero(row.ResourceSize),
+        cid: normalizeHex(row.CidHex),
+        gcid: normalizeHex(row.GcidHex),
+        vipReceiveSize: numberOrZero(row.VipReceiveSize),
+        freeDcdnReceiveSize: numberOrZero(row.FreeDcdnReceiveSize),
+        vipResourceEnableNecessary: numberOrZero(row.VipResourceEnableNecessary),
+        forbidden: numberOrZero(row.Forbidden),
+        btFiles: [],
+      });
+    }
+    if (!map.size) return map;
+    let fileRows = [];
+    try {
+      fileRows = withDatabase(dbPath, timeoutMs, (db) =>
+        db.prepare(`SELECT ${VIP_FILE_COLUMNS} FROM BtFile WHERE BtTaskId IN (${selected.map(() => '?').join(',')}) ORDER BY BtTaskId,FileIndex`).all(...selected)) || [];
+    } catch (e) {
+      // 老版本/磁力 metadata 窗口可能暂时没有 BtFile 表；TaskBase 快照仍然有价值。
+      if (!/no such table/i.test(e.message || '')) throw e;
+    }
+    for (const row of fileRows) {
+      const task = map.get(Number(row.BtTaskId));
+      if (!task) continue;
+      task.btFiles.push({
+        fileIndex: numberOrZero(row.FileIndex),
+        download: numberOrZero(row.Download),
+        fileName: row.FileName || null,
+        fileSize: numberOrZero(row.FileSize),
+        cid: normalizeHex(row.CidHex),
+        gcid: normalizeHex(row.GcidHex),
+      });
+    }
+    return map;
+  }
+
+  async function readNativeBtTasks(dbPath, infoId, { savePath = null, taskName = null, timeoutMs = 5000 } = {}) {
+    if (!dbPath) {
+      const problem = new Error('TaskDb reader unavailable');
+      problem.code = 'BT_NATIVE_STATE_UNAVAILABLE';
+      throw problem;
+    }
+    if (infoId === null || infoId === undefined) return [];
+    const normalizedInfoId = String(infoId).replace(/^0x/i, '').replace(/[^0-9a-f]/gi, '').toUpperCase();
+    if (!normalizedInfoId || normalizedInfoId.length < 32) return [];
+    const wantedPath = savePath === null ? null : normalizeComparablePath(savePath);
+    const wantedName = taskName === null ? null : String(taskName);
+    const rows = withDatabase(dbPath, timeoutMs, (db) => db.prepare(NATIVE_BT_SQL).all(normalizedInfoId)) || [];
+    return rows.map((row) => ({
+      engineId: Number(row.TaskId),
+      status: numberOrZero(row.Status),
+      savePath: row.SavePath || '',
+      name: row.Name || '',
+      totalReceiveSize: numberOrZero(row.TotalReceiveSize),
+      resourceSize: numberOrZero(row.ResourceSize),
+      failureErrorCode: numberOrZero(row.FailureErrorCode),
+    })).filter((row) => {
+      if (!Number.isSafeInteger(row.engineId) || row.engineId <= 0) return false;
+      if (wantedPath !== null && normalizeComparablePath(row.savePath) !== wantedPath) return false;
+      if (wantedName !== null && row.name !== wantedName) return false;
+      return true;
+    });
+  }
+
+  return { available, readTasks, readVipTasks, readNativeBtTasks };
+}
+
+module.exports = { readTasks, readVipTasks, readNativeBtTasks, hasSqlite, createNodeSqliteTaskDbReader };

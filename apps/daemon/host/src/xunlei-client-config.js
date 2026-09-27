@@ -8,7 +8,7 @@ function versionCodeFromName(value, fallback = '2500821562') {
   return match.slice(1).map((part, index) => String(Number(part)).padStart(index === 3 ? 4 : 2, '0')).join('');
 }
 
-const RUNTIME_RELEASE_VERSION = process.env.THUNDERD_WINDOWS_SDK_VERSION || process.env.THUNDERD_SDK_VERSION_NAME || '25.0.82.1562';
+const RUNTIME_RELEASE_VERSION = process.env.THUNDERD_SDK_VERSION_NAME || '25.0.82.1562';
 const XUNLEI_CLIENT = Object.freeze({
   clientId: 'XW-G4v1H72tgfJym',
   // main.js 的 clientSecret_win_prod；旧 account 链的 secret 不用于 OAuth2 device flow。

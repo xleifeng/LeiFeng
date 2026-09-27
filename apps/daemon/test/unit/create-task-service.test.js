@@ -5,6 +5,7 @@ const fs = require('fs'); const os = require('os'); const path = require('path')
 const { TaskRepository } = require('../../host/src/repositories/task-repository');
 const { CreateTaskService } = require('../../host/src/services/create-task-service');
 const { FtpSecretStore } = require('../../host/src/secrets/ftp-secret-store');
+const { linuxToWinePath } = require('../../host/src/driver');
 
 test('compat create URI preserves create native → repository → start order', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'create-v2-')); const repo = new TaskRepository({ filePath: path.join(dir, 'tasks.json') }); repo.load();
@@ -106,8 +107,8 @@ test('torrent create adopts the most progressed persisted native task instead of
   const service = new CreateTaskService({
     tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
     readNativeBtTasks: async () => [
-      { engineId: 51, status: 5, savePath: 'Z:\\' + dir.slice(1).replaceAll('/', '\\'), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 },
-      { engineId: 52, status: 5, savePath: 'Z:\\' + dir.slice(1).replaceAll('/', '\\'), name: 'ubuntu.iso', totalReceiveSize: 200, resourceSize: 1000, failureErrorCode: 0 },
+      { engineId: 51, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 },
+      { engineId: 52, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 200, resourceSize: 1000, failureErrorCode: 0 },
     ],
   });
   const taskId = await service.createTorrentCompat({ torrentInput: torrent, savePath: dir, displayName: 'ubuntu.iso', options: { startMode: 'queued' } });
@@ -132,7 +133,7 @@ test('torrent native adoption explicitly starts an existing status-5 row when re
   };
   const service = new CreateTaskService({
     tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => [{ engineId: 51, status: 5, savePath: 'Z:\\' + dir.slice(1).replaceAll('/', '\\'), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 }],
+    readNativeBtTasks: async () => [{ engineId: 51, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 }],
   });
   const taskId = await service.createTorrentCompat({ torrentInput: torrent, savePath: dir, displayName: 'ubuntu.iso' });
   assert.equal(repo.get(taskId).engineId, 51);

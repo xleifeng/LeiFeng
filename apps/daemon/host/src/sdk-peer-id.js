@@ -5,16 +5,21 @@ const path = require('path');
 // XLSDK 实际 crashinfo.ini 中是短的持久化标识；只允许单 token，避免把整行配置误当 peer id。
 const PEER_ID_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
 
-function candidatePaths(winePrefix) {
-  if (!winePrefix) return [];
-  const usersDir = path.join(winePrefix, 'drive_c', 'users');
-  let users = [];
-  try { users = fs.readdirSync(usersDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); }
-  catch { return []; }
-  return users.flatMap((user) => [
-    path.join(usersDir, user, 'AppData', 'Local', 'Temp', 'Thunder Network', 'XLSDK', 'crashinfo.ini'),
-    path.join(usersDir, user, 'Temp', 'Thunder Network', 'XLSDK', 'crashinfo.ini'),
-  ]);
+function candidatePaths(winePrefix, candidateDirs) {
+  const paths = [];
+  if (winePrefix) {
+    const usersDir = path.join(winePrefix, 'drive_c', 'users');
+    let users = [];
+    try { users = fs.readdirSync(usersDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); }
+    catch { users = []; }
+    paths.push(...users.flatMap((user) => [
+      path.join(usersDir, user, 'AppData', 'Local', 'Temp', 'Thunder Network', 'XLSDK', 'crashinfo.ini'),
+      path.join(usersDir, user, 'Temp', 'Thunder Network', 'XLSDK', 'crashinfo.ini'),
+    ]));
+  }
+  // native（Windows 宿主）：候选目录已是 crashinfo.ini 的直接父目录（…\Thunder Network\XLSDK）。
+  for (const dir of candidateDirs || []) paths.push(path.join(dir, 'crashinfo.ini'));
+  return paths;
 }
 
 function parsePeerId(text) {
@@ -35,10 +40,10 @@ function readOne(filePath) {
   return { ok: true, peerId, source: filePath };
 }
 
-function readSdkPeerId({ explicitPath, winePrefix } = {}) {
+function readSdkPeerId({ explicitPath, winePrefix, candidateDirs } = {}) {
   const candidates = [];
   if (explicitPath) candidates.push(path.resolve(explicitPath));
-  candidates.push(...candidatePaths(winePrefix));
+  candidates.push(...candidatePaths(winePrefix, candidateDirs));
   if (!candidates.length) return { ok: false, reason: 'not-found' };
   for (const filePath of [...new Set(candidates)]) {
     const result = readOne(filePath);

@@ -1,8 +1,10 @@
 'use strict';
 
 // Local, deterministic BT acceptance. Run with:
-// THUNDERD_RUN_CREATE_V2_BT_IT=1 node --test daemon/test/integration/create-v2-bt.it.test.js
+// THUNDERD_RUN_CREATE_V2_BT_IT=1 node --test --test-concurrency=1 daemon/test/integration/create-v2-bt.it.test.js
 // The tracker and seeder stay on loopback; no public torrent or user directory is touched.
+// 串行跑是硬要求：node --test 默认按文件并行，4 个全新 WINEPREFIX 同时 wineboot 抢磁盘/CPU，
+// 引擎 gen1-3 boot 超时、gen4 刚起即建 BT 任务 → 立即 nativeCode 20000（2026-09-26 实测；串行单跑稳定绿）。
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
@@ -14,11 +16,24 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const enabled = process.env.THUNDERD_RUN_CREATE_V2_BT_IT === '1';
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
 const rpcPort = Number(process.env.THUNDERD_CREATE_V2_BT_PORT || 16921);
+// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（test:integration 脚本已统一导 TMPDIR）
 const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-bt-runtime-'));
 const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-bt-download-'));
+// 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
+const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
+  || path.join(process.env.HOME, 'tmp', `tlei-it-wine-${path.basename(runtime)}`);
 let daemon; let tracker; let seeder;
+
+// 兜底回收：测试超时被 runner 强杀时 finally 不执行，daemon/tracker/seeder 全泄漏
+//（2026-09-24 实测泄漏的 web-api 引擎进程活 17 分钟）。closeAllConnections 断 CLOSE_WAIT 存量连接。
+test.after(() => {
+  for (const srv of [tracker && tracker.server, seeder && seeder.server]) {
+    if (srv) { try { srv.close(); srv.closeAllConnections?.(); } catch {} }
+  }
+  try { daemon && daemon.kill('SIGTERM'); } catch {}
+});
 
 function encode(value) {
   if (Buffer.isBuffer(value)) return Buffer.concat([Buffer.from(`${value.length}:`), value]);
@@ -95,9 +110,12 @@ function startTracker({ infoHash, seederPort }) {
   const peerBytes = Buffer.alloc(6); peerBytes.writeUInt32BE(0x7f000001, 0); peerBytes.writeUInt16BE(seederPort, 4);
   const server = http.createServer((req, res) => {
     if (!req.url.startsWith('/announce')) { res.writeHead(404); return res.end(); }
+    // connection: close：引擎异常退出后 keep-alive 连接滞留 CLOSE_WAIT，server.close()
+    // 只停监听不断存量连接 → runner 事件循环挂死（2026-09-24 实测挂 17 分钟）
     const body = encode({ interval: 1, peers: peerBytes });
-    res.writeHead(200, { 'content-type': 'text/plain', 'content-length': body.length }); res.end(body);
+    res.writeHead(200, { 'content-type': 'text/plain', 'content-length': body.length, connection: 'close' }); res.end(body);
   });
+  server.keepAliveTimeout = 0;
   return new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', () => resolve({ server, port: server.address().port })); });
 }
 
@@ -124,7 +142,7 @@ test('real V2 BT upload → selected draft commit → byte-complete query', { sk
   seeder = await startSeeder({ infoHash, payload: fixture.payload });
   tracker = await startTracker({ infoHash, seederPort: seeder.port });
   const torrent = encode({ announce: `http://127.0.0.1:${tracker.port}/announce`, info: fixture.info });
-  daemon = spawn('bash', [path.join(repoRoot, 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(rpcPort), THUNDERD_RPC_SECRET: 'bt-create-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: process.env.WINEPREFIX || path.join(process.env.HOME, '.wine-thunder') }, stdio: ['ignore', 'inherit', 'inherit'] });
+  daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(rpcPort), THUNDERD_RPC_SECRET: 'bt-create-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: winePrefix }, stdio: ['ignore', 'inherit', 'inherit'] });
   try {
     await waitHealthy();
     const draft = await uploadTorrent(torrent);
@@ -133,7 +151,9 @@ test('real V2 BT upload → selected draft commit → byte-complete query', { sk
     assert.equal(committed.results[0].ok, true);
     const taskId = committed.results[0].taskIds[0]; const deadline = Date.now() + 90000; let item;
     for (;;) { const result = await rpc('thunder.ui.v2.tasks.query', [{ view: 'all', limit: 20 }]); item = result.items.find((candidate) => candidate.taskId === taskId); if (item && item.lifecycle === 'completed') break; if (Date.now() > deadline) throw new Error(`BT task did not complete: ${item && item.lifecycle}`); await new Promise((resolve) => setTimeout(resolve, 1000)); }
-    const target = path.join(downloadDir, 'bt-local-fixture.bin', 'bt-local-fixture.bin'); assert.equal(fs.statSync(target).size, fixture.payload.length); assert.deepEqual(fs.readFileSync(target), fixture.payload);
+    // 单文件种子引擎直接落 savePath/<文件名>，不套 taskName 目录（.p0/a1-hybrid 基线：
+    // 多文件种子才是 taskName目录/内部文件 形态；2026-09-26 实测单文件即直接落盘）
+    const target = path.join(downloadDir, 'bt-local-fixture.bin'); assert.equal(fs.statSync(target).size, fixture.payload.length); assert.deepEqual(fs.readFileSync(target), fixture.payload);
   } finally {
     try { tracker && tracker.server.close(); } catch {} try { seeder && seeder.server.close(); } catch {} try { daemon && daemon.kill('SIGTERM'); } catch {} await new Promise((resolve) => setTimeout(resolve, 1500));
   }
@@ -144,7 +164,7 @@ test('real V2 magnet metadata → BT commit → byte-complete query', { skip: !e
   seeder = await startSeeder({ infoHash, payload: fixture.payload, infoBytes: fixture.infoBytes });
   tracker = await startTracker({ infoHash, seederPort: seeder.port });
   const magnet = `magnet:?xt=urn:btih:${infoHash.toString('hex')}&dn=bt-local-fixture.bin&tr=${encodeURIComponent(`http://127.0.0.1:${tracker.port}/announce`)}`;
-  daemon = spawn('bash', [path.join(repoRoot, 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'bt-create-it', THUNDERD_RUNTIME_DIR: `${runtime}-magnet`, THUNDERD_DOWNLOAD_DIR: `${downloadDir}-magnet`, WINEPREFIX: process.env.WINEPREFIX || path.join(process.env.HOME, '.wine-thunder') }, stdio: ['ignore', 'inherit', 'inherit'] });
+  daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'bt-create-it', THUNDERD_RUNTIME_DIR: `${runtime}-magnet`, THUNDERD_DOWNLOAD_DIR: `${downloadDir}-magnet`, WINEPREFIX: `${winePrefix}-magnet` }, stdio: ['ignore', 'inherit', 'inherit'] });
   try {
     await waitHealthy(port);
     const preflight = await rpc('thunder.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: magnet }], savePath: `${downloadDir}-magnet` }], port);
@@ -154,7 +174,8 @@ test('real V2 magnet metadata → BT commit → byte-complete query', { skip: !e
     assert.equal(draft.files.length, 1); const committed = await rpc('thunder.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'magnet-create-it-1' }], port); assert.equal(committed.results[0].ok, true);
     const taskId = committed.results[0].taskIds[0]; const deadline = Date.now() + 90000; let item;
     for (;;) { const result = await rpc('thunder.ui.v2.tasks.query', [{ view: 'all', limit: 20 }], port); item = result.items.find((candidate) => candidate.taskId === taskId); if (item && item.lifecycle === 'completed') break; if (Date.now() > deadline) throw new Error(`magnet BT task did not complete: ${item && item.lifecycle}`); await new Promise((resolve) => setTimeout(resolve, 1000)); }
-    const target = path.join(`${downloadDir}-magnet`, 'bt-local-fixture.bin', 'bt-local-fixture.bin'); assert.equal(fs.statSync(target).size, fixture.payload.length); assert.deepEqual(fs.readFileSync(target), fixture.payload);
+    // 同上：单文件种子直接落 savePath/<文件名>
+    const target = path.join(`${downloadDir}-magnet`, 'bt-local-fixture.bin'); assert.equal(fs.statSync(target).size, fixture.payload.length); assert.deepEqual(fs.readFileSync(target), fixture.payload);
   } finally {
     try { tracker && tracker.server.close(); } catch {} try { seeder && seeder.server.close(); } catch {} try { daemon && daemon.kill('SIGTERM'); } catch {} await new Promise((resolve) => setTimeout(resolve, 1500));
   }

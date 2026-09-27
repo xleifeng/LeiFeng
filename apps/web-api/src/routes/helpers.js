@@ -48,7 +48,8 @@ async function stageRequest(req, { rootDir, prefix = 'upload-', maxBytes }) {
       if (!output.write(chunk)) await once(output, 'drain');
     }
     await new Promise((resolve, reject) => { output.once('error', reject); output.end(resolve); });
-    const descriptor = fs.openSync(filePath, 'r');
+    // 'r+' 而非 'r'：Windows 的 FlushFileBuffers 要求写句柄，只读 fd fsync 报 EPERM
+    const descriptor = fs.openSync(filePath, 'r+');
     try { fs.fsyncSync(descriptor); } finally { fs.closeSync(descriptor); }
     return { directory, filePath, bytes, cleanup: () => { try { fs.rmSync(directory, { recursive: true, force: true }); } catch {} } };
   } catch (error) {

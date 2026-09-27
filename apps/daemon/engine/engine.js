@@ -55,8 +55,14 @@ const INIT_CFG = {
 log('initAddon ->', String(m.initAddon(INIT_CFG)));
 process.env['01KVYZS23XBRBTN7XTFFPAXQNV_SDK_Platform'] = process.env.THUNDERD_SDK_PLATFORM || '64';
 const tm = new m.NativeTaskManager();
-tm.beginInitDownloadServer();
-log('beginInitDownloadServer done; settling 8s before host connect');
+// 老版 SDK（2024-08 基线）需显式 beginInitDownloadServer 拉起下载服务器；
+// 新版 SDK（2026-06+）在 initAddon 内隐式完成，方法已移除——按存在性分流。
+if (typeof tm.beginInitDownloadServer === 'function') {
+  tm.beginInitDownloadServer();
+  log('beginInitDownloadServer done; settling 8s before host connect');
+} else {
+  log('beginInitDownloadServer absent (implicit init SDK); proceeding');
+}
 
 // TASKTYPE/CREATORS/validateInfo 与 daemon/test/unit/helpers/fake-engine.js 同构（单测验形状对齐）。
 // native 方法需 .bind(tm)。事件与未经逐项验证的 callback API 仍禁止进入生产路径。

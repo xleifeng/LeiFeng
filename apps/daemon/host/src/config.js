@@ -2,6 +2,7 @@
 
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 
 function freezeDeep(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -22,11 +23,14 @@ function positiveInt(value, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER }
 
 function resolveRoot(value, fallback) { return path.resolve(value || fallback); }
 
-function engineMode(value) {
-  const normalized = String(value || 'wine').trim().toLowerCase();
-  if (normalized === 'windows' || normalized === 'windows-native') return 'windows-native';
+// 两态引擎模式：wine（Linux 宿主经 Wine）/ native（Windows 宿主直跑）。
+// auto 由平台解析（win32 → native，其余 → wine），loadConfig 内定型后运行时不再出现 auto。
+function engineMode(value, platform = process.platform) {
+  const normalized = String(value || 'auto').trim().toLowerCase();
+  if (normalized === 'auto') return platform === 'win32' ? 'native' : 'wine';
   if (normalized === 'wine') return 'wine';
-  throw new Error('THUNDERD_ENGINE_MODE must be wine or windows-native');
+  if (normalized === 'native' || normalized === 'windows') return 'native';
+  throw new Error('THUNDERD_ENGINE_MODE must be wine, native or auto');
 }
 
 function versionCodeFromName(value, fallback = 2500821562) {
@@ -73,13 +77,66 @@ function assertSafeWritableRoot(candidate, home, label) {
   return resolved;
 }
 
-function loadConfig({ env = {}, repoRoot = path.resolve(__dirname, '..', '..', '..'), homeDir = env.HOME || os.homedir() } = {}) {
-  const runtimeDir = assertSafeWritableRoot(resolveRoot(env.THUNDERD_RUNTIME_DIR, path.join(repoRoot, 'daemon', '.runtime')), homeDir, 'runtime directory');
-  const downloadDir = assertSafeWritableRoot(resolveRoot(env.THUNDERD_DOWNLOAD_DIR, path.join(repoRoot, 'downloads')), homeDir, 'download directory');
-  const selectedEngineMode = engineMode(env.THUNDERD_ENGINE_MODE);
-  const windowsProfileRoot = assertSafeWritableRoot(resolveRoot(env.THUNDERD_WINDOWS_PROFILE_ROOT, path.join(runtimeDir, 'windows-native')), homeDir, 'Windows engine profile directory');
-  const windowsProgramDir = env.THUNDERD_WINDOWS_PROGRAM_DIR ? path.resolve(env.THUNDERD_WINDOWS_PROGRAM_DIR) : '';
-  const windowsSdkVersionName = env.THUNDERD_WINDOWS_SDK_VERSION || versionNameFromProgramDir(windowsProgramDir, '25.0.82.1562');
+// THUNDERD_CONFIG 白名单：文件只允许承载非 secret 的常规配置（环境变量名 → 当前读取点全集）。
+const CONFIG_FILE_KEYS = new Set([
+  'THUNDERD_PORT', 'THUNDERD_HOST', 'THUNDERD_ENGINE_MODE', 'THUNDERD_PROGRAM_DIR',
+  'THUNDERD_RUNTIME_DIR', 'THUNDERD_DOWNLOAD_DIR', 'THUNDERD_CONTROL_SOCKET',
+  'THUNDERD_MAX_BODY_BYTES', 'THUNDERD_MAX_TORRENT_UPLOAD_BYTES', 'THUNDERD_MAX_CAPTURE_BODY_BYTES',
+  'THUNDERD_MAGNET_TIMEOUT_SEC', 'THUNDERD_VERSION', 'THUNDERD_VIP_ENABLED',
+  'THUNDERD_ALLOW_POWER_ACTIONS', 'THUNDERD_CSRF', 'THUNDERD_LEGACY_RPC', 'THUNDERD_WEBUI_DIR',
+  'THUNDERD_SDK_VERSION_NAME', 'THUNDERD_SDK_VERSION_CODE', 'THUNDERD_SDK_PLATFORM',
+  'WINEPREFIX', 'THUNDERD_CAPTURE_CLIENT_CONFIG',
+]);
+// secret 类键永不入文件：RPC secret / CSRF token / 凭据只能走环境变量。
+const CONFIG_FILE_FORBIDDEN = /(?:SECRET|TOKEN|PASSWORD|PASSKEY|SESSION|CREDENTIAL|AUTH)/i;
+
+function mergeConfigFile({ env, configPath, readFileImpl }) {
+  if (!configPath) return env;
+  const text = readFileImpl(path.resolve(configPath), 'utf8');
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { throw new Error(`THUNDERD_CONFIG is not valid JSON: ${e.message}`); }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('THUNDERD_CONFIG must contain a JSON object');
+  }
+  const merged = { ...env };
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+      throw new Error(`THUNDERD_CONFIG: ${key} must be a string, number or boolean`);
+    }
+    if (CONFIG_FILE_FORBIDDEN.test(key)) {
+      throw new Error(`THUNDERD_CONFIG: secret key ${key} is not allowed in the config file`);
+    }
+    if (!CONFIG_FILE_KEYS.has(key)) {
+      throw new Error(`THUNDERD_CONFIG: unknown key ${key}`);
+    }
+    // 环境变量 > 文件 > 默认：文件只补未由环境变量提供的键。
+    if (merged[key] === undefined || merged[key] === '') merged[key] = String(value);
+  }
+  return merged;
+}
+
+function loadConfig({
+  env = {}, repoRoot = path.resolve(__dirname, '..', '..', '..'), homeDir = env.HOME || env.USERPROFILE || os.homedir(),
+  platform = process.platform, readFileImpl, configPath = env.THUNDERD_CONFIG || '',
+} = {}) {
+  const mergedEnv = mergeConfigFile({ env, configPath, readFileImpl: readFileImpl || ((file, encoding) => require('fs').readFileSync(file, encoding)) });
+  const runtimeDir = assertSafeWritableRoot(resolveRoot(mergedEnv.THUNDERD_RUNTIME_DIR, path.join(repoRoot, 'apps', 'daemon', '.runtime')), homeDir, 'runtime directory');
+  const downloadDir = assertSafeWritableRoot(resolveRoot(mergedEnv.THUNDERD_DOWNLOAD_DIR, path.join(repoRoot, 'downloads')), homeDir, 'download directory');
+  const selectedEngineMode = engineMode(mergedEnv.THUNDERD_ENGINE_MODE, platform);
+  const programDir = mergedEnv.THUNDERD_PROGRAM_DIR ? path.resolve(mergedEnv.THUNDERD_PROGRAM_DIR) : '';
+  const sdkVersionName = mergedEnv.THUNDERD_SDK_VERSION_NAME || versionNameFromProgramDir(programDir, '25.0.82.1562');
+  const isWindows = platform === 'win32';
+  // control socket：Linux 用 UDS；Windows 用 named pipe（net 模块对 \\.\pipe\ 前缀天然按管道处理）。
+  // 管道名含 runtimeDir 哈希，隔离多实例且避免路径长度限制。
+  const controlSocketPath = mergedEnv.THUNDERD_CONTROL_SOCKET || (isWindows
+    ? `\\\\.\\pipe\\thunderd-control-${crypto.createHash('sha256').update(runtimeDir).digest('hex').slice(0, 8)}`
+    : path.resolve(path.join(runtimeDir, 'thunderd-control.sock')));
+  // xlconfig（设备 ID 来源）：wine 走 prefix 的 Public 用户；native 走 %PUBLIC%。
+  const winePrefix = path.resolve(mergedEnv.WINEPREFIX || path.join(homeDir, '.wine-thunder'));
+  const xlconfigPath = isWindows
+    ? path.join(mergedEnv.PUBLIC || path.join(path.dirname(path.dirname(homeDir)), 'Public'), 'Thunder Network', 'Thunder', 'xlconfig.ini')
+    : path.join(winePrefix, 'drive_c', 'users', 'Public', 'Thunder Network', 'Thunder', 'xlconfig.ini');
   const config = {
     repoRoot: path.resolve(repoRoot),
     runtimeDir,
@@ -97,7 +154,7 @@ function loadConfig({ env = {}, repoRoot = path.resolve(__dirname, '..', '..', '
     privateSpaceSecretsPath: path.join(runtimeDir, 'secrets', 'private-space.json'),
     mediaSecretPath: path.join(runtimeDir, 'secrets', 'media-hmac.key'),
     captureSecretsPath: path.join(runtimeDir, 'secrets', 'capture.json'),
-    captureClientConfigPath: path.resolve(env.THUNDERD_CAPTURE_CLIENT_CONFIG || path.join(env.XDG_CONFIG_HOME || path.join(homeDir, '.config'), 'thunder', 'capture.json')),
+    captureClientConfigPath: path.resolve(mergedEnv.THUNDERD_CAPTURE_CLIENT_CONFIG || path.join(mergedEnv.XDG_CONFIG_HOME || path.join(homeDir, '.config'), 'thunder', 'capture.json')),
     remoteNodesPath: path.join(runtimeDir, 'data', 'remote-nodes.json'),
     remoteClientsPath: path.join(runtimeDir, 'secrets', 'remote-clients.json'),
     remoteSecretsDir: path.join(runtimeDir, 'secrets', 'remote'),
@@ -105,36 +162,33 @@ function loadConfig({ env = {}, repoRoot = path.resolve(__dirname, '..', '..', '
     dataDbPath: path.join(runtimeDir, 'data', 'thunder-data.db'),
     seedsDir: path.join(runtimeDir, 'seeds'),
     uploadsDir: path.join(runtimeDir, 'uploads'),
-    controlSocketPath: path.resolve(env.THUNDERD_CONTROL_SOCKET || path.join(runtimeDir, 'thunderd-control.sock')),
+    controlSocketPath,
     downloadDir,
     profileDir: path.join(runtimeDir, 'profile'),
-    winePrefix: path.resolve(env.WINEPREFIX || path.join(homeDir, '.wine-thunder')),
+    winePrefix,
+    xlconfigPath,
     engineMode: selectedEngineMode,
-    windowsProgramDir,
-    windowsProfileRoot,
-    windowsEngineMirrorDir: path.join(windowsProfileRoot, 'engine'),
-    windowsPythonExe: env.THUNDERD_WINDOWS_PYTHON ? path.resolve(env.THUNDERD_WINDOWS_PYTHON) : '',
-    windowsSdkVersionName,
-    windowsSdkVersionCode: positiveInt(env.THUNDERD_WINDOWS_SDK_VERSION_CODE, versionCodeFromName(windowsSdkVersionName), { min: 1 }),
-    windowsSdkPlatform: String(env.THUNDERD_WINDOWS_SDK_PLATFORM ?? (selectedEngineMode === 'windows-native' ? '0' : '64')),
-    windowsSdkGuid: String(env.THUNDERD_WINDOWS_SDK_GUID || ''),
-    wslDistroName: String(env.WSL_DISTRO_NAME || 'Ubuntu'),
-    port: positiveInt(env.THUNDERD_PORT, 16800, { min: 1, max: 65535 }),
-    host: env.THUNDERD_HOST || '127.0.0.1',
-    rpcSecret: typeof env.THUNDERD_RPC_SECRET === 'string' ? env.THUNDERD_RPC_SECRET : '',
-    maxBodyBytes: positiveInt(env.THUNDERD_MAX_BODY_BYTES, 8 * 1024 * 1024, { min: 1024, max: 64 * 1024 * 1024 }),
-    maxTorrentUploadBytes: positiveInt(env.THUNDERD_MAX_TORRENT_UPLOAD_BYTES, 20 * 1024 * 1024, { min: 1024, max: 100 * 1024 * 1024 }),
-    maxCaptureBodyBytes: positiveInt(env.THUNDERD_MAX_CAPTURE_BODY_BYTES, 1024 * 1024, { min: 1024, max: 4 * 1024 * 1024 }),
-    magnetTimeoutSec: positiveInt(env.THUNDERD_MAGNET_TIMEOUT_SEC, 120, { min: 30, max: 600 }),
-    version: env.THUNDERD_VERSION || '0.4.0',
-    vipEnabled: bool(env.THUNDERD_VIP_ENABLED, true),
-    allowPowerActions: bool(env.THUNDERD_ALLOW_POWER_ACTIONS, false),
-    csrfEnabled: bool(env.THUNDERD_CSRF, true),
-    legacyRpcEnabled: bool(env.THUNDERD_LEGACY_RPC, false),
-    webUiDir: path.resolve(env.THUNDERD_WEBUI_DIR || path.join(repoRoot, 'apps', 'webui', 'dist')),
+    programDir,
+    sdkVersionName,
+    sdkVersionCode: positiveInt(mergedEnv.THUNDERD_SDK_VERSION_CODE, versionCodeFromName(sdkVersionName), { min: 1 }),
+    sdkPlatform: String(mergedEnv.THUNDERD_SDK_PLATFORM ?? (selectedEngineMode === 'native' ? '0' : '64')),
+    port: positiveInt(mergedEnv.THUNDERD_PORT, 16800, { min: 1, max: 65535 }),
+    host: mergedEnv.THUNDERD_HOST || '127.0.0.1',
+    rpcSecret: typeof mergedEnv.THUNDERD_RPC_SECRET === 'string' ? mergedEnv.THUNDERD_RPC_SECRET : '',
+    maxBodyBytes: positiveInt(mergedEnv.THUNDERD_MAX_BODY_BYTES, 8 * 1024 * 1024, { min: 1024, max: 64 * 1024 * 1024 }),
+    maxTorrentUploadBytes: positiveInt(mergedEnv.THUNDERD_MAX_TORRENT_UPLOAD_BYTES, 20 * 1024 * 1024, { min: 1024, max: 100 * 1024 * 1024 }),
+    maxCaptureBodyBytes: positiveInt(mergedEnv.THUNDERD_MAX_CAPTURE_BODY_BYTES, 1024 * 1024, { min: 1024, max: 4 * 1024 * 1024 }),
+    magnetTimeoutSec: positiveInt(mergedEnv.THUNDERD_MAGNET_TIMEOUT_SEC, 120, { min: 30, max: 600 }),
+    version: mergedEnv.THUNDERD_VERSION || '0.4.0',
+    vipEnabled: bool(mergedEnv.THUNDERD_VIP_ENABLED, true),
+    allowPowerActions: bool(mergedEnv.THUNDERD_ALLOW_POWER_ACTIONS, false),
+    csrfEnabled: bool(mergedEnv.THUNDERD_CSRF, true),
+    legacyRpcEnabled: bool(mergedEnv.THUNDERD_LEGACY_RPC, false),
+    webUiDir: path.resolve(mergedEnv.THUNDERD_WEBUI_DIR || path.join(repoRoot, 'apps', 'webui', 'dist')),
   };
   return freezeDeep(config);
 }
 
 module.exports = { loadConfig, freezeDeep, assertSafeWritableRoot, positiveInt, parseListenAddress, engineMode,
-  versionCodeFromName, versionNameFromProgramDir };
+  versionCodeFromName, versionNameFromProgramDir, mergeConfigFile, CONFIG_FILE_KEYS };
+
