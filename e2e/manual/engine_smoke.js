@@ -6,7 +6,7 @@ const http = require('http');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..', '..');
 const runtime = path.join(repoRoot, 'apps', 'daemon', '.runtime-smoke');
 const saveDir = path.join(runtime, 'save');
 const winePath = (p) => 'Z:' + p.replace(/\//g, '\\');

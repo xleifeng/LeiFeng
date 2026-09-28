@@ -10,7 +10,7 @@ apps/
     engine/        原生引擎 JS（Wine 下驱动迅雷 SDK 的 dk_addon.node）
     host/src/      domain / services / repositories / rpc 源码；entry.mjs 为 launcher 入口
     host/plugins/  daemon 插件定义（一插件一文件 + index.cjs 汇总）
-    test/          unit / architecture / integration / regression
+    test/          unit / architecture / regression
   web-api/         外部 HTTP 网关：JSON-RPC、静态 WebUI、mTLS 远程面
   webui/           原生风格 WebUI（Vue 3 + Vite + Playwright 像素验收）
   bridge/          桥：5 插件树 + Recipient 三角色 + E4 批量输入
@@ -18,6 +18,7 @@ packages/
   runtime/         profile launcher（composeProfile / bootProfile / runCli）
   daemon-client/   control socket 客户端 SDK
 vendor/cordis/     上游 pin 收编（vendor/README.md 记来源与修改日志）
+e2e/               跨 app 验收：真 daemon + Web API + Wine 引擎（npm run test:e2e，串行）
 scripts/           入口守卫等门禁
 docs/              本地过程文档：spec / plan / 报告（gitignored）
 recon/             逆向调研材料（gitignored）
@@ -33,6 +34,7 @@ npm run build:vendor                   # esbuild 构建 vendored cordis 的 lib/
 npm test --workspaces --if-present     # 全量测试（daemon / web-api / runtime / bridge）
 npm run test:vendor                    # Cordis Fiber 生命周期用例
 npm run test:entrypoints               # 入口守卫：拒绝绕过 profile launcher 的旁路
+npm run test:e2e                       # 跨 app 验收（需本机 Wine 引擎，串行；wine 包装在 /home/yj/bin）
 
 # 三 profile 启动（详见 apps/daemon/README.md 与 apps/bridge/README.md）
 node apps/daemon/host/src/entry.mjs --profile thunderd                  # 全量：core + Web API 子进程

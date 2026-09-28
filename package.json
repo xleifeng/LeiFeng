@@ -17,6 +17,7 @@
     "postinstall": "npm run build:vendor",
     "build:vendor": "node vendor/cordis/build.mjs",
     "test:vendor": "node --test vendor/cordis/test/*.test.mjs",
+    "test:e2e": "node apps/daemon/test/prepare-tmpdir.js && node --test --test-concurrency=1 e2e/*.it.test.js",
     "test:entrypoints": "node scripts/verify-application-entrypoints.mjs"
   },
   "devDependencies": {

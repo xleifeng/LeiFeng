@@ -11,7 +11,6 @@
     "test:unit": "node test/prepare-tmpdir.js && node --test test/unit/*.test.js",
     "test:architecture": "node --test test/architecture/*.test.js",
     "test:web-api": "node test/prepare-tmpdir.js && node --test ../web-api/test/*.test.js",
-    "test:integration": "node test/prepare-tmpdir.js && node --test --test-concurrency=1 test/integration/*.test.js",
     "setup:remote": "node host/bin/setup-remote-pki.js",
     "monitor:ubuntu-vip": "node monitor-ubuntu-vip.js"
   },

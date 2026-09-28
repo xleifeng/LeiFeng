@@ -24,9 +24,9 @@
 ## 开发与构建
 
 ```bash
-npm --prefix webui install
-npm --prefix webui test
-npm --prefix webui run build
+npm --prefix apps/webui install
+npm --prefix apps/webui test
+npm --prefix apps/webui run build
 ```
 
 构建输出在 `webui/dist/`，由 daemon 同端口提供：
@@ -38,15 +38,15 @@ http://127.0.0.1:16800/
 开发服务器默认监听 5173，并把 `/jsonrpc` 代理到 `127.0.0.1:16800`：
 
 ```bash
-npm --prefix webui run dev
+npm --prefix apps/webui run dev
 ```
 
 完整验证：
 
 ```bash
-npm --prefix webui run typecheck
-npm --prefix webui test
-npm --prefix webui run test:e2e
+npm --prefix apps/webui run typecheck
+npm --prefix apps/webui test
+npm --prefix apps/webui run test:e2e
 node --test daemon/test/unit/*.test.js daemon/test/architecture/*.test.js
 ```
 
@@ -54,9 +54,9 @@ node --test daemon/test/unit/*.test.js daemon/test/architecture/*.test.js
 
 ```bash
 THUNDERD_RUN_CREATE_V2_BT_IT=1 THUNDERD_CREATE_V2_BT_PORT=16921 \
-  node --test daemon/test/integration/create-v2-bt.it.test.js
+  node --test --test-concurrency=1 e2e/create-v2-bt.it.test.js
 THUNDERD_RUN_TASK_OPERATIONS_IT=1 THUNDERD_TASK_OPERATIONS_PORT=16945 \
-  node --test daemon/test/integration/task-operations-v2.it.test.js
+  node --test --test-concurrency=1 e2e/task-operations-v2.it.test.js
 ```
 
 ## 资源与许可

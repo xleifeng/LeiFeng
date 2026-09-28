@@ -1,7 +1,7 @@
 'use strict';
 
 // Local, deterministic BT acceptance. Run with:
-// THUNDERD_RUN_CREATE_V2_BT_IT=1 node --test --test-concurrency=1 daemon/test/integration/create-v2-bt.it.test.js
+// THUNDERD_RUN_CREATE_V2_BT_IT=1 node --test --test-concurrency=1 e2e/create-v2-bt.it.test.js
 // The tracker and seeder stay on loopback; no public torrent or user directory is touched.
 // 串行跑是硬要求：node --test 默认按文件并行，4 个全新 WINEPREFIX 同时 wineboot 抢磁盘/CPU，
 // 引擎 gen1-3 boot 超时、gen4 刚起即建 BT 任务 → 立即 nativeCode 20000（2026-09-26 实测；串行单跑稳定绿）。
@@ -16,9 +16,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const enabled = process.env.THUNDERD_RUN_CREATE_V2_BT_IT === '1';
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..');
 const rpcPort = Number(process.env.THUNDERD_CREATE_V2_BT_PORT || 16921);
-// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（test:integration 脚本已统一导 TMPDIR）
+// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（根 test:e2e 脚本已统一导 TMPDIR）
 const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-bt-runtime-'));
 const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-bt-download-'));
 // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0

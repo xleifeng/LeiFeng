@@ -1,5 +1,5 @@
 'use strict';
-// 五链路集成（真 daemon + 真 Wine 引擎）。运行: node --test daemon/test/integration/
+// 五链路集成（真 daemon + 真 Wine 引擎）。运行: node --test e2e/
 // 断言依据 = Task 0 RESULTS.md 的实测语义（stop/resume/delete/restart/404）。
 const test = require('node:test');
 const assert = require('node:assert');
@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { rpc } = require('./helpers/fixture-server');
 
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..');
 const PORT = 16899;
 // 临时目录纪律：/tmp 是配额 tmpfs（写满连 Bash 工具都会失灵），测试临时物走家目录
 const tmpBase = process.env.THUNDERD_IT_TMP || path.join(process.env.HOME, 'tmp');

@@ -1,5 +1,5 @@
 'use strict';
-// 多协议集成冒烟（真 daemon + 真 Wine 引擎）。运行: node --test daemon/test/integration/download-protocols.it.test.js
+// 多协议集成冒烟（真 daemon + 真 Wine 引擎）。运行: node --test e2e/download-protocols.it.test.js
 //
 // 策略（与daemon.it.test.js 同）：
 //   - HTTP 冒烟可跑（复用fixture-server），验 daemon 协议扩展后 仍能下 HTTP。
@@ -15,7 +15,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { startFixture, rpc } = require('./helpers/fixture-server');
 
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..');
 const PORT = 16898; // 与 daemon.it.test.js（16899）错开，同机并行不撞端口
 // 每轮 mkdtemp 隔离：固定目录跨轮残留旧 fixture.bin，引擎撞名落 fixture(1).bin，
 // sha 断言读到旧文件必假性失败（2026-09-24 实测）。需要保留证据时导 THUNDERD_IT_SAVE

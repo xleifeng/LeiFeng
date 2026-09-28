@@ -2,8 +2,8 @@
 
 // Real policy acceptance. Opt in with THUNDERD_RUN_POLICIES_IT=1.
 const test = require('node:test'); const assert = require('node:assert/strict'); const http = require('node:http'); const fs = require('node:fs'); const os = require('node:os'); const path = require('node:path'); const { spawn } = require('node:child_process');
-const enabled = process.env.THUNDERD_RUN_POLICIES_IT === '1'; const repoRoot = path.resolve(__dirname, '..', '..', '..', '..'); const port = Number(process.env.THUNDERD_POLICIES_PORT || 16950);
-// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（test:integration 脚本已统一导 TMPDIR）
+const enabled = process.env.THUNDERD_RUN_POLICIES_IT === '1'; const repoRoot = path.resolve(__dirname, '..'); const port = Number(process.env.THUNDERD_POLICIES_PORT || 16950);
+// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（根 test:e2e 脚本已统一导 TMPDIR）
 const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-policy-runtime-')); const downloads = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-policy-download-'));
 // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
 const winePrefix = process.env.THUNDERD_IT_WINEPREFIX || path.join(process.env.HOME, 'tmp', `tlei-it-wine-${path.basename(runtime)}`); let daemon;

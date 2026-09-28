@@ -156,7 +156,7 @@ node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 │   │   ├── host/plugins/  daemon 插件定义（见下方插件清单）
 │   │   ├── integration/   桌面集成（协议关联、浏览器捕获）
 │   │   ├── run.sh         一键启动（预检 + 前台运行）
-│   │   └── test/          unit / architecture / integration / regression
+│   │   └── test/          unit / architecture / regression
 │   ├── web-api/           外部 HTTP 网关进程：JSON-RPC、静态 WebUI、mTLS 远程面
 │   ├── webui/             Web 界面（Vue 3 + Vite，Playwright 像素验收）
 │   └── bridge/            P2SP→BT 混合加速桥（领域码 + 桥插件定义）
@@ -164,6 +164,7 @@ node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 │   ├── runtime/           装配框架：profile launcher（composeProfile / bootProfile / runCli）
 │   └── daemon-client/     control socket 客户端 SDK
 ├── vendor/cordis/         上游 Cordis 固定 commit 收编（来源与修改日志在内）
+├── e2e/                   跨 app 验收（真 daemon + Web API + Wine 引擎三件套，串行跑）
 ├── scripts/               门禁脚本（入口守卫等）
 ├── thunder_x/             引擎运行时（gitignored，自行放置）
 └── docs/                  本地过程文档（gitignored）
@@ -205,6 +206,8 @@ node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 npm test --workspaces --if-present   # 全量（daemon 393 + web-api 11 + runtime 8 + bridge 25）
 npm run test:vendor                  # vendored Cordis Fiber 生命周期
 npm run test:entrypoints             # 入口守卫（禁止绕过 launcher）
+npm run test:e2e                     # 跨 app 验收（需本机 Wine 引擎与 thunder_x，串行约 10 分钟；
+                                     #   v2 开关测试的用法见 apps/daemon/README.md）
 ```
 
 进一步阅读：[ARCHITECTURE.md](ARCHITECTURE.md)（分层与依赖规则）、[apps/daemon/README.md](apps/daemon/README.md)（RPC 全量示例）、[apps/bridge/README.md](apps/bridge/README.md)（桥详解）、[vendor/README.md](vendor/README.md)（vendored Cordis 来源）。

@@ -11,9 +11,9 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 
 const enabled = process.env.THUNDERD_RUN_TASK_OPERATIONS_IT === '1';
-const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
+const repoRoot = path.resolve(__dirname, '..');
 const port = Number(process.env.THUNDERD_TASK_OPERATIONS_PORT || 16940);
-// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（test:integration 脚本已统一导 TMPDIR）
+// 临时目录纪律：/tmp 是配额 tmpfs，走家目录（根 test:e2e 脚本已统一导 TMPDIR）
 const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-ops-runtime-'));
 const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-ops-download-'));
 const targetDir = path.join(downloadDir, 'moved');
