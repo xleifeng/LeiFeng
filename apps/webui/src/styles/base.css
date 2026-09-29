@@ -21,39 +21,14 @@ h1, h2, h3, h4 { color: var(--md-on-surface); }
 mdui-button.danger-action::part(button) { background: var(--md-error); color: rgb(var(--mdui-color-on-error, 255, 255, 255)); }
 mdui-button.danger-outline::part(button) { background: var(--md-error-container); color: var(--md-on-error-container); }
 
-/* ---- M3 输入（filled text field 风：container 底 + 下划线态） ---- */
-.lf-input, .settings-card input:not([type='checkbox']), .settings-card select,
-.data-toolbar input, .data-toolbar select, .link-save-bar input, .private-out-row input,
-.private-action-panel input, .schedule-dialog input:not([type='checkbox']), .schedule-dialog select,
-.link-detail-tags input {
-  min-height: 40px; padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md);
-  color: var(--md-on-surface); background: var(--md-surface-container-low); font-size: 13.5px;
-  transition: border-color var(--md-motion-fast), box-shadow var(--md-motion-fast), background var(--md-motion-fast);
-}
-.lf-input:focus, .settings-card input:not([type='checkbox']):focus, .settings-card select:focus,
-.data-toolbar input:focus, .data-toolbar select:focus, .link-save-bar input:focus, .private-out-row input:focus,
-.private-action-panel input:focus, .schedule-dialog input:not([type='checkbox']):focus, .schedule-dialog select:focus,
-.link-detail-tags input:focus { border-color: var(--md-primary); background: var(--md-surface); box-shadow: var(--md-focus-ring); outline: none; }
-input[type='checkbox'], input[type='radio'] { accent-color: var(--md-primary); }
+/* ---- 表单控件：全部迁 mdui-text-field / mdui-select / mdui-checkbox / mdui-radio / mdui-switch（规范件） ---- */
 
 /* ---- M3 Switch：已迁 mdui-switch（规范件） ---- */
 
-/* ---- M3 弹窗骨架：28px 圆角 + scrim ---- */
-.modal-layer {
-  position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px;
-  background: rgb(0 0 0 / 32%);
-  animation: md-fade-in var(--md-motion-fast);
-}
-.modal-card {
-  width: min(560px, calc(100vw - 48px)); max-height: calc(100vh - 64px); display: flex; flex-direction: column;
-  border-radius: var(--md-shape-xl); background: var(--md-surface-container-low); box-shadow: var(--md-elev-3);
-  animation: md-dialog-in var(--md-motion-med);
-}
-.modal-card.wide { width: min(800px, calc(100vw - 48px)); }
+/* ---- 弹窗骨架：已迁 mdui-dialog（scrim/圆角/动效/层级全规范自带）。
+   modal-layer/modal-card/modal-body/modal-footer 已删；modal-header 仅任务详情抽屉沿用 ---- */
 .modal-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 12px; }
 .modal-header h2 { margin: 0; font-size: 21px; font-weight: 500; line-height: 28px; }
-.modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 24px 20px; color: var(--md-on-surface-variant); }
-.modal-footer { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 24px 22px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 @keyframes md-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes md-dialog-in { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
@@ -67,12 +42,7 @@ input[type='checkbox'], input[type='radio'] { accent-color: var(--md-primary); }
 .data-row, .private-task-row { transition: background var(--md-motion-fast); }
 .data-row:hover, .private-task-row:hover { background: var(--md-surface-container); }
 
-/* ---- M3 chip / 徽标 ---- */
-.tag-list em, .link-detail-tags span {
-  padding: 4px 12px; border-radius: var(--md-shape-sm);
-  color: var(--md-on-primary-container); background: var(--md-primary-container);
-  font-size: 11.5px; font-style: normal; font-weight: 500;
-}
+/* ---- chip / 徽标：已迁 mdui-chip / mdui-badge（规范件） ---- */
 .lf-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: var(--md-shape-full); font-size: 11.5px; font-weight: 500; }
 .lf-chip.is-accent { color: var(--md-on-primary-container); background: var(--md-primary-container); }
 .lf-chip.is-danger { color: var(--md-on-error-container); background: var(--md-error-container); }

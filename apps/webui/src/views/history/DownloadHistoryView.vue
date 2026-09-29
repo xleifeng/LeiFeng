@@ -27,7 +27,7 @@ async function redownload(item: HistoryItem) { try { const draft = await createD
   <PageShell title="下载记录" subtitle="记录与本地文件相互独立" class="history-page">
     <template #actions><button class="page-quiet-action" :disabled="!query.data.value?.items.length" @click="clear"><Trash2 :size="16" />清空记录</button></template>
     <template #subhead>
-    <div class="filter-bar"><label class="search-box"><Clock3 :size="16" /><input v-model="search" placeholder="搜索历史" /></label><select v-model="result" aria-label="下载结果"><option value="">全部结果</option><option value="completed">已完成</option><option value="failed">失败</option><option value="removed">已删除</option></select></div>
+    <div class="filter-bar"><label class="search-box"><Clock3 :size="16" /><input v-model="search" placeholder="搜索历史" /></label><mdui-select variant="outlined" :value="result" aria-label="下载结果" @change="result = ($event.target as HTMLInputElement).value"><mdui-menu-item value="">全部结果</mdui-menu-item><mdui-menu-item value="completed">已完成</mdui-menu-item><mdui-menu-item value="failed">失败</mdui-menu-item><mdui-menu-item value="removed">已删除</mdui-menu-item></mdui-select></div>
     </template>
     <p v-if="error" class="settings-error">{{ error }}</p>
     <div v-if="query.isPending.value" class="data-loading">正在读取下载记录…</div>

@@ -120,9 +120,8 @@
 .settings-card .settings-check { display: flex; grid-column: 1 / -1; align-items: center; gap: 12px; }
 .settings-card > .secondary-button { grid-column: 2; justify-self: start; }
 .link-source { display: block; padding: 12px 14px; overflow-wrap: anywhere; border-radius: var(--md-shape-md); color: var(--md-on-surface-variant); background: var(--md-surface-container); font-size: 12.5px; }
-.speed-limit-popover, .queue-position-menu { display: grid; gap: 2px; min-width: 160px; padding: 6px 0; border-radius: var(--md-shape-md); background: var(--md-surface-container); box-shadow: var(--md-elev-2); }
-.speed-limit-popover button, .queue-position-menu button { padding: 9px 14px; color: var(--md-on-surface); text-align: left; font-size: 12.5px; }
-.speed-limit-popover button:hover, .queue-position-menu button:hover { background: color-mix(in srgb, var(--md-on-surface) 7%, transparent); }
+.speed-limit-popover, .queue-position-menu { min-width: 180px; margin-top: 8px; }
+.speed-limit-custom { padding: 4px 10px 8px; }
 
 @media (max-width: 760px) {
   .data-page, .settings-page { padding: 14px 16px 40px; }

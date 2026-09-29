@@ -17,7 +17,9 @@ describe('ConnectionSecretDialog', () => {
     window.dispatchEvent(new CustomEvent(RPC_AUTH_REQUIRED_EVENT))
     await nextTick()
     expect(wrapper.get('[role="dialog"]').isVisible()).toBe(true)
-    await wrapper.get('#rpc-secret').setValue('browser-secret')
+    const field = wrapper.get('#rpc-secret')
+    ;(field.element as HTMLInputElement).value = 'browser-secret'
+    await field.trigger('input')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(mocks.getBootstrapV2).toHaveBeenCalledOnce()

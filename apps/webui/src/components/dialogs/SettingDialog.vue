@@ -225,53 +225,53 @@ async function restore() {
 
           <div class="settings-rule settings-mode-separator" />
           <h2>下载模式</h2>
-          <label class="settings-radio-row"><input type="radio" name="download-mode" :checked="!limited" @change="setFullSpeed" />全速下载</label>
+          <label class="settings-radio-row"><mdui-radio :checked="!limited" @change="setFullSpeed"></mdui-radio>全速下载</label>
           <div class="settings-radio-action-row">
-            <label class="settings-radio-row"><input type="radio" name="download-mode" :checked="limited" @change="openLimitSpeed" />限速下载</label>
-            <button class="settings-inline-button" @click="openLimitSpeed">修改配置</button>
-            <button v-if="limited" class="settings-text-button" @click="restore">恢复运行时限速</button>
+            <label class="settings-radio-row"><mdui-radio :checked="limited" @change="openLimitSpeed"></mdui-radio>限速下载</label>
+            <mdui-button variant="tonal" class="settings-inline-button" @click="openLimitSpeed">修改配置</mdui-button>
+            <mdui-button v-if="limited" variant="text" class="settings-text-button" @click="restore">恢复运行时限速</mdui-button>
           </div>
         </section>
 
         <section v-else-if="activeSection === 'download'" class="settings-section">
           <h1>下载设置</h1>
           <h2>目录与资源</h2>
-          <label class="settings-field-row is-wide"><span>默认下载目录</span><input :value="form.draft.defaultDownloadPath" placeholder="请选择下载目录" @input="form.patch({ defaultDownloadPath: ($event.target as HTMLInputElement).value })" /></label>
-          <label class="settings-field-row"><span>同时下载最大任务数</span><input type="number" min="1" max="100" :value="form.draft.maxConcurrentTasks" @input="form.patch({ maxConcurrentTasks: Math.min(100, Math.max(1, Math.round(numberValue($event, 5)))) })" /></label>
-          <label class="settings-field-row"><span>最大连接数</span><input type="number" min="1" max="10000" :value="form.draft.globalConnectionLimit ?? ''" placeholder="跟随引擎默认" @input="form.patch({ globalConnectionLimit: nullableNumber($event) })" /></label>
+          <label class="settings-field-row is-wide"><span>默认下载目录</span><mdui-text-field variant="outlined" :value="form.draft.defaultDownloadPath" placeholder="请选择下载目录" @input="form.patch({ defaultDownloadPath: ($event.target as HTMLInputElement).value })"></mdui-text-field></label>
+          <label class="settings-field-row"><span>同时下载最大任务数</span><mdui-text-field variant="outlined" type="number" min="1" max="100" :value="String(form.draft.maxConcurrentTasks)" @input="form.patch({ maxConcurrentTasks: Math.min(100, Math.max(1, Math.round(numberValue($event, 5)))) })"></mdui-text-field></label>
+          <label class="settings-field-row"><span>最大连接数</span><mdui-text-field variant="outlined" type="number" min="1" max="10000" :value="form.draft.globalConnectionLimit === null ? '' : String(form.draft.globalConnectionLimit)" placeholder="跟随引擎默认" @input="form.patch({ globalConnectionLimit: nullableNumber($event) })"></mdui-text-field></label>
 
           <div class="settings-rule" />
           <h2>网络通道</h2>
           <label class="settings-toggle-row"><mdui-switch :checked="form.draft.p2pEnabled" @change="form.patch({ p2pEnabled: booleanValue($event) })"></mdui-switch>启用 P2P 加速</label>
           <label class="settings-toggle-row"><mdui-switch :checked="form.draft.p2sEnabled" @change="form.patch({ p2sEnabled: booleanValue($event) })"></mdui-switch>启用镜像 / P2S 加速</label>
-          <div class="settings-sub-action"><span>代理模式：{{ form.draft.proxy.mode === 'direct' ? '不使用代理' : form.draft.proxy.mode.toUpperCase() }}</span><button class="settings-inline-button proxy-settings-trigger" @click="openProxy">代理设置</button></div>
+          <div class="settings-sub-action"><span>代理模式：{{ form.draft.proxy.mode === 'direct' ? '不使用代理' : form.draft.proxy.mode.toUpperCase() }}</span><mdui-button variant="tonal" class="settings-inline-button proxy-settings-trigger" @click="openProxy">代理设置</mdui-button></div>
         </section>
 
         <section v-else-if="activeSection === 'tasks'" class="settings-section">
           <h1>任务管理</h1>
           <h2>队列</h2>
           <label class="settings-toggle-row"><mdui-switch :checked="form.draft.autoMoveSlowTaskToTail" @change="form.patch({ autoMoveSlowTaskToTail: booleanValue($event) })"></mdui-switch>低速任务自动移到队尾</label>
-          <label class="settings-field-row"><span>低速判定阈值（B/s）</span><input type="number" min="0" :value="form.draft.slowTaskThresholdBytesPerSecond" @input="form.patch({ slowTaskThresholdBytesPerSecond: Math.max(0, Math.round(numberValue($event, 0))) })" /></label>
+          <label class="settings-field-row"><span>低速判定阈值（B/s）</span><mdui-text-field variant="outlined" type="number" min="0" :value="String(form.draft.slowTaskThresholdBytesPerSecond)" @input="form.patch({ slowTaskThresholdBytesPerSecond: Math.max(0, Math.round(numberValue($event, 0))) })"></mdui-text-field></label>
           <div class="settings-rule" />
           <h2>空闲下载</h2>
-          <label class="settings-field-row"><span>空闲判定时间（秒）</span><input type="number" min="60" max="86400" :value="form.draft.idleDownload.idleAfterSeconds" @input="form.patch({ idleDownload: { ...form.draft!.idleDownload, idleAfterSeconds: Math.min(86400, Math.max(60, Math.round(numberValue($event, 900)))) } })" /></label>
+          <label class="settings-field-row"><span>空闲判定时间（秒）</span><mdui-text-field variant="outlined" type="number" min="60" max="86400" :value="String(form.draft.idleDownload.idleAfterSeconds)" @input="form.patch({ idleDownload: { ...form.draft!.idleDownload, idleAfterSeconds: Math.min(86400, Math.max(60, Math.round(numberValue($event, 900)))) } })"></mdui-text-field></label>
           <label class="settings-toggle-row"><mdui-switch :checked="form.draft.idleDownload.pauseOnActivity" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, pauseOnActivity: booleanValue($event) } })"></mdui-switch>检测到活动时暂停空闲下载</label>
         </section>
 
         <section v-else-if="activeSection === 'automation'" class="settings-section">
           <h1>计划任务</h1>
           <h2>定时与完成动作</h2>
-          <label class="settings-field-row"><span>所有任务完成后</span><select :value="form.draft.completionAction" @change="form.patch({ completionAction: completionActionValue($event) })"><option value="none">不执行操作</option><option value="pause-all">暂停全部任务</option><option value="stop-engine">停止下载引擎</option><option value="suspend">系统睡眠</option><option value="poweroff">系统关机</option></select></label>
-          <div class="settings-sub-action"><span>创建按星期和本地时间执行的下载计划</span><button class="settings-inline-button" @click="openSchedules">管理计划任务</button></div>
+          <label class="settings-field-row"><span>所有任务完成后</span><mdui-select variant="outlined" :value="form.draft.completionAction" @change="form.patch({ completionAction: completionActionValue($event) })"><mdui-menu-item value="none">不执行操作</mdui-menu-item><mdui-menu-item value="pause-all">暂停全部任务</mdui-menu-item><mdui-menu-item value="stop-engine">停止下载引擎</mdui-menu-item><mdui-menu-item value="suspend">系统睡眠</mdui-menu-item><mdui-menu-item value="poweroff">系统关机</mdui-menu-item></mdui-select></label>
+          <div class="settings-sub-action"><span>创建按星期和本地时间执行的下载计划</span><mdui-button variant="tonal" class="settings-inline-button" @click="openSchedules">管理计划任务</mdui-button></div>
           <div class="settings-rule" />
           <h2>会员下载加速</h2>
-          <div class="settings-sub-action"><span>查看账号、Peer ID 和任务级加速状态</span><button class="settings-inline-button" @click="openVip">查看加速状态</button></div>
+          <div class="settings-sub-action"><span>查看账号、Peer ID 和任务级加速状态</span><mdui-button variant="tonal" class="settings-inline-button" @click="openVip">查看加速状态</mdui-button></div>
         </section>
 
         <footer v-if="form.dirty || form.error || notice" class="settings-window-savebar">
           <span v-if="form.error" class="settings-save-message is-error">{{ form.error }}</span>
           <span v-else-if="notice" class="settings-save-message">{{ notice }}</span>
-          <button class="settings-save-button" :disabled="!form.dirty || form.saving" @click="save">{{ form.saving ? '保存中…' : '保存设置' }}</button>
+          <mdui-button variant="filled" class="settings-save-button" :disabled="!form.dirty || form.saving" @click="save">{{ form.saving ? '保存中…' : '保存设置' }}</mdui-button>
         </footer>
       </template>
     </main>

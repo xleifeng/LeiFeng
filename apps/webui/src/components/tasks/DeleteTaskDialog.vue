@@ -30,7 +30,7 @@ async function confirm() {
   <ModalShell :title="command === 'delete-permanently' ? '彻底删除任务' : '移入回收站'" @close="overlay.close">
     <div class="operation-dialog-body">
       <p>已选择 {{ props.tasks.length }} 个任务。请确认要执行的本地文件策略。</p>
-      <label v-if="command !== 'delete-permanently'" class="operation-choice"><input v-model="command" type="radio" value="recycle" />仅移入回收站，保留本地文件</label>
+      <label v-if="command !== 'delete-permanently'" class="operation-choice"><mdui-radio :checked="command === 'recycle'" @change="command = 'recycle'"></mdui-radio>仅移入回收站，保留本地文件</label>
       <label v-if="command !== 'delete-permanently'" class="operation-choice"><mdui-checkbox :checked="deleteLocalFiles" @change="deleteLocalFiles = $event.target.checked" ></mdui-checkbox>同时删除本地文件</label>
       <label v-if="command === 'delete-permanently'" class="operation-choice"><mdui-checkbox :checked="deleteLocalFiles" @change="deleteLocalFiles = $event.target.checked" ></mdui-checkbox>同时永久删除本地文件</label>
       <p v-if="errorMessage" class="operation-error">{{ errorMessage }}</p>

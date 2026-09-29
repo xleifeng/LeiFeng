@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Eye, EyeOff, KeyRound, ShieldCheck } from '@lucide/vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { KeyRound, ShieldCheck } from '@lucide/vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { getBootstrapV2 } from '../../api/native-download/bootstrap'
 import { clearRpcSecret, RPC_AUTH_REQUIRED_EVENT, RpcProblemError, setRpcSecret } from '../../api/native-download/client'
@@ -9,11 +9,9 @@ const queryClient = useQueryClient()
 const open = ref(false)
 const secret = ref('')
 const remember = ref(true)
-const visible = ref(false)
 const pending = ref(false)
 const error = ref('')
 const input = ref<HTMLInputElement | null>(null)
-const inputType = computed(() => visible.value ? 'text' : 'password')
 
 function focusInput() { nextTick(() => input.value?.focus()) }
 function requireSecret() {
@@ -61,12 +59,7 @@ onBeforeUnmount(() => window.removeEventListener(RPC_AUTH_REQUIRED_EVENT, requir
       </div>
       <form class="connection-secret-form" @submit.prevent="connect">
         <label for="rpc-secret">RPC 访问密钥</label>
-        <div class="connection-secret-input" :class="{ 'has-error': error }">
-          <input id="rpc-secret" ref="input" v-model="secret" :type="inputType" autocomplete="current-password" spellcheck="false" placeholder="粘贴密钥" :disabled="pending" />
-          <button type="button" :aria-label="visible ? '隐藏密钥' : '显示密钥'" @click="visible = !visible">
-            <EyeOff v-if="visible" :size="18" /><Eye v-else :size="18" />
-          </button>
-        </div>
+        <mdui-text-field id="rpc-secret" ref="input" variant="outlined" type="password" toggle-password autocomplete="current-password" spellcheck="false" placeholder="粘贴密钥" :disabled="pending" :value="secret" @input="secret = ($event.target as HTMLInputElement).value" @keyup.enter="connect"></mdui-text-field>
         <p v-if="error" class="connection-secret-error" role="alert">{{ error }}</p>
         <label class="connection-secret-remember">
           <mdui-checkbox :checked="remember" @change="remember = $event.target.checked" :disabled="pending" ></mdui-checkbox>

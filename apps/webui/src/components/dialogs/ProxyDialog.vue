@@ -79,23 +79,23 @@ async function confirm() {
 </script>
 
 <template>
-  <div class="subdialog-canvas" @mousedown.self="backToSettings">
-    <section class="proxy-window" role="dialog" aria-modal="true" aria-label="代理设置">
-      <h1>添加代理/编辑代理</h1>
-      <button class="subdialog-close" aria-label="关闭代理设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></button>
+  <mdui-dialog open close-on-overlay-click close-on-esc role="dialog" aria-modal="true" aria-label="代理设置" class="proxy-dialog" @closed="backToSettings">
+    <div slot="headline" class="modal-shell-headline">
+      <span class="modal-shell-title">添加代理/编辑代理</span>
+      <mdui-button-icon aria-label="关闭代理设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></mdui-button-icon>
+    </div>
 
-      <label class="proxy-field is-name"><span>代理名称</span><input v-model="proxyName" placeholder="请输入" /></label>
-      <label class="proxy-field is-host"><span>服务器</span><input v-model="host" placeholder="请输入" /></label>
-      <label class="proxy-field is-port"><span>端口</span><input v-model.number="port" type="number" min="1" max="65535" /></label>
-      <fieldset class="proxy-type"><legend>类型</legend><div class="proxy-type-options"><label><input v-model="mode" type="radio" value="http" />HTTP</label><label><input v-model="mode" type="radio" value="socks5" />SOCKS5</label></div></fieldset>
-      <div class="proxy-auth"><span>验证</span><input v-model="username" autocomplete="username" placeholder="请输入" aria-label="代理用户名" /><input v-model="password" type="password" autocomplete="new-password" placeholder="请输入" aria-label="代理密码" /><button :disabled="testing" @click="runTest">{{ testing ? '测试中' : '测试' }}</button></div>
+    <label class="proxy-field is-name"><span>代理名称</span><mdui-text-field variant="outlined" :value="proxyName" placeholder="请输入" @input="proxyName = ($event.target as HTMLInputElement).value"></mdui-text-field></label>
+    <label class="proxy-field is-host"><span>服务器</span><mdui-text-field variant="outlined" :value="host" placeholder="请输入" @input="host = ($event.target as HTMLInputElement).value"></mdui-text-field></label>
+    <label class="proxy-field is-port"><span>端口</span><mdui-text-field variant="outlined" type="number" min="1" max="65535" :value="String(port)" @input="port = Number(($event.target as HTMLInputElement).value)"></mdui-text-field></label>
+    <fieldset class="proxy-type"><legend>类型</legend><div class="proxy-type-options"><label><mdui-radio :checked="mode === 'http'" @change="mode = 'http'"></mdui-radio>HTTP</label><label><mdui-radio :checked="mode === 'socks5'" @change="mode = 'socks5'"></mdui-radio>SOCKS5</label></div></fieldset>
+    <div class="proxy-auth"><span>验证</span><mdui-text-field variant="outlined" :value="username" autocomplete="username" placeholder="请输入" aria-label="代理用户名" @input="username = ($event.target as HTMLInputElement).value"></mdui-text-field><mdui-text-field variant="outlined" type="password" :value="password" autocomplete="new-password" placeholder="请输入" aria-label="代理密码" @input="password = ($event.target as HTMLInputElement).value"></mdui-text-field><mdui-button variant="tonal" :disabled="testing" @click="runTest">{{ testing ? '测试中' : '测试' }}</mdui-button></div>
 
-      <p v-if="errorMessage" class="subdialog-error">{{ errorMessage }}</p>
-      <p v-else-if="notice" class="subdialog-notice">{{ notice }}</p>
-      <footer class="subdialog-actions">
-        <button @click="backToSettings">取消</button>
-        <button class="confirm" :disabled="form.saving" @click="confirm">{{ form.saving ? '保存中…' : '确认' }}</button>
-      </footer>
-    </section>
-  </div>
+    <p v-if="errorMessage" class="subdialog-error">{{ errorMessage }}</p>
+    <p v-else-if="notice" class="subdialog-notice">{{ notice }}</p>
+    <div slot="action" class="modal-shell-footer">
+      <mdui-button variant="tonal" class="secondary-button" @click="backToSettings">取消</mdui-button>
+      <mdui-button variant="filled" class="primary-button" :disabled="form.saving" @click="confirm">{{ form.saving ? '保存中…' : '确认' }}</mdui-button>
+    </div>
+  </mdui-dialog>
 </template>

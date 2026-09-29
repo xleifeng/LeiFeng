@@ -83,7 +83,7 @@ import PageShell from '../../components/common/PageShell.vue'
     <template v-else>
       <div class="private-tools">
         <label class="search-box"><Search :size="16" /><input v-model="search" placeholder="搜索私人任务" /></label>
-        <label class="private-path-control"><input v-model="targetDirectory" placeholder="移出到普通下载目录" /></label>
+        <label class="private-path-control"><mdui-text-field variant="outlined" :value="targetDirectory" placeholder="移出到普通下载目录" @input="targetDirectory = ($event.target as HTMLInputElement).value"></mdui-text-field></label>
       </div>
       <div v-if="tasksQuery.isPending.value" class="data-loading">正在读取私人任务…</div>
       <div v-else-if="!tasksQuery.data.value?.items.length" class="data-empty"><span class="data-empty-icon"><FolderLock :size="30" :stroke-width="1.6" /></span><h2>私人空间暂无任务</h2><p>在下载任务菜单中选择“移入私人空间”。</p></div>

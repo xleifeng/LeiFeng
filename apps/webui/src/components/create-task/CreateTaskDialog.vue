@@ -35,7 +35,7 @@ function updateDraftSelection(draft: CreateDraftV2, indices: number[]) { create.
           <LinkDraftList :drafts="create.drafts" />
           <div v-if="create.preflightErrors.length" class="preflight-errors"><div v-for="item in create.preflightErrors" :key="`${item.value}:${item.code}`"><strong>{{ item.value }}</strong><span>{{ item.message }}</span></div></div>
           <SavePathPicker :model-value="create.savePath" :warnings="pathWarnings" @update:model-value="updateSavePath" @blur="validateSavePath" />
-          <div class="create-group-setting"><label><mdui-checkbox :checked="create.groupEnabled" @change="create.groupEnabled = $event.target.checked" ></mdui-checkbox>同时创建任务组</label><input v-if="create.groupEnabled" v-model="create.groupLabel" aria-label="任务组名称" placeholder="任务组名称（可选）" /></div>
+          <div class="create-group-setting"><label><mdui-checkbox :checked="create.groupEnabled" @change="create.groupEnabled = $event.target.checked" ></mdui-checkbox>同时创建任务组</label><mdui-text-field v-if="create.groupEnabled" variant="outlined" :value="create.groupLabel" aria-label="任务组名称" placeholder="任务组名称（可选）" @input="create.groupLabel = ($event.target as HTMLInputElement).value"></mdui-text-field></div>
           <div v-for="draft in create.drafts" :key="draft.draftId">
             <BtFileTree :draft="draft" @toggle="updateDraftSelection(draft, $event)" />
             <div v-if="draft.metadata.state === 'failed'" class="duplicate-card"><strong>磁力元数据获取失败</strong><span>可重试 metadata 任务，原始磁力链接仍保留。</span><mdui-button variant="tonal" class="secondary-button" @click="create.updateDraft(draft, { options: { retryMetadata: true } })">重试</mdui-button></div>

@@ -7,13 +7,6 @@
 .modal-shell-title { font-size: 21px; font-weight: 500; line-height: 28px; }
 .modal-shell-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 
-/* M3 radio：圆点描边 2px，选中 primary */
-.settings-radio-row input[type='radio'] {
-  appearance: none; -webkit-appearance: none; width: 20px; height: 20px; margin: 0; flex: 0 0 auto;
-  border: 2px solid var(--md-outline); border-radius: 50%; cursor: pointer;
-  transition: border-color var(--md-motion-fast), box-shadow var(--md-motion-fast);
-}
-.settings-radio-row input[type='radio']:checked { border-color: var(--md-primary); box-shadow: inset 0 0 0 3.5px var(--md-surface-container-low), inset 0 0 0 10px var(--md-primary); }
 
 /* ---- 设置（M3：大圆角居中 dialog，左导航 tonal pill） ---- */
 .settings-window {
@@ -57,23 +50,11 @@
 .settings-radio-row { width: fit-content; gap: 10px; }
 .settings-rule { height: 1px; margin: 22px 0; background: var(--md-outline-variant); }
 .settings-radio-action-row { display: flex; align-items: center; min-height: 40px; gap: 10px; }
-.settings-inline-button {
-  display: inline-flex; align-items: center; min-height: 34px; padding: 0 16px;
-  border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-full);
-  color: var(--md-primary); background: transparent; font-size: 13px; font-weight: 500;
-  transition: background var(--md-motion-fast);
-}
-.settings-inline-button:hover { background: color-mix(in srgb, var(--md-primary) 8%, transparent); }
-.settings-text-button { color: var(--md-primary); font-size: 12.5px; font-weight: 500; }
-.settings-text-button:hover { text-decoration: underline; }
+/* settings-inline-button / settings-text-button：mdui-button(tonal/text) 规范件，类名仅作钩子 */
 .settings-field-row { display: flex; align-items: center; width: min(580px, 100%); min-height: 52px; gap: 20px; color: var(--md-on-surface); font-size: 14px; }
 .settings-field-row > span { flex: 0 0 170px; color: var(--md-on-surface-variant); font-size: 13px; }
-.settings-field-row input, .settings-field-row select {
-  flex: 1; min-width: 0; height: 40px; padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md);
-  outline: none; color: var(--md-on-surface); background: var(--md-surface-container-low); font-size: 13.5px;
-  transition: border-color var(--md-motion-fast), box-shadow var(--md-motion-fast);
-}
-.settings-field-row input:focus, .settings-field-row select:focus { border-color: var(--md-primary); box-shadow: var(--md-focus-ring); }
+/* 字段行控件：mdui-text-field / mdui-select 宿主只管弹性布局（视觉由组件自带） */
+.settings-field-row mdui-text-field, .settings-field-row mdui-select { flex: 1; min-width: 0; }
 .settings-field-row.is-wide { width: 100%; }
 .settings-sub-action { display: flex; align-items: center; min-height: 48px; gap: 16px; color: var(--md-on-surface-variant); font-size: 13.5px; }
 
@@ -102,60 +83,40 @@
 }
 .settings-save-message { color: var(--md-success); font-size: 12.5px; }
 .settings-save-message.is-error { color: var(--md-error); }
-.settings-save-button {
-  min-width: 96px; height: 38px; border-radius: var(--md-shape-full);
-  color: var(--md-on-primary); background: var(--md-primary); font-size: 13.5px; font-weight: 600;
-}
-.settings-save-button:hover { background: var(--md-primary-hover); }
-.settings-save-button:disabled { color: var(--md-on-surface-variant); background: var(--md-surface-container-high); }
+.settings-save-button { min-width: 96px; }
 
-/* ---- 子弹窗（限速/代理） ---- */
-.subdialog-canvas { position: fixed; z-index: 160; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(0 0 0 / 32%); animation: md-fade-in var(--md-motion-fast); }
-.limit-speed-window, .proxy-window {
-  position: relative; overflow-y: auto; width: min(620px, calc(100vw - 48px)); max-height: calc(100vh - 64px);
-  padding: 24px 28px; border-radius: var(--md-shape-xl); background: var(--md-surface-container-low); box-shadow: var(--md-elev-3);
-  animation: md-dialog-in var(--md-motion-med);
-}
-.limit-speed-window h1, .proxy-window h1 { margin: 0 0 20px; font-size: 21px; font-weight: 500; }
-.subdialog-close { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--md-shape-full); color: var(--md-on-surface-variant); }
-.subdialog-close:hover { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
+/* ---- 限速/代理子弹窗：已迁 mdui-dialog；此处只管内部布局 ---- */
 .limit-enable-row, .limit-upload-row, .limit-schedule-row { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--md-on-surface); font-size: 13.5px; cursor: pointer; }
-.limit-enable-row input, .limit-upload-row input, .limit-schedule-row input { width: 18px; height: 18px; margin: 0; }
-.limit-download-controls { position: relative; height: 64px; margin: 12px 0 8px; }
+.limit-download-controls { display: grid; gap: 8px; margin: 12px 0 8px; }
 .limit-download-controls.disabled { opacity: .5; }
-.limit-range-shell { position: absolute; top: 8px; left: 8px; width: min(400px, calc(100% - 150px)); height: 6px; border-radius: var(--md-shape-full); background: linear-gradient(90deg, var(--md-primary) 0 var(--limit-progress), var(--md-surface-container-highest) var(--limit-progress) 100%); }
-.limit-range-shell input { position: absolute; inset: -8px 0; width: 100%; height: 22px; margin: 0; opacity: 0; cursor: pointer; }
-.limit-range-shell input:disabled { cursor: default; }
-.limit-scale { position: absolute; top: 34px; left: 0; display: flex; justify-content: space-between; width: min(415px, calc(100% - 135px)); color: var(--md-on-surface-variant); font-size: 11px; font-variant-numeric: tabular-nums; }
-.limit-number-field { position: absolute; top: 0; right: 0; display: flex; align-items: center; gap: 8px; color: var(--md-on-surface-variant); font-size: 13px; }
-.limit-number-field input { width: 78px; height: 36px; padding: 0 10px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md); color: var(--md-on-surface); background: var(--md-surface); }
+.limit-scale { position: relative; height: 14px; color: var(--md-on-surface-variant); font-size: 11px; font-variant-numeric: tabular-nums; }
+.limit-scale span { position: absolute; transform: translateX(-50%); }
+.limit-scale span:first-child { transform: none; }
+.limit-scale span:last-child { transform: translateX(-100%); }
+.limit-number-field { display: flex; align-items: center; justify-content: flex-end; gap: 8px; color: var(--md-on-surface-variant); font-size: 13px; }
+.limit-number-field mdui-text-field { width: 140px; }
 .limit-schedule-controls { display: grid; gap: 14px; margin: 10px 0 4px 26px; color: var(--md-on-surface-variant); font-size: 13px; }
 .limit-schedule-controls.disabled { opacity: .5; }
-.limit-schedule-controls > div { display: flex; align-items: center; height: 34px; }
+.limit-schedule-controls > div { display: flex; align-items: center; gap: 8px; }
 .limit-schedule-controls div > span { width: 96px; }
-.limit-schedule-controls select { width: 112px; height: 34px; padding: 0 10px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md); color: var(--md-on-surface); background: var(--md-surface); }
-.limit-schedule-controls i { width: 54px; padding-left: 14px; color: var(--md-on-surface-variant); font-style: normal; }
+.limit-schedule-controls mdui-select { width: 88px; }
+.limit-schedule-controls i { color: var(--md-on-surface-variant); font-style: normal; }
 .limit-upload-controls { display: inline-flex; align-items: center; gap: 8px; margin-left: 26px; color: var(--md-on-surface-variant); font-size: 13px; }
-.limit-upload-controls input { width: 92px; height: 34px; padding: 0 10px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md); color: var(--md-on-surface); background: var(--md-surface); }
-.subdialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.limit-upload-controls mdui-text-field { width: 140px; }
 .subdialog-error, .subdialog-notice { margin: 12px 0 0; color: var(--md-error); font-size: 12.5px; }
 .subdialog-notice { color: var(--md-success); }
 
 /* 代理 */
 .proxy-field { display: flex; align-items: center; gap: 14px; margin: 14px 0; color: var(--md-on-surface-variant); font-size: 13.5px; }
 .proxy-field > span { flex: 0 0 64px; }
-.proxy-field input { flex: 1; min-width: 0; height: 40px; padding: 0 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md); outline: none; color: var(--md-on-surface); background: var(--md-surface); }
-.proxy-field input:focus, .proxy-auth input:focus { border-color: var(--md-primary); box-shadow: var(--md-focus-ring); }
+.proxy-field mdui-text-field { flex: 1; min-width: 0; }
 .proxy-type { display: flex; align-items: center; gap: 14px; margin: 16px 0; border: 0; padding: 0; color: var(--md-on-surface-variant); font-size: 13.5px; }
 .proxy-type legend { float: left; width: 64px; padding-top: 9px; }
 .proxy-type-options { display: flex; align-items: center; gap: 24px; }
 .proxy-type label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.proxy-type input { width: 18px; height: 18px; margin: 0; }
 .proxy-auth { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--md-on-surface-variant); font-size: 13.5px; }
 .proxy-auth > span { flex: 0 0 58px; }
-.proxy-auth input { width: 116px; height: 38px; padding: 0 12px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md); outline: none; color: var(--md-on-surface); background: var(--md-surface); }
-.proxy-auth button { height: 38px; padding: 0 16px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-full); color: var(--md-primary); background: transparent; font-size: 13px; font-weight: 500; }
-.proxy-auth button:hover { background: color-mix(in srgb, var(--md-primary) 8%, transparent); }
+.proxy-auth mdui-text-field { flex: 1; min-width: 0; }
 
 /* ---- 关于（mdui-dialog 承载：scrim/动效/规范圆角自带） ---- */
 mdui-dialog.about-dialog::part(panel) { width: min(480px, calc(100vw - 48px)); }
@@ -177,19 +138,13 @@ mdui-dialog.about-dialog::part(panel) { width: min(480px, calc(100vw - 48px)); }
 
 /* ---- 连接密钥 ---- */
 .connection-secret-layer { z-index: 180; }
-.connection-secret-dialog { width: min(440px, calc(100vw - 48px)); overflow: hidden; }
+mdui-dialog.connection-secret-dialog::part(panel) { width: min(440px, calc(100vw - 48px)); }
 .connection-secret-hero { display: flex; align-items: center; gap: 14px; padding: 24px 24px 16px; }
 .connection-secret-hero h2 { margin: 0; font-size: 20px; font-weight: 500; }
 .connection-secret-hero p { margin: 4px 0 0; color: var(--md-on-surface-variant); font-size: 12.5px; }
 .connection-secret-icon { display: grid; flex: 0 0 48px; place-items: center; width: 48px; height: 48px; border-radius: var(--md-shape-md); color: var(--md-on-primary); background: var(--md-primary); }
 .connection-secret-form { display: grid; gap: 12px; padding: 18px 24px 18px; }
 .connection-secret-form > label:first-child { color: var(--md-on-surface-variant); font-size: 12.5px; font-weight: 500; }
-.connection-secret-input { display: flex; align-items: center; height: 44px; overflow: hidden; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-md); background: var(--md-surface); transition: border-color var(--md-motion-fast), box-shadow var(--md-motion-fast); }
-.connection-secret-input:focus-within { border-color: var(--md-primary); box-shadow: var(--md-focus-ring); }
-.connection-secret-input.has-error { border-color: var(--md-error); }
-.connection-secret-input input { flex: 1; min-width: 0; height: 100%; padding: 0 14px; border: 0; outline: 0; color: var(--md-on-surface); background: transparent; font: 13.5px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
-.connection-secret-input button { display: grid; flex: 0 0 44px; place-items: center; height: 100%; color: var(--md-on-surface-variant); }
-.connection-secret-input button:hover { color: var(--md-on-surface); }
 .connection-secret-error { margin: -2px 0 0; color: var(--md-error); font-size: 11.5px; }
 .connection-secret-remember { display: inline-flex; width: fit-content; align-items: center; gap: 8px; margin: 2px 0 4px; color: var(--md-on-surface-variant); font-size: 12.5px; cursor: pointer; }
 .connection-secret-submit { width: 100%; min-height: 44px; }

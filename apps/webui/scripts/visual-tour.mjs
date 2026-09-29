@@ -27,12 +27,14 @@ async function stubRoutes(page) {
         : body.method === 'leifeng.ui.v2.tasks.counts'
           ? { all: 3, active: 1, completed: 1, trash: 0, private: 0, repositoryRevision: 1 }
           : body.method === 'leifeng.ui.v2.tasks.query'
-            ? { items: input.view === 'completed' ? [doneTask] : input.view === 'trash' ? [] : [task, btTask], total: 2, nextCursor: null, snapshotRevision: 1, repositoryRevision: 1, counts: { all: 3, active: 1, completed: 1, trash: 0, private: 0, repositoryRevision: 1 } }
+            ? { items: input.view === 'completed' ? [doneTask] : input.view === 'trash' ? [] : [task, btTask], total: input.view === 'trash' ? 0 : input.view === 'completed' ? 1 : 2, nextCursor: null, snapshotRevision: 1, repositoryRevision: 1, counts: { all: 3, active: 1, completed: 1, trash: 0, private: 0, repositoryRevision: 1 } }
             : body.method === 'leifeng.ui.v2.plugins.list'
               ? { plugins: [] }
               : body.method === 'leifeng.ui.v2.daemon.status'
                 ? { pid: 1234, ppid: 1, version: 'tour-0.1.0', profile: 'thunderd', uptimeMs: 3723000, restartPending: false, memory: { rssBytes: 268435456, heapUsedBytes: 67108864 }, engine: { sdkReady: true, enginePid: 4321, restarts: 0, generation: 1 } }
-                : body.method === 'leifeng.ui.v2.policies.get'
+                : body.method === 'leifeng.ui.v2.schedules.getDownloadLimitWindow'
+                  ? { configured: true, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null, revision: 1, runtime: { applied: true, reason: 'ok' } }
+                  : body.method === 'leifeng.ui.v2.policies.get'
                   ? { revision: 1, lastApplied: null, fullSpeed: true, policy: { schemaVersion: 1, autoResumeUnfinished: true, openOnCompleteDefault: false, idleDownload: { enabled: false, idleAfterSeconds: 900, pauseOnActivity: true }, autoMoveSlowTaskToTail: false, slowTaskThresholdBytesPerSecond: 102400, maxConcurrentTasks: 5, globalConnectionLimit: null, globalDownloadLimit: null, globalUploadLimit: null, defaultDownloadPath: '/downloads', p2pEnabled: true, p2sEnabled: true, proxy: { mode: 'direct', host: '', port: null, username: '', passwordRef: null }, completionAction: 'none', scheduleIds: [], updatedAt: Date.now() } }
                   : {}
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: body?.id ?? 1, result }) })
@@ -78,6 +80,26 @@ await page.waitForTimeout(400)
 await settle()
 await page.screenshot({ path: `${outDir}/06-about.png` })
 await page.getByLabel('关闭关于 Leifeng').click().catch(() => {})
+
+// 限速弹窗（slider + select + text-field 验收）
+await page.keyboard.press('Escape').catch(() => {})
+await page.locator('.settings-link').click()
+await page.waitForSelector('[data-testid="settings-dialog"]')
+await page.getByRole('button', { name: '修改配置' }).click()
+await page.waitForSelector('mdui-dialog[aria-label="限速设置"]')
+await page.locator('mdui-dialog[aria-label="限速设置"]').locator('mdui-checkbox').nth(0).click()
+await page.locator('mdui-dialog[aria-label="限速设置"]').locator('mdui-checkbox').nth(1).click()
+await settle()
+await page.screenshot({ path: `${outDir}/07-limit-speed.png` })
+await page.getByLabel('关闭限速设置').click()
+await page.getByLabel('关闭设置').click().catch(() => {})
+
+// 排序下拉展开（mdui-select + menu）
+await page.getByLabel('任务排序').click()
+await page.waitForSelector('mdui-menu-item')
+await settle()
+await page.screenshot({ path: `${outDir}/08-sort-menu.png` })
+await page.keyboard.press('Escape')
 
 // 回收站（空态）
 await page.keyboard.press('Escape').catch(() => {})

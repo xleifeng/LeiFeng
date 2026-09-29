@@ -29,9 +29,9 @@ async function submit() {
 <template>
   <section class="change-password-grid">
     <h3>修改私人空间密码</h3>
-    <label>当前密码<input v-model="oldPassword" type="password" autocomplete="current-password" /></label>
-    <label>新密码<input v-model="newPassword" type="password" autocomplete="new-password" /></label>
-    <label>确认新密码<input v-model="confirmPassword" type="password" autocomplete="new-password" @keyup.enter="submit" /></label>
+    <label>当前密码<mdui-text-field variant="outlined" type="password" :value="oldPassword" @input="oldPassword = ($event.target as HTMLInputElement).value" autocomplete="current-password" ></mdui-text-field></label>
+    <label>新密码<mdui-text-field variant="outlined" type="password" :value="newPassword" @input="newPassword = ($event.target as HTMLInputElement).value" autocomplete="new-password" ></mdui-text-field></label>
+    <label>确认新密码<mdui-text-field variant="outlined" type="password" :value="confirmPassword" @input="confirmPassword = ($event.target as HTMLInputElement).value" autocomplete="new-password" @keyup.enter="submit" ></mdui-text-field></label>
     <p v-if="error" class="settings-error">{{ error }}</p>
     <div class="modal-actions"><mdui-button variant="tonal" class="secondary-button" @click="emit('close')">取消</mdui-button><mdui-button variant="filled" class="primary-button" :disabled="busy" @click="submit">{{ busy ? '保存中…' : '确认修改' }}</mdui-button></div>
   </section>

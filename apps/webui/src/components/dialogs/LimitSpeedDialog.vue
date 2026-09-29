@@ -40,6 +40,12 @@ function splitTime(value: string, fallbackHour: number, fallbackMinute: number) 
 }
 function localTime(hour: number, minute: number) { return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` }
 
+// mdui 控件事件适配：value 统一为字符串读出
+function controlValue(event: Event) { return String((event.target as HTMLInputElement).value) }
+function onSliderInput(event: Event) { sliderValue.value = Number(controlValue(event)) }
+function onDownloadInput(event: Event) { const value = Number(controlValue(event)); if (Number.isFinite(value)) downloadKbps.value = Math.max(1, value) }
+function onUploadInput(event: Event) { const value = Number(controlValue(event)); if (Number.isFinite(value)) uploadKbps.value = Math.max(1, value) }
+
 onMounted(async () => {
   if (!form.draft) await form.load()
   hydrate()
@@ -80,32 +86,32 @@ async function confirm() {
 </script>
 
 <template>
-  <div class="subdialog-canvas" @mousedown.self="backToSettings">
-    <section class="limit-speed-window" role="dialog" aria-modal="true" aria-label="限速设置">
-      <h1>限速设置</h1>
-      <button class="subdialog-close" aria-label="关闭限速设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></button>
+  <mdui-dialog open close-on-overlay-click close-on-esc role="dialog" aria-modal="true" aria-label="限速设置" class="limit-speed-dialog" @closed="backToSettings">
+    <div slot="headline" class="modal-shell-headline">
+      <span class="modal-shell-title">限速设置</span>
+      <mdui-button-icon aria-label="关闭限速设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></mdui-button-icon>
+    </div>
 
-      <label class="limit-enable-row"><mdui-checkbox :checked="downloadEnabled" @change="downloadEnabled = $event.target.checked" ></mdui-checkbox>最大下载速度</label>
-      <div class="limit-download-controls" :class="{ disabled: !downloadEnabled }">
-        <div class="limit-range-shell" :style="{ '--limit-progress': `${sliderValue}%` }"><input v-model.number="sliderValue" type="range" min="0" max="100" :disabled="!downloadEnabled" aria-label="最大下载速度滑块" /></div>
-        <div class="limit-scale"><span>60KB</span><span>500KB</span><span>1MB</span><span>5MB</span><span>50MB</span></div>
-        <label class="limit-number-field"><input v-model.number="downloadKbps" type="number" min="1" :disabled="!downloadEnabled" /><span>KB/s</span></label>
-      </div>
+    <label class="limit-enable-row"><mdui-checkbox :checked="downloadEnabled" @change="downloadEnabled = $event.target.checked"></mdui-checkbox>最大下载速度</label>
+    <div class="limit-download-controls" :class="{ disabled: !downloadEnabled }">
+      <mdui-slider class="limit-slider" :min="0" :max="100" :value="sliderValue" :disabled="!downloadEnabled" aria-label="最大下载速度滑块" @input="onSliderInput"></mdui-slider>
+      <div class="limit-scale"><span style="left: 0">60KB</span><span style="left: 31.4%">500KB</span><span style="left: 42%">1MB</span><span style="left: 65.9%">5MB</span><span style="left: 100%">50MB</span></div>
+      <label class="limit-number-field"><mdui-text-field type="number" variant="outlined" min="1" :disabled="!downloadEnabled" :value="String(downloadKbps)" @input="onDownloadInput"></mdui-text-field><span>KB/s</span></label>
+    </div>
 
-      <label class="limit-schedule-row"><mdui-checkbox :checked="scheduleVisible" @change="scheduleVisible = $event.target.checked" ></mdui-checkbox>限速下载时间段</label>
-      <div class="limit-schedule-controls" :class="{ disabled: !scheduleVisible }" :aria-disabled="!scheduleVisible">
-        <div><span>开始限速时间</span><select v-model.number="startHour" :disabled="!scheduleVisible" aria-label="开始限速小时"><option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option></select><i>时</i><select v-model.number="startMinute" :disabled="!scheduleVisible" aria-label="开始限速分钟"><option v-for="minute in minutes" :key="minute" :value="minute">{{ minute }}</option></select><i>分</i></div>
-        <div><span>结束限速时间</span><select v-model.number="endHour" :disabled="!scheduleVisible" aria-label="结束限速小时"><option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option></select><i>时</i><select v-model.number="endMinute" :disabled="!scheduleVisible" aria-label="结束限速分钟"><option v-for="minute in minutes" :key="minute" :value="minute">{{ minute }}</option></select><i>分</i></div>
-      </div>
+    <label class="limit-schedule-row"><mdui-checkbox :checked="scheduleVisible" @change="scheduleVisible = $event.target.checked"></mdui-checkbox>限速下载时间段</label>
+    <div class="limit-schedule-controls" :class="{ disabled: !scheduleVisible }" :aria-disabled="!scheduleVisible">
+      <div><span>开始限速时间</span><mdui-select variant="outlined" :disabled="!scheduleVisible" :value="String(startHour)" aria-label="开始限速小时" @change="startHour = Number(controlValue($event))"><mdui-menu-item v-for="hour in hours" :key="hour" :value="String(hour)">{{ hour }}</mdui-menu-item></mdui-select><i>时</i><mdui-select variant="outlined" :disabled="!scheduleVisible" :value="String(startMinute)" aria-label="开始限速分钟" @change="startMinute = Number(controlValue($event))"><mdui-menu-item v-for="minute in minutes" :key="minute" :value="String(minute)">{{ minute }}</mdui-menu-item></mdui-select><i>分</i></div>
+      <div><span>结束限速时间</span><mdui-select variant="outlined" :disabled="!scheduleVisible" :value="String(endHour)" aria-label="结束限速小时" @change="endHour = Number(controlValue($event))"><mdui-menu-item v-for="hour in hours" :key="hour" :value="String(hour)">{{ hour }}</mdui-menu-item></mdui-select><i>时</i><mdui-select variant="outlined" :disabled="!scheduleVisible" :value="String(endMinute)" aria-label="结束限速分钟" @change="endMinute = Number(controlValue($event))"><mdui-menu-item v-for="minute in minutes" :key="minute" :value="String(minute)">{{ minute }}</mdui-menu-item></mdui-select><i>分</i></div>
+    </div>
 
-      <label class="limit-upload-row"><mdui-checkbox :checked="uploadEnabled" @change="uploadEnabled = $event.target.checked" ></mdui-checkbox>最大上传速度</label>
-      <div v-if="uploadEnabled" class="limit-upload-controls"><input v-model.number="uploadKbps" type="number" min="1" /><span>KB/s</span></div>
+    <label class="limit-upload-row"><mdui-checkbox :checked="uploadEnabled" @change="uploadEnabled = $event.target.checked"></mdui-checkbox>最大上传速度</label>
+    <div v-if="uploadEnabled" class="limit-upload-controls"><mdui-text-field type="number" variant="outlined" min="1" :value="String(uploadKbps)" @input="onUploadInput"></mdui-text-field><span>KB/s</span></div>
 
-      <p v-if="errorMessage" class="subdialog-error">{{ errorMessage }}</p>
-      <footer class="subdialog-actions">
-        <button @click="backToSettings">取消</button>
-        <button class="confirm" :disabled="form.saving" @click="confirm">{{ form.saving ? '保存中…' : '确认' }}</button>
-      </footer>
-    </section>
-  </div>
+    <p v-if="errorMessage" class="subdialog-error">{{ errorMessage }}</p>
+    <div slot="action" class="modal-shell-footer">
+      <mdui-button variant="tonal" class="secondary-button" @click="backToSettings">取消</mdui-button>
+      <mdui-button variant="filled" class="primary-button" :disabled="form.saving" @click="confirm">{{ form.saving ? '保存中…' : '确认' }}</mdui-button>
+    </div>
+  </mdui-dialog>
 </template>

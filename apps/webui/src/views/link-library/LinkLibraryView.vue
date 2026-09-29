@@ -26,7 +26,7 @@ function details(item: LinkItem) { void router.push({ name: 'link-details', para
 <template>
   <PageShell title="链接库" subtitle="本地保存下载来源，便于再次下载" class="link-library-page">
     <template #actions><label class="favorite-filter"><mdui-checkbox :checked="favoriteOnly" @change="favoriteOnly = $event.target.checked" ></mdui-checkbox><Star :size="15" />只看收藏</label></template>
-    <template #subhead><div class="link-save-bar" style="margin-bottom: 0; width: 100%"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><mdui-button variant="filled" class="primary-button" @click="save">保存链接</mdui-button></div></template>
+    <template #subhead><div class="link-save-bar" style="margin-bottom: 0; width: 100%"><mdui-text-field variant="outlined" :value="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @input="linkInput = ($event.target as HTMLInputElement).value" @keyup.enter="save"></mdui-text-field><mdui-button variant="filled" class="primary-button" @click="save">保存链接</mdui-button></div></template>
     <label class="search-box standalone"><Search :size="16" /><input v-model="search" placeholder="搜索链接库" /></label>
     <p v-if="error" class="settings-error">{{ error }}</p>
     <div v-if="query.isPending.value" class="data-loading">正在读取链接库…</div>
@@ -34,7 +34,7 @@ function details(item: LinkItem) { void router.push({ name: 'link-details', para
     <div v-else class="data-list-panel">
       <article v-for="item in query.data.value.items" :key="item.id" class="data-row link-row">
         <span class="file-icon"><Link2 :size="20" /></span>
-        <button class="data-row-main is-button" @click="details(item)"><strong>{{ item.locked ? '私人链接（已锁定）' : item.title }}</strong><span>{{ item.kind.toUpperCase() }} · {{ formatBytes(item.totalBytes) }} · {{ formatDateTime(item.lastDownloadedAt) }}</span><small v-if="!item.locked">{{ item.source || '来源已加密' }}</small><span v-if="item.tags?.length" class="tag-list"><em v-for="tag in item.tags" :key="tag.id">{{ tag.name }}</em></span></button>
+        <button class="data-row-main is-button" @click="details(item)"><strong>{{ item.locked ? '私人链接（已锁定）' : item.title }}</strong><span>{{ item.kind.toUpperCase() }} · {{ formatBytes(item.totalBytes) }} · {{ formatDateTime(item.lastDownloadedAt) }}</span><small v-if="!item.locked">{{ item.source || '来源已加密' }}</small><span v-if="item.tags?.length" class="tag-list"><mdui-chip v-for="tag in item.tags" :key="tag.id" variant="assist">{{ tag.name }}</mdui-chip></span></button>
         <div class="data-row-actions"><button :aria-label="item.favorite ? '取消收藏' : '收藏'" @click="favorite(item)"><Star :size="16" :fill="item.favorite ? 'currentColor' : 'none'" /></button><button aria-label="删除链接" @click="remove(item)"><Trash2 :size="16" /></button></div>
       </article>
     </div>
