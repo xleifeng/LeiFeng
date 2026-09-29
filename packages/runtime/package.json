@@ -1,0 +1,16 @@
+{
+  "name": "@leifeng/runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./profiles": "./src/profiles.mjs"
+  },
+  "scripts": {
+    "test": "mkdir -p \"${TMPDIR:-$HOME/tmp}\"; TMPDIR=\"${TMPDIR:-$HOME/tmp}\" node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@leifeng/cordis": "file:../../vendor/cordis/packages/core"
+  }
+}

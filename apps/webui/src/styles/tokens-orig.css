@@ -1,0 +1,36 @@
+/* webui/src/styles/tokens-orig.css — 原版设计令牌覆盖层
+ * 来源：docs/ui-reference/README.md 对照表（与迅雷 Linux 客户端原版 renderer 视觉对照）
+ * 加载顺序：tokens.css 在前（基础层），本文件在后；本文件只保留原版特有的像素令牌，
+ * 与 tokens.css 重名的变量已收口进基础层同名定义（值取原版实测），不再双写。
+ * 暗色主题由 :root[data-theme='dark'] 切换（暗色覆盖统一在 tokens.css）。
+ */
+
+:root {
+  /* 像素复刻令牌（Task 2 实测原版 orig-main-download-clean.png） */
+  --xl-text-brand: #101217;      /* 顶栏品牌/侧栏导航文字（原版近黑） */
+  --xl-selected-bg: #e0ebff;     /* 侧栏选中项底 + 顶栏「新建」按钮底 */
+  --xl-placeholder: #a3a8b3;     /* 搜索框 placeholder */
+  --xl-search-icon: #b0b3b8;     /* 搜索框放大镜 */
+  --xl-text-muted: #8a8f99;      /* 侧栏底部次要文字 */
+  --xl-tool-icon: #3a3d42;       /* 顶栏右侧功能图标 */
+  --xl-avatar-bg: #f0f1f4;       /* 头像圆底 */
+  --xl-divider: #ececef;         /* 侧栏分隔线 */
+
+  /* 字体 — 数字 / 度量首选 D-DIN-PRO（来源：thunder_x/program/static/font），退化 PingFang/雅黑 */
+  --xl-font-num: 'D-DIN-PRO', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* 字号 */
+  --xl-font-size-12: 12px;
+  --xl-font-size-13: 13px;
+  --xl-font-size-14: 14px;
+  --xl-font-size-16: 16px;
+  --xl-font-size-20: 20px;
+
+  /* 圆角（独有小圆角） */
+  --xl-radius-small: 4px;
+
+  /* 组件专用 */
+  --xl-tab-underline: 2px solid #226df5;
+  --xl-vip-banner-grad: linear-gradient(90deg, #3F85FF 0%, #AAA3FF 100%);
+  --xl-dialog-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+}
