@@ -147,14 +147,13 @@ async function restore() {
         <div v-if="pluginManager.loading" class="settings-window-state">正在加载插件列表…</div>
         <template v-else-if="pluginManager.plugins.length">
           <label v-for="plugin in pluginManager.plugins" :key="plugin.id" class="settings-toggle-row plugin-manager-row" :class="{ 'is-locked': plugin.id === 'runtime-config' }">
-            <input
-              type="checkbox"
+            <mdui-switch
               :checked="plugin.enabled"
               :disabled="plugin.id === 'runtime-config' || pluginManager.pendingId !== ''"
               :data-plugin-id="plugin.id"
               :title="plugin.id === 'runtime-config' ? '基础插件，不可禁用' : undefined"
               @change="togglePlugin"
-            />
+            ></mdui-switch>
             <span class="plugin-manager-label">
               <span class="plugin-manager-id">{{ plugin.id }}</span>
               <span class="plugin-manager-provides">
@@ -201,7 +200,7 @@ async function restore() {
         <p v-if="daemonNotice" class="plugin-manager-message">{{ daemonNotice }}</p>
         <h2>重启</h2>
         <p class="settings-hint">整体重启 daemon 进程：插件开关等需要重装配的变更在此生效。进程退出后由守护脚本拉起新进程，页面会短暂失联。</p>
-        <button class="secondary-button" :disabled="daemonRestarting || daemonStatusQuery.data.value?.restartPending" @click="restartDaemonProcess">{{ daemonRestarting ? '重启中…' : '重启 daemon' }}</button>
+        <mdui-button variant="tonal" class="secondary-button" :disabled="daemonRestarting || daemonStatusQuery.data.value?.restartPending" @click="restartDaemonProcess">{{ daemonRestarting ? '重启中…' : '重启 daemon' }}</mdui-button>
       </section>
 
       <section v-else-if="activePluginSection" :key="activePluginSection.id" class="settings-section settings-plugin-section">
@@ -218,11 +217,11 @@ async function restore() {
         <section v-if="activeSection === 'basic'" class="settings-section">
           <h1>基本设置</h1>
           <h2>开机与启动</h2>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.autoResumeUnfinished" @change="form.patch({ autoResumeUnfinished: booleanValue($event) })" />启动后自动开始未完成任务</label>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.openOnCompleteDefault" @change="form.patch({ openOnCompleteDefault: booleanValue($event) })" />下载完成后默认打开文件</label>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.idleDownload.enabled" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, enabled: booleanValue($event) } })" />空闲时自动下载</label>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.idleDownload.pauseOnActivity" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, pauseOnActivity: booleanValue($event) } })" />检测到活动时暂停空闲下载</label>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.autoMoveSlowTaskToTail" @change="form.patch({ autoMoveSlowTaskToTail: booleanValue($event) })" />低速任务自动移到队尾</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.autoResumeUnfinished" @change="form.patch({ autoResumeUnfinished: booleanValue($event) })"></mdui-switch>启动后自动开始未完成任务</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.openOnCompleteDefault" @change="form.patch({ openOnCompleteDefault: booleanValue($event) })"></mdui-switch>下载完成后默认打开文件</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.idleDownload.enabled" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, enabled: booleanValue($event) } })"></mdui-switch>空闲时自动下载</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.idleDownload.pauseOnActivity" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, pauseOnActivity: booleanValue($event) } })"></mdui-switch>检测到活动时暂停空闲下载</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.autoMoveSlowTaskToTail" @change="form.patch({ autoMoveSlowTaskToTail: booleanValue($event) })"></mdui-switch>低速任务自动移到队尾</label>
 
           <div class="settings-rule settings-mode-separator" />
           <h2>下载模式</h2>
@@ -243,20 +242,20 @@ async function restore() {
 
           <div class="settings-rule" />
           <h2>网络通道</h2>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.p2pEnabled" @change="form.patch({ p2pEnabled: booleanValue($event) })" />启用 P2P 加速</label>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.p2sEnabled" @change="form.patch({ p2sEnabled: booleanValue($event) })" />启用镜像 / P2S 加速</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.p2pEnabled" @change="form.patch({ p2pEnabled: booleanValue($event) })"></mdui-switch>启用 P2P 加速</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.p2sEnabled" @change="form.patch({ p2sEnabled: booleanValue($event) })"></mdui-switch>启用镜像 / P2S 加速</label>
           <div class="settings-sub-action"><span>代理模式：{{ form.draft.proxy.mode === 'direct' ? '不使用代理' : form.draft.proxy.mode.toUpperCase() }}</span><button class="settings-inline-button proxy-settings-trigger" @click="openProxy">代理设置</button></div>
         </section>
 
         <section v-else-if="activeSection === 'tasks'" class="settings-section">
           <h1>任务管理</h1>
           <h2>队列</h2>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.autoMoveSlowTaskToTail" @change="form.patch({ autoMoveSlowTaskToTail: booleanValue($event) })" />低速任务自动移到队尾</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.autoMoveSlowTaskToTail" @change="form.patch({ autoMoveSlowTaskToTail: booleanValue($event) })"></mdui-switch>低速任务自动移到队尾</label>
           <label class="settings-field-row"><span>低速判定阈值（B/s）</span><input type="number" min="0" :value="form.draft.slowTaskThresholdBytesPerSecond" @input="form.patch({ slowTaskThresholdBytesPerSecond: Math.max(0, Math.round(numberValue($event, 0))) })" /></label>
           <div class="settings-rule" />
           <h2>空闲下载</h2>
           <label class="settings-field-row"><span>空闲判定时间（秒）</span><input type="number" min="60" max="86400" :value="form.draft.idleDownload.idleAfterSeconds" @input="form.patch({ idleDownload: { ...form.draft!.idleDownload, idleAfterSeconds: Math.min(86400, Math.max(60, Math.round(numberValue($event, 900)))) } })" /></label>
-          <label class="settings-toggle-row"><input type="checkbox" :checked="form.draft.idleDownload.pauseOnActivity" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, pauseOnActivity: booleanValue($event) } })" />检测到活动时暂停空闲下载</label>
+          <label class="settings-toggle-row"><mdui-switch :checked="form.draft.idleDownload.pauseOnActivity" @change="form.patch({ idleDownload: { ...form.draft!.idleDownload, pauseOnActivity: booleanValue($event) } })"></mdui-switch>检测到活动时暂停空闲下载</label>
         </section>
 
         <section v-else-if="activeSection === 'automation'" class="settings-section">

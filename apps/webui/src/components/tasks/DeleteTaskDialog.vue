@@ -31,10 +31,10 @@ async function confirm() {
     <div class="operation-dialog-body">
       <p>已选择 {{ props.tasks.length }} 个任务。请确认要执行的本地文件策略。</p>
       <label v-if="command !== 'delete-permanently'" class="operation-choice"><input v-model="command" type="radio" value="recycle" />仅移入回收站，保留本地文件</label>
-      <label v-if="command !== 'delete-permanently'" class="operation-choice"><input v-model="deleteLocalFiles" type="checkbox" />同时删除本地文件</label>
-      <label v-if="command === 'delete-permanently'" class="operation-choice"><input v-model="deleteLocalFiles" type="checkbox" />同时永久删除本地文件</label>
+      <label v-if="command !== 'delete-permanently'" class="operation-choice"><mdui-checkbox :checked="deleteLocalFiles" @change="deleteLocalFiles = $event.target.checked" ></mdui-checkbox>同时删除本地文件</label>
+      <label v-if="command === 'delete-permanently'" class="operation-choice"><mdui-checkbox :checked="deleteLocalFiles" @change="deleteLocalFiles = $event.target.checked" ></mdui-checkbox>同时永久删除本地文件</label>
       <p v-if="errorMessage" class="operation-error">{{ errorMessage }}</p>
     </div>
-    <template #footer><button class="secondary-button" :disabled="pending" @click="overlay.close">取消</button><button class="primary-button danger-action" :disabled="pending" @click="confirm">{{ pending ? '处理中…' : command === 'delete-permanently' ? '彻底删除' : '移入回收站' }}</button></template>
+    <template #footer><mdui-button variant="tonal" class="secondary-button" :disabled="pending" @click="overlay.close">取消</mdui-button><mdui-button variant="filled" class="primary-button danger-action" :disabled="pending" @click="confirm">{{ pending ? '处理中…' : command === 'delete-permanently' ? '彻底删除' : '移入回收站' }}</mdui-button></template>
   </ModalShell>
 </template>

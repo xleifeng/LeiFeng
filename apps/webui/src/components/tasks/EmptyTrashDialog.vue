@@ -43,13 +43,13 @@ async function confirm() {
   <ModalShell title="清空回收站" @close="overlay.close">
     <div class="operation-dialog-body">
       <p>回收站中有 {{ props.total }} 个任务。此操作不可撤销。</p>
-      <label class="operation-choice"><input v-model="deleteLocalFiles" type="checkbox" />同时永久删除本地文件</label>
+      <label class="operation-choice"><mdui-checkbox :checked="deleteLocalFiles" @change="deleteLocalFiles = $event.target.checked" ></mdui-checkbox>同时永久删除本地文件</label>
       <p v-if="errorMessage" class="operation-error">{{ errorMessage }}</p>
       <p v-if="warningMessage" class="operation-warning">{{ warningMessage }}</p>
     </div>
     <template #footer>
-      <button class="secondary-button" :disabled="pending" @click="overlay.close">{{ completed ? '关闭' : '取消' }}</button>
-      <button v-if="!completed" class="primary-button danger-action" :disabled="pending" @click="confirm">{{ pending ? '处理中…' : '清空回收站' }}</button>
+      <mdui-button variant="tonal" class="secondary-button" :disabled="pending" @click="overlay.close">{{ completed ? '关闭' : '取消' }}</mdui-button>
+      <mdui-button variant="filled" class="primary-button danger-action" v-if="!completed"  :disabled="pending" @click="confirm">{{ pending ? '处理中…' : '清空回收站' }}</mdui-button>
     </template>
   </ModalShell>
 </template>

@@ -3,7 +3,7 @@
 defineProps<{ label: string; size?: number; disabled?: boolean }>()
 </script>
 <template>
-  <button class="icon-button" type="button" :class="[`size-${size || 40}`]" :aria-label="label" :disabled="disabled"><slot /></button>
+  <mdui-button-icon class="icon-button" :class="[`size-${size || 40}`]" :aria-label="label" :disabled="disabled"><slot /></mdui-button-icon>
 </template>
 <style scoped>
 .icon-button {

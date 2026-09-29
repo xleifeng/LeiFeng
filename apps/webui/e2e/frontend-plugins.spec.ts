@@ -85,8 +85,8 @@ test.describe('运行期前端插件（U2）', () => {
     await page.goto(`http://127.0.0.1:${port}/#/hello`)
     await expect(page.locator('.hello-plugin-view')).toBeVisible()
     await expect(page.locator('.hello-plugin-view p')).toContainText('共享 vue 计数: 42')
-    await expect(page.locator('aside.nav-rail nav.rail-items a[href="#/hello"]')).toHaveCount(1)
-    await expect(page.locator('aside.nav-rail nav.rail-items a[href="#/hello"]')).toContainText('插件页')
+    await expect(page.locator('[data-testid="nav-hello"]')).toHaveCount(1)
+    await expect(page.locator('[data-testid="nav-hello"]')).toContainText('插件页')
   })
 
   test('能力门控：views 缺失能力时插件导航隐藏、路由守卫回退', async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe('运行期前端插件（U2）', () => {
       await expect(page.locator('.gated-plugin-view')).toHaveCount(0)
       await expect(page.locator('.app-main')).toBeVisible()
       // 导航项被能力过滤
-      await expect(page.locator('aside.nav-rail nav.rail-items a[href="#/gated"]')).toHaveCount(0)
+      await expect(page.locator('[data-testid="nav-gated"]')).toHaveCount(0)
     } finally {
       fs.writeFileSync(path.join(gatedDir, 'ui.js'), uiJs)
     }
@@ -108,7 +108,7 @@ test.describe('运行期前端插件（U2）', () => {
   test('设置弹窗合并插件分区', async ({ page }) => {
     await page.goto(`http://127.0.0.1:${port}/#/download`)
     // 原生路径：顶栏菜单开侧栏抽屉 → 侧栏「设置」
-    await page.locator('.rail-item.settings-link').click()
+    await page.locator('.settings-link').click()
     await expect(page.locator('.settings-window')).toBeVisible()
     await expect(page.locator('.settings-window-nav button', { hasText: '插件设置' })).toHaveCount(1)
     // U3：插件分区带 component 时内容区渲染（此前只有导航项、点击落入「系统集成」兜底）
@@ -133,7 +133,7 @@ test.describe('运行期前端插件（U2）', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: 1, result }) })
     })
     await page.goto(`http://127.0.0.1:${port}/#/download`)
-    await page.locator('.rail-item.settings-link').click()
+    await page.locator('.settings-link').click()
     await expect(page.locator('.settings-window')).toBeVisible()
     // 核心分区「插件管理」存在且可点入
     await page.locator('.settings-window-nav button', { hasText: '插件管理' }).click()
@@ -141,11 +141,11 @@ test.describe('运行期前端插件（U2）', () => {
     const locked = page.locator('.plugin-manager-row.is-locked')
     await expect(locked).toHaveCount(1)
     await expect(locked.locator('input')).toBeDisabled()
-    const rows = page.locator('.plugin-manager-row input[data-plugin-id="web-api-process"]')
-    await expect(rows).toBeChecked()
+    const rows = page.locator('mdui-switch[data-plugin-id="web-api-process"]')
+    await expect(rows.locator('input[type=checkbox]')).toBeChecked()
     // 开关（true → false）→ setEnabled 成功 → 本地同步 + 重启提示
-    await rows.uncheck()
+    await rows.click()
     await expect(page.locator('.plugin-manager-message')).toContainText('重启 daemon 后生效')
-    await expect(rows).not.toBeChecked()
+    await expect(rows.locator('input[type=checkbox]')).not.toBeChecked()
   })
 })

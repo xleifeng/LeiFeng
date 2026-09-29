@@ -16,6 +16,6 @@ const emit = defineEmits<{ create: [] }>()
     </span>
     <h2>{{ kind === 'offline' ? 'daemon 暂时离线' : kind === 'search' ? '没有匹配的任务' : kind === 'trash' ? '回收站是空的' : kind === 'completed' ? '还没有已完成的任务' : '暂无下载任务' }}</h2>
     <p>{{ kind === 'offline' ? '重连后会自动恢复任务列表。' : kind === 'search' ? '换个关键词试试。' : kind === 'trash' ? '被移除的任务会先来到这里。' : kind === 'completed' ? '完成的下载会出现在这里。' : '新建一个任务开始下载。' }}</p>
-    <button v-if="kind === 'downloading'" class="primary-button" data-testid="empty-create" @click="emit('create')">新建任务</button>
+    <mdui-button variant="filled" class="primary-button" v-if="kind === 'downloading'"  data-testid="empty-create" @click="emit('create')">新建任务</mdui-button>
   </div>
 </template>

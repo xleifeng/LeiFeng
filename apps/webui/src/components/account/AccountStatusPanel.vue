@@ -23,6 +23,6 @@ const memberType = computed(() => {
     <div class="account-status-hero"><span class="account-avatar">{{ status.account.isVip ? 'V' : 'T' }}</span><div><strong>{{ memberLabel }}</strong><p>{{ status.account.valid ? '账号已连接' : '账号不可用' }}</p></div></div>
     <dl class="account-status-grid"><div><dt>会员类型</dt><dd>{{ memberType }}</dd></div><div><dt>凭据刷新</dt><dd>{{ status.credential.refreshTokenPresent ? '已配置' : '未配置' }}</dd></div><div><dt>会话注册</dt><dd>{{ status.session.registered ? '已注册' : '未注册' }}</dd></div><div><dt>引擎通知</dt><dd>{{ status.engine.notified ? '已通知' : '待通知' }}</dd></div></dl>
     <p v-if="status.session.problemCode || status.engine.problemCode" class="settings-error">{{ status.session.problemCode || status.engine.problemCode }}</p>
-    <footer class="modal-actions"><button class="secondary-button" @click="$emit('refresh')">刷新状态</button><button class="primary-button" @click="$emit('logout')">退出登录</button></footer>
+    <footer class="modal-actions"><mdui-button variant="tonal" class="secondary-button" @click="$emit('refresh')">刷新状态</mdui-button><mdui-button variant="filled" class="primary-button" @click="$emit('logout')">退出登录</mdui-button></footer>
   </div>
 </template>

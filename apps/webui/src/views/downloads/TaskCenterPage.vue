@@ -134,6 +134,11 @@ function selectDownloadTab(tab: 'downloading' | 'completed') {
   else delete query.tab
   router.replace({ path: '/download', query })
 }
+// mdui-segmented-button-group 的 change：value 为选中段值
+function onSegmentChange(event: Event) {
+  const value = (event.target as HTMLElement & { value?: string }).value
+  if (value === 'downloading' || value === 'completed') selectDownloadTab(value)
+}
 useDownloadShortcuts({ selected: selectedTasks, visibleIds, focused: focusedTask, onNewTask: newTask, onSearch: focusSearch, onSelectAll: selectAll, onCopy: copyLinks, onToggle: toggleSelected, onOpen: () => focusedTask.value && openTask(focusedTask.value.taskId), onCommand: (name) => command(name), onDetails: () => focusedTask.value && openTask(focusedTask.value.taskId), onEscape: closeOverlays, onRename: () => focusedTask.value && command('rename', [focusedTask.value]) })
 </script>
 
@@ -144,10 +149,10 @@ useDownloadShortcuts({ selected: selectedTasks, visibleIds, focused: focusedTask
       <button class="page-header-action" type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="19" :stroke-width="2" /></button>
     </template>
     <template v-if="currentView !== 'trash'" #subhead>
-      <div class="view-segment" role="tablist" aria-label="下载分类">
-        <button type="button" role="tab" :class="{ active: currentView === 'downloading' }" data-testid="tab-downloading" @click="selectDownloadTab('downloading')">下载中 <span>{{ downloadingCount }}</span></button>
-        <button type="button" role="tab" :class="{ active: currentView === 'completed' }" data-testid="tab-completed" @click="selectDownloadTab('completed')">已完成 <span>{{ completedCount }}</span></button>
-      </div>
+      <mdui-segmented-button-group class="view-segment" selects="single" role="tablist" aria-label="下载分类" :value="currentView" @change="onSegmentChange">
+        <mdui-segmented-button value="downloading" role="tab" data-testid="tab-downloading">下载中 {{ downloadingCount }}</mdui-segmented-button>
+        <mdui-segmented-button value="completed" role="tab" data-testid="tab-completed">已完成 {{ completedCount }}</mdui-segmented-button>
+      </mdui-segmented-button-group>
     </template>
       <TaskCenterToolbar :view="currentView" :selected-count="selection.count" :total="taskQuery.data.value?.pages[0]?.total || 0" :sort="sort" :group-by="groupBy" :busy="commandCenter.pendingCount > 0" :can-start="selectedCapabilities.start" :can-pause="selectedCapabilities.pause" :can-recycle="selectedCapabilities.recycle" :can-delete-permanently="selectedCapabilities.deletePermanently" @update:sort="updateSort" @update:group-by="updateGroupBy" @select-all="selectAll" @command="command" @empty-trash="emptyTrash" @refresh="taskQuery.refresh" @more="openDownloadSettings" @vip="openVipOverview" />
       <TaskSelectionToolbar :count="selection.count" :total="visibleIds.length" @clear="selection.clear" @select-all="selectAll" />

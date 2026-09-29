@@ -33,6 +33,6 @@ async function submit() {
     <label>新密码<input v-model="newPassword" type="password" autocomplete="new-password" /></label>
     <label>确认新密码<input v-model="confirmPassword" type="password" autocomplete="new-password" @keyup.enter="submit" /></label>
     <p v-if="error" class="settings-error">{{ error }}</p>
-    <div class="modal-actions"><button class="secondary-button" @click="emit('close')">取消</button><button class="primary-button" :disabled="busy" @click="submit">{{ busy ? '保存中…' : '确认修改' }}</button></div>
+    <div class="modal-actions"><mdui-button variant="tonal" class="secondary-button" @click="emit('close')">取消</mdui-button><mdui-button variant="filled" class="primary-button" :disabled="busy" @click="submit">{{ busy ? '保存中…' : '确认修改' }}</mdui-button></div>
   </section>
 </template>

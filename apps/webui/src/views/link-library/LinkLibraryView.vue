@@ -25,8 +25,8 @@ function details(item: LinkItem) { void router.push({ name: 'link-details', para
 
 <template>
   <PageShell title="链接库" subtitle="本地保存下载来源，便于再次下载" class="link-library-page">
-    <template #actions><label class="favorite-filter"><input v-model="favoriteOnly" type="checkbox" /><Star :size="15" />只看收藏</label></template>
-    <template #subhead><div class="link-save-bar" style="margin-bottom: 0; width: 100%"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><button class="primary-button" @click="save">保存链接</button></div></template>
+    <template #actions><label class="favorite-filter"><mdui-checkbox :checked="favoriteOnly" @change="favoriteOnly = $event.target.checked" ></mdui-checkbox><Star :size="15" />只看收藏</label></template>
+    <template #subhead><div class="link-save-bar" style="margin-bottom: 0; width: 100%"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><mdui-button variant="filled" class="primary-button" @click="save">保存链接</mdui-button></div></template>
     <label class="search-box standalone"><Search :size="16" /><input v-model="search" placeholder="搜索链接库" /></label>
     <p v-if="error" class="settings-error">{{ error }}</p>
     <div v-if="query.isPending.value" class="data-loading">正在读取链接库…</div>

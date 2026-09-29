@@ -38,6 +38,6 @@ const channelLabel = computed(() => {
       <div><span>限时试用</span><strong>{{ globalState.data.value?.featureCapabilities.speedTrial ? '可用' : '未接入促销流程' }}</strong></div>
     </div>
     <p class="vip-overview-note">每个任务的实际状态和 VIP 接收字节在“任务详情 → 加速”中查看。只有观察到 VIP 字节增长才标记为实际生效；证书注入成功会显示为“加速已开启”。</p>
-    <template #footer><button v-if="!globalState.data.value?.accountReady" class="primary-button" @click="login">登录迅雷账号</button><button class="secondary-button" @click="overlay.close">关闭</button></template>
+    <template #footer><mdui-button variant="filled" class="primary-button" v-if="!globalState.data.value?.accountReady"  @click="login">登录迅雷账号</mdui-button><mdui-button variant="tonal" class="secondary-button" @click="overlay.close">关闭</mdui-button></template>
   </ModalShell>
 </template>

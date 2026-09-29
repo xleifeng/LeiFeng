@@ -28,7 +28,7 @@ onBeforeUnmount(() => { if (media.value) { media.value.pause(); media.value.remo
 <template>
   <div class="media-player">
     <div v-if="loading" class="inline-note">正在准备播放…</div>
-    <div v-else-if="problem" class="inline-error">{{ problem }} <button class="secondary-button" @click="retryManually">重试</button></div>
+    <div v-else-if="problem" class="inline-error">{{ problem }} <mdui-button variant="tonal" class="secondary-button" @click="retryManually">重试</mdui-button></div>
     <video v-else-if="kind === 'video'" ref="media" class="media-player-element" controls playsinline :src="source" @error="onError" @timeupdate="onTimeUpdate" />
     <audio v-else-if="kind === 'audio'" ref="media" class="media-player-element" controls :src="source" @error="onError" />
     <img v-else-if="kind === 'image'" class="media-player-image" :src="source" :alt="displayName || '下载文件'" @error="onError" />

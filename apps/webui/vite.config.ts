@@ -4,7 +4,8 @@ import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   base: './',
-  plugins: [vue()],
+  // mdui-* 是原生 Web Components（第三轮重设计），不走 Vue 组件解析
+  plugins: [vue({ template: { compilerOptions: { isCustomElement: (tag) => tag.startsWith('mdui-') } } })],
   build: {
     rollupOptions: {
       // vue-runtime-exports 作为第二入口：entry 导出不受 tree-shaking 影响，用它把

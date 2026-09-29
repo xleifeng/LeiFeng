@@ -8,5 +8,5 @@ function reload() { error.value = null; window.location.reload() }
 
 <template>
   <slot v-if="!error" />
-  <section v-else class="app-error-boundary"><h1>页面出现问题</h1><p>{{ error.message }}</p><button class="primary-button" @click="reload">重新加载</button></section>
+  <section v-else class="app-error-boundary"><h1>页面出现问题</h1><p>{{ error.message }}</p><mdui-button variant="filled" class="primary-button" @click="reload">重新加载</mdui-button></section>
 </template>

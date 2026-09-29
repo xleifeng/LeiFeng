@@ -1,38 +1,41 @@
-/* Leifeng Modern × Material 3 设计令牌（2026-09-29 第二轮重设计）
- * M3 色彩角色制：primary / surface-container 五级分层（色块分区替代边框）。
- * 命名 --md-*，与第一轮 --lf-* 切割。暗色经 data-theme='dark'。
+/* Leifeng × Material 3 设计令牌（第三轮：mdui 动态色接入）
+ * --md-* 收敛为 --mdui-color-* 的别名层：mdui 以种子色 #0b57d0 经 HCT 色调板生成
+ * 明暗双套（.mdui-theme-dark 切换），手书样式与 mdui 组件共享同一套色。
+ * 注意：mdui 的颜色变量是「R, G, B 三通道数值」（供 rgb(var(--x) / α) 用法），
+ * 别名层必须包一层 rgb()，且回退值也要写成三通道数值。
+ * M3 无 warning / success 角色——这两个语义色保留自定义（含暗色覆盖）。
  */
 :root {
-  /* ---- primary（Google 蓝系） ---- */
-  --md-primary: #0b57d0;
-  --md-on-primary: #ffffff;
-  --md-primary-container: #d3e3fd;
-  --md-on-primary-container: #041e49;
-  --md-primary-hover: #0842a0;
+  /* ---- primary ---- */
+  --md-primary: rgb(var(--mdui-color-primary, 11, 87, 208));
+  --md-on-primary: rgb(var(--mdui-color-on-primary, 255, 255, 255));
+  --md-primary-container: rgb(var(--mdui-color-primary-container, 211, 227, 253));
+  --md-on-primary-container: rgb(var(--mdui-color-on-primary-container, 4, 30, 73));
+  --md-primary-hover: #0842a0; /* 手书悬停沿用（mdui 组件内是 state layer，无此角色） */
 
-  /* ---- secondary / tertiary 容器 ---- */
-  --md-secondary-container: #c2e7ff;
-  --md-on-secondary-container: #001d35;
+  /* ---- secondary 容器 ---- */
+  --md-secondary-container: rgb(var(--mdui-color-secondary-container, 194, 231, 255));
+  --md-on-secondary-container: rgb(var(--mdui-color-on-secondary-container, 0, 29, 53));
 
   /* ---- surface 五级分层（M3 核心：用色块不用边框） ---- */
-  --md-surface: #ffffff;
-  --md-surface-dim: #d8dce2;
-  --md-surface-container-lowest: #ffffff;
-  --md-surface-container-low: #f0f4f9;
-  --md-surface-container: #e9eef6;
-  --md-surface-container-high: #dde3ea;
-  --md-surface-container-highest: #ccd3dc;
+  --md-surface: rgb(var(--mdui-color-surface, 255, 255, 255));
+  --md-surface-dim: rgb(var(--mdui-color-surface-dim, 216, 220, 226));
+  --md-surface-container-lowest: rgb(var(--mdui-color-surface-container-lowest, 255, 255, 255));
+  --md-surface-container-low: rgb(var(--mdui-color-surface-container-low, 240, 244, 249));
+  --md-surface-container: rgb(var(--mdui-color-surface-container, 233, 238, 246));
+  --md-surface-container-high: rgb(var(--mdui-color-surface-container-high, 221, 227, 234));
+  --md-surface-container-highest: rgb(var(--mdui-color-surface-container-highest, 204, 211, 220));
 
   /* ---- 文字/描边 ---- */
-  --md-on-surface: #1f1f1f;
-  --md-on-surface-variant: #444746;
-  --md-outline: #747775;
-  --md-outline-variant: #c4c7c5;
+  --md-on-surface: rgb(var(--mdui-color-on-surface, 31, 31, 31));
+  --md-on-surface-variant: rgb(var(--mdui-color-on-surface-variant, 68, 71, 70));
+  --md-outline: rgb(var(--mdui-color-outline, 116, 119, 117));
+  --md-outline-variant: rgb(var(--mdui-color-outline-variant, 196, 199, 197));
 
   /* ---- 语义 ---- */
-  --md-error: #b3261e;
-  --md-error-container: #f9dedc;
-  --md-on-error-container: #410e0b;
+  --md-error: rgb(var(--mdui-color-error, 179, 38, 30));
+  --md-error-container: rgb(var(--mdui-color-error-container, 249, 222, 220));
+  --md-on-error-container: rgb(var(--mdui-color-on-error-container, 65, 14, 11));
   --md-warning: #b06000;
   --md-warning-container: #ffddb8;
   --md-success: #146c2e;
@@ -65,31 +68,7 @@
 }
 
 :root[data-theme='dark'] {
-  --md-primary: #a8c7fa;
-  --md-on-primary: #062e6f;
-  --md-primary-container: #004a8b;
-  --md-on-primary-container: #d3e3fd;
-  --md-primary-hover: #c2d8fb;
-
-  --md-secondary-container: #3d5a73;
-  --md-on-secondary-container: #d8ecfd;
-
-  --md-surface: #131314;
-  --md-surface-dim: #0e0e0f;
-  --md-surface-container-lowest: #0e0e0f;
-  --md-surface-container-low: #1b1b1c;
-  --md-surface-container: #1e1f20;
-  --md-surface-container-high: #28292a;
-  --md-surface-container-highest: #333436;
-
-  --md-on-surface: #e3e3e3;
-  --md-on-surface-variant: #c4c7c5;
-  --md-outline: #8e918f;
-  --md-outline-variant: #444746;
-
-  --md-error: #f2b8b5;
-  --md-error-container: #8c1d18;
-  --md-on-error-container: #f9dedc;
+  /* 已别名化的色彩角色随 mdui-theme-dark 自动切换，此处只留非 mdui 角色 */
   --md-warning: #f5bb6b;
   --md-warning-container: #5c4100;
   --md-success: #8fdca4;

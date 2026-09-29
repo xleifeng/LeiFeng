@@ -30,7 +30,7 @@ async function submit() {
 
 <template>
   <ModalShell title="恢复下载任务" @close="overlay.close">
-    <div class="operation-dialog-body"><p>优先恢复原生任务；若当前 SDK 不支持恢复，将根据原始链接或已保存种子重建任务，并保留现有文件用于校验。</p><label class="operation-choice"><input v-model="startAfterRecover" type="checkbox" />恢复后立即开始下载</label><p v-if="errorMessage" class="operation-error">{{ errorMessage }}</p></div>
-    <template #footer><button class="secondary-button" @click="overlay.close">取消</button><button class="primary-button" :disabled="pending" @click="submit">{{ pending ? '恢复中…' : '确认恢复' }}</button></template>
+    <div class="operation-dialog-body"><p>优先恢复原生任务；若当前 SDK 不支持恢复，将根据原始链接或已保存种子重建任务，并保留现有文件用于校验。</p><label class="operation-choice"><mdui-checkbox :checked="startAfterRecover" @change="startAfterRecover = $event.target.checked" ></mdui-checkbox>恢复后立即开始下载</label><p v-if="errorMessage" class="operation-error">{{ errorMessage }}</p></div>
+    <template #footer><mdui-button variant="tonal" class="secondary-button" @click="overlay.close">取消</mdui-button><mdui-button variant="filled" class="primary-button" :disabled="pending" @click="submit">{{ pending ? '恢复中…' : '确认恢复' }}</mdui-button></template>
   </ModalShell>
 </template>

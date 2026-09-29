@@ -16,32 +16,10 @@ a:hover { color: var(--md-primary-hover); }
 h1, h2, h3, h4 { color: var(--md-on-surface); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-/* ---- M3 按钮族：filled / filled-tonal / outlined / text ---- */
-.primary-button {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 40px; padding: 0 24px; border-radius: var(--md-shape-full);
-  background: var(--md-primary); color: var(--md-on-primary); font-size: 14px; font-weight: 500; letter-spacing: .1px;
-  transition: background var(--md-motion-fast), box-shadow var(--md-motion-fast), transform var(--md-motion-fast);
-}
-.primary-button:hover { background: var(--md-primary-hover); box-shadow: var(--md-elev-1); }
-.primary-button:active { transform: scale(.98); }
-.primary-button:disabled { background: var(--md-surface-container-highest); color: var(--md-on-surface-variant); box-shadow: none; }
-.secondary-button {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 40px; padding: 0 20px; border-radius: var(--md-shape-full);
-  color: var(--md-on-secondary-container); background: var(--md-secondary-container); font-size: 14px; font-weight: 500;
-  transition: box-shadow var(--md-motion-fast), filter var(--md-motion-fast);
-}
-.secondary-button:hover { box-shadow: var(--md-elev-1); filter: brightness(.97); }
-.danger-button {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 40px; padding: 0 24px; border-radius: var(--md-shape-full);
-  background: var(--md-error); color: #fff; font-size: 14px; font-weight: 500;
-}
-:root[data-theme='dark'] .danger-button { color: var(--md-on-error-container); }
-.text-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--md-shape-full); color: var(--md-primary); font-size: 13.5px; font-weight: 500; transition: background var(--md-motion-fast); }
-.text-button:hover { background: color-mix(in srgb, var(--md-primary) 10%, transparent); }
-.icon-only { width: 40px; padding: 0 !important; }
+/* ---- 按钮族：已迁 mdui-button（filled/tonal/text 变体 + ripple + state layer 全规范）。
+   danger 变体 mdui 无内置，经 ::part(button) 覆盖为 error 色 ---- */
+mdui-button.danger-action::part(button) { background: var(--md-error); color: rgb(var(--mdui-color-on-error, 255, 255, 255)); }
+mdui-button.danger-outline::part(button) { background: var(--md-error-container); color: var(--md-on-error-container); }
 
 /* ---- M3 输入（filled text field 风：container 底 + 下划线态） ---- */
 .lf-input, .settings-card input:not([type='checkbox']), .settings-card select,
@@ -58,23 +36,7 @@ h1, h2, h3, h4 { color: var(--md-on-surface); }
 .link-detail-tags input:focus { border-color: var(--md-primary); background: var(--md-surface); box-shadow: var(--md-focus-ring); outline: none; }
 input[type='checkbox'], input[type='radio'] { accent-color: var(--md-primary); }
 
-/* ---- M3 Switch（设置开关：52×32 轨道 + 滑动圆钮） ---- */
-.md-switch { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; width: 52px; height: 32px; cursor: pointer; }
-.md-switch input { position: absolute; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.md-switch .md-switch-track {
-  display: block; width: 52px; height: 32px; border: 2px solid var(--md-outline); border-radius: var(--md-shape-full);
-  background: var(--md-surface-container-highest); transition: background var(--md-motion-fast), border-color var(--md-motion-fast);
-}
-.md-switch .md-switch-thumb {
-  position: absolute; top: 50%; left: 8px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--md-outline); transform: translateY(-50%);
-  transition: left var(--md-motion-fast), width var(--md-motion-fast), height var(--md-motion-fast), background var(--md-motion-fast);
-  pointer-events: none;
-}
-.md-switch input:checked ~ .md-switch-track { border-color: var(--md-primary); background: var(--md-primary); }
-.md-switch input:checked ~ .md-switch-thumb { left: 27px; width: 24px; height: 24px; background: var(--md-on-primary); }
-.md-switch input:disabled ~ .md-switch-track { opacity: .4; }
-.md-switch input:focus-visible ~ .md-switch-track { box-shadow: var(--md-focus-ring); }
+/* ---- M3 Switch：已迁 mdui-switch（规范件） ---- */
 
 /* ---- M3 弹窗骨架：28px 圆角 + scrim ---- */
 .modal-layer {

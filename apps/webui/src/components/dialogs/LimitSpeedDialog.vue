@@ -85,20 +85,20 @@ async function confirm() {
       <h1>限速设置</h1>
       <button class="subdialog-close" aria-label="关闭限速设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></button>
 
-      <label class="limit-enable-row"><input v-model="downloadEnabled" type="checkbox" />最大下载速度</label>
+      <label class="limit-enable-row"><mdui-checkbox :checked="downloadEnabled" @change="downloadEnabled = $event.target.checked" ></mdui-checkbox>最大下载速度</label>
       <div class="limit-download-controls" :class="{ disabled: !downloadEnabled }">
         <div class="limit-range-shell" :style="{ '--limit-progress': `${sliderValue}%` }"><input v-model.number="sliderValue" type="range" min="0" max="100" :disabled="!downloadEnabled" aria-label="最大下载速度滑块" /></div>
         <div class="limit-scale"><span>60KB</span><span>500KB</span><span>1MB</span><span>5MB</span><span>50MB</span></div>
         <label class="limit-number-field"><input v-model.number="downloadKbps" type="number" min="1" :disabled="!downloadEnabled" /><span>KB/s</span></label>
       </div>
 
-      <label class="limit-schedule-row"><input v-model="scheduleVisible" type="checkbox" />限速下载时间段</label>
+      <label class="limit-schedule-row"><mdui-checkbox :checked="scheduleVisible" @change="scheduleVisible = $event.target.checked" ></mdui-checkbox>限速下载时间段</label>
       <div class="limit-schedule-controls" :class="{ disabled: !scheduleVisible }" :aria-disabled="!scheduleVisible">
         <div><span>开始限速时间</span><select v-model.number="startHour" :disabled="!scheduleVisible" aria-label="开始限速小时"><option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option></select><i>时</i><select v-model.number="startMinute" :disabled="!scheduleVisible" aria-label="开始限速分钟"><option v-for="minute in minutes" :key="minute" :value="minute">{{ minute }}</option></select><i>分</i></div>
         <div><span>结束限速时间</span><select v-model.number="endHour" :disabled="!scheduleVisible" aria-label="结束限速小时"><option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option></select><i>时</i><select v-model.number="endMinute" :disabled="!scheduleVisible" aria-label="结束限速分钟"><option v-for="minute in minutes" :key="minute" :value="minute">{{ minute }}</option></select><i>分</i></div>
       </div>
 
-      <label class="limit-upload-row"><input v-model="uploadEnabled" type="checkbox" />最大上传速度</label>
+      <label class="limit-upload-row"><mdui-checkbox :checked="uploadEnabled" @change="uploadEnabled = $event.target.checked" ></mdui-checkbox>最大上传速度</label>
       <div v-if="uploadEnabled" class="limit-upload-controls"><input v-model.number="uploadKbps" type="number" min="1" /><span>KB/s</span></div>
 
       <p v-if="errorMessage" class="subdialog-error">{{ errorMessage }}</p>

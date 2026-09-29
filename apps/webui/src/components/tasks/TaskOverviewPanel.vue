@@ -21,16 +21,16 @@ function moveQueue(target: 'top' | 'up' | 'down' | 'bottom') { queueMenu.value =
 </script>
 <template>
   <section class="details-panel-section">
-    <div class="detail-progress"><div class="detail-progress-head"><strong>{{ Math.round(detail.progress * 100) }}%</strong><span>{{ detail.completedBytes }} / {{ detail.totalBytes }}</span></div><div class="task-progress large"><span :style="{ width: `${detail.progress * 100}%` }" /></div></div>
+    <div class="detail-progress"><div class="detail-progress-head"><strong>{{ Math.round(detail.progress * 100) }}%</strong><span>{{ detail.completedBytes }} / {{ detail.totalBytes }}</span></div><mdui-linear-progress class="task-progress large" :max="1" :value="Math.min(1, detail.progress)"></mdui-linear-progress></div>
     <dl class="detail-grid"><div><dt>状态</dt><dd>{{ detail.lifecycle }}</dd></div><div><dt>下载速度</dt><dd>{{ detail.downloadBytesPerSecond }} B/s</dd></div><div><dt>保存位置</dt><dd :title="detail.savePath">{{ detail.savePath }}</dd></div><div><dt>来源</dt><dd :title="detail.source || ''">{{ detail.source || '—' }}</dd></div><div><dt>队列位置</dt><dd>{{ detail.queuePosition }}</dd></div><div><dt>单任务限速</dt><dd>{{ detail.taskSpeedLimit ? `${detail.taskSpeedLimit} B/s` : '跟随全局' }}</dd></div></dl>
     <div class="detail-action-row">
-      <button v-if="detail.capabilities.open" class="secondary-button" @click="emit('command', 'open')">打开文件</button>
-      <button v-if="mediaKind(detail.displayName) !== 'download-only'" class="secondary-button" @click="overlay.open({ type: 'media-preview', taskId: detail.taskId, fileIndex: 0, displayName: detail.displayName, kind: mediaKind(detail.displayName) })">浏览器预览</button>
-      <button v-if="detail.capabilities.showInFolder" class="secondary-button" @click="emit('command', 'show-in-folder')">定位文件</button>
-      <button v-if="detail.seedAvailable" class="secondary-button" @click="emit('exportTorrent')">导出种子</button>
-      <button v-if="canMoveQueue" class="secondary-button" @click="queueMenu = !queueMenu">调整队列</button>
-      <button v-if="detail.capabilities.perTaskRateLimit" class="secondary-button" @click="speedMenu = !speedMenu">单任务限速</button>
-      <button v-if="detail.capabilities.copyInfo" class="secondary-button" @click="emit('command', 'copy-info')">复制信息</button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="detail.capabilities.open"  @click="emit('command', 'open')">打开文件</mdui-button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="mediaKind(detail.displayName) !== 'download-only'"  @click="overlay.open({ type: 'media-preview', taskId: detail.taskId, fileIndex: 0, displayName: detail.displayName, kind: mediaKind(detail.displayName) })">浏览器预览</mdui-button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="detail.capabilities.showInFolder"  @click="emit('command', 'show-in-folder')">定位文件</mdui-button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="detail.seedAvailable"  @click="emit('exportTorrent')">导出种子</mdui-button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="canMoveQueue"  @click="queueMenu = !queueMenu">调整队列</mdui-button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="detail.capabilities.perTaskRateLimit"  @click="speedMenu = !speedMenu">单任务限速</mdui-button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="detail.capabilities.copyInfo"  @click="emit('command', 'copy-info')">复制信息</mdui-button>
     </div>
     <QueuePositionMenu v-if="queueMenu" @move="moveQueue" />
     <SpeedLimitPopover v-if="speedMenu" :value="detail.taskSpeedLimit" @apply="setSpeed" />

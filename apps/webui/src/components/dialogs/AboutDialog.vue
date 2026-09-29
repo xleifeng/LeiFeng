@@ -18,9 +18,9 @@ function openNotices() {
 </script>
 
 <template>
-  <div class="about-canvas" @mousedown.self="overlay.close">
-    <section class="about-window" role="dialog" aria-modal="true" aria-label="关于 Leifeng">
-      <button class="about-close" aria-label="关闭关于 Leifeng" @click="overlay.close"><X :size="17" :stroke-width="1.5" /></button>
+  <mdui-dialog open close-on-overlay-click close-on-esc role="dialog" aria-modal="true" aria-label="关于 Leifeng" class="about-dialog" @closed="overlay.close">
+    <div class="about-inner">
+      <mdui-button-icon class="about-close" aria-label="关闭关于 Leifeng" @click="overlay.close"><X :size="17" :stroke-width="1.5" /></mdui-button-icon>
       <div class="about-brand">
         <BrandMark :size="44" class="about-brand-mark" />
         <div>
@@ -31,6 +31,6 @@ function openNotices() {
       <button class="about-component-version" :aria-expanded="componentsVisible" @click="componentsVisible = !componentsVisible">查看组件版本 <ChevronDown :size="13" :class="{ expanded: componentsVisible }" /></button>
       <dl v-if="componentsVisible" class="about-component-list"><div><dt>WebUI</dt><dd>0.1.0</dd></div><div><dt>Daemon</dt><dd>{{ version }}</dd></div><div><dt>Web API</dt><dd>JSON-RPC v2</dd></div></dl>
       <div style="margin-top: 14px"><button class="settings-inline-button" @click="openNotices">开源组件许可 <ChevronRight :size="14" /></button></div>
-    </section>
-  </div>
+    </div>
+  </mdui-dialog>
 </template>

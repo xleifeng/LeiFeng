@@ -42,14 +42,14 @@ function actionLabel(value: string) { return ({ 'start-all': '开始全部', 'pa
 
 <template>
   <ModalShell title="计划任务与完成动作" wide @close="overlay.close">
-    <div class="schedule-manager-toolbar"><div><strong>定时下载策略</strong><span>由 daemon 按本地时区执行，可随时停用或删除。</span></div><div><button class="secondary-button" :disabled="busy" @click="refresh">刷新</button><button class="primary-button" @click="createSchedule">新建计划</button></div></div>
+    <div class="schedule-manager-toolbar"><div><strong>定时下载策略</strong><span>由 daemon 按本地时区执行，可随时停用或删除。</span></div><div><mdui-button variant="tonal" class="secondary-button" :disabled="busy" @click="refresh">刷新</mdui-button><mdui-button variant="filled" class="primary-button" @click="createSchedule">新建计划</mdui-button></div></div>
     <p v-if="errorMessage" class="operation-error">{{ errorMessage }}</p>
     <div v-if="schedules.isPending.value" class="inline-note">正在读取计划任务…</div>
     <div v-else-if="!schedules.data.value?.schedules.length" class="schedule-empty">尚未创建计划任务</div>
     <ScheduleTaskList v-else :schedules="schedules.data.value.schedules" @toggle="toggle" @edit="editSchedule" @remove="remove" />
     <section class="completion-action-card">
       <div><strong>下载完成动作</strong><span v-if="completion.data.value">{{ actionLabel(completion.data.value.action) }} 将于 {{ new Date(completion.data.value.expiresAt).toLocaleTimeString('zh-CN') }} 执行</span><span v-else>当前没有等待执行的完成动作</span></div>
-      <button v-if="completion.data.value" class="secondary-button" @click="cancelCompletion">取消本次动作</button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="completion.data.value"  @click="cancelCompletion">取消本次动作</mdui-button>
     </section>
     <ScheduleTaskDialog v-if="editorOpen" :model-value="editing" @save="save" @close="editorOpen = false" />
   </ModalShell>

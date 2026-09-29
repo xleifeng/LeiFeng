@@ -50,9 +50,9 @@ async function redownload() {
     <div v-if="query.isPending.value" class="data-loading">正在读取链接详情…</div>
     <div v-else-if="query.isError.value" class="settings-error">链接详情不可用：{{ query.error.value?.message }}</div>
     <article v-else-if="query.data.value" class="link-detail-card">
-      <div class="link-detail-summary"><div><h1>{{ query.data.value.title }}</h1><p>{{ query.data.value.kind.toUpperCase() }} · {{ formatBytes(query.data.value.totalBytes) }} · 最近下载 {{ formatDateTime(query.data.value.lastDownloadedAt) }}</p></div><button class="primary-button" :disabled="query.data.value.locked" @click="redownload"><Download :size="15" />重新下载</button></div>
+      <div class="link-detail-summary"><div><h1>{{ query.data.value.title }}</h1><p>{{ query.data.value.kind.toUpperCase() }} · {{ formatBytes(query.data.value.totalBytes) }} · 最近下载 {{ formatDateTime(query.data.value.lastDownloadedAt) }}</p></div><mdui-button variant="filled" class="primary-button" :disabled="query.data.value.locked" @click="redownload"><Download :size="15" />重新下载</mdui-button></div>
       <section class="link-detail-section"><h2>下载来源</h2><code class="link-source">{{ query.data.value.source || '私人链接已加密，解锁私人空间后可见' }}</code></section>
-      <section class="link-detail-section"><h2>标签</h2><div class="link-detail-tags"><input v-model="tags" placeholder="多个标签用逗号分隔" @keyup.enter="saveTags" /><button class="secondary-button" @click="saveTags">保存标签</button></div></section>
+      <section class="link-detail-section"><h2>标签</h2><div class="link-detail-tags"><input v-model="tags" placeholder="多个标签用逗号分隔" @keyup.enter="saveTags" /><mdui-button variant="tonal" class="secondary-button" @click="saveTags">保存标签</mdui-button></div></section>
       <section v-if="query.data.value.files?.length" class="link-detail-section"><h2>种子文件（{{ query.data.value.files.length }}）</h2><div class="link-file-list"><div v-for="file in query.data.value.files" :key="file.index" class="link-file-row"><span>{{ file.path }}</span><small>{{ formatBytes(file.size) }}</small></div></div></section>
       <p v-if="error" class="settings-error">{{ error }}</p><p v-if="notice" class="settings-notice">{{ notice }}</p>
     </article>

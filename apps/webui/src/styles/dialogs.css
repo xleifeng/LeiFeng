@@ -1,28 +1,11 @@
 /* Leifeng Modern × Material 3 — 弹窗族：设置 / 限速 / 代理 / 关于 / 账户 / 计划 / 会员 / 媒体 */
 
-/* ---- M3 Switch：纯 CSS 套在原生 checkbox 上（模板零改动） ---- */
-.settings-toggle-row input[type='checkbox'], .plugin-manager-row input[type='checkbox'],
-.settings-check input[type='checkbox'], .create-group-setting input[type='checkbox'] {
-  appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto;
-  width: 52px; height: 32px; margin: 0; border: 2px solid var(--md-outline); border-radius: var(--md-shape-full);
-  background: var(--md-surface-container-highest); cursor: pointer;
-  transition: background var(--md-motion-fast), border-color var(--md-motion-fast);
-}
-.settings-toggle-row input[type='checkbox']::after, .plugin-manager-row input[type='checkbox']::after,
-.settings-check input[type='checkbox']::after, .create-group-setting input[type='checkbox']::after {
-  content: ''; position: absolute; top: 50%; left: 6px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--md-outline); transform: translateY(-50%);
-  transition: left var(--md-motion-fast), width var(--md-motion-fast), height var(--md-motion-fast), background var(--md-motion-fast);
-}
-.settings-toggle-row input[type='checkbox']:checked, .plugin-manager-row input[type='checkbox']:checked,
-.settings-check input[type='checkbox']:checked, .create-group-setting input[type='checkbox']:checked {
-  border-color: var(--md-primary); background: var(--md-primary);
-}
-.settings-toggle-row input[type='checkbox']:checked::after, .plugin-manager-row input[type='checkbox']:checked::after,
-.settings-check input[type='checkbox']:checked::after, .create-group-setting input[type='checkbox']:checked::after {
-  left: 25px; width: 24px; height: 24px; background: var(--md-on-primary);
-}
-.settings-toggle-row input[type='checkbox']:disabled, .plugin-manager-row input[type='checkbox']:disabled { opacity: .4; cursor: default; }
+/* 开关已迁 mdui-switch（第三轮）：轨道/圆钮/按压态由组件按 M3 规范自带 */
+
+/* ---- ModalShell（mdui-dialog 承载）的槽布局：标题左 + 关闭右、footer 右对齐 ---- */
+.modal-shell-headline { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.modal-shell-title { font-size: 21px; font-weight: 500; line-height: 28px; }
+.modal-shell-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 
 /* M3 radio：圆点描边 2px，选中 primary */
 .settings-radio-row input[type='radio'] {
@@ -174,15 +157,10 @@
 .proxy-auth button { height: 38px; padding: 0 16px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-full); color: var(--md-primary); background: transparent; font-size: 13px; font-weight: 500; }
 .proxy-auth button:hover { background: color-mix(in srgb, var(--md-primary) 8%, transparent); }
 
-/* ---- 关于 ---- */
-.about-canvas { position: fixed; z-index: 150; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(0 0 0 / 32%); animation: md-fade-in var(--md-motion-fast); }
-.about-window {
-  position: relative; width: min(480px, calc(100vw - 48px)); padding: 32px 30px 26px;
-  border-radius: var(--md-shape-xl); background: var(--md-surface-container-low); box-shadow: var(--md-elev-3);
-  animation: md-dialog-in var(--md-motion-med);
-}
-.about-close { position: absolute; z-index: 2; top: 16px; right: 16px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--md-shape-full); color: var(--md-on-surface-variant); }
-.about-close:hover { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
+/* ---- 关于（mdui-dialog 承载：scrim/动效/规范圆角自带） ---- */
+mdui-dialog.about-dialog::part(panel) { width: min(480px, calc(100vw - 48px)); }
+.about-inner { position: relative; padding: 8px 6px 2px; }
+.about-close { position: absolute; z-index: 2; top: -4px; right: -4px; }
 .about-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .about-brand-mark { display: grid; place-items: center; }
 .about-brand h1 { margin: 0; font-size: 24px; font-weight: 500; }

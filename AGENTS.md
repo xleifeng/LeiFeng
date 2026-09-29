@@ -80,9 +80,14 @@ node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 
 ## WebUI 设计（Leifeng Modern，2026-09-29 起）
 
-2026-09-29 全面重设计：旧「迅雷像素复刻」体系（tokens-orig.css / 蜂鸟 / 1200×760 pixelmatch 验收）已整体退役，备份在 `apps/webui-legacy/`（冻结，仅供回退参考）与 git 历史（179e490）。
+2026-09-29 全面重设计：旧「迅雷像素复刻」体系（tokens-orig.css / 蜂鸟 / 1200×760 pixelmatch 验收）已整体退役，备份在 `apps/webui-legacy/`（冻结，仅供回退参考）与 git 历史（179e490）。同日第三轮：接入 **mdui 2**（M3 规范 Web Components）——按钮/开关/弹窗/分段控件/进度条/checkbox/navigation rail+bar 全部规范件化（ripple、state layer、暗色双套齐备）。
 
-- 设计语言：现代工具风——石板灰阶 + teal 强调色（`--lf-*` 令牌，`src/styles/tokens.css`），全高侧栏 + 窄顶栏 + 居中模态，暗色主题经 `data-theme='dark'`。
+- 设计语言：Material 3。mdui 组件以 `#0b57d0` 为种子色经 HCT 色调板生成动态色（`setColorScheme`，`src/mdui.ts` 按需注册组件）；手书样式经 `--md-*` 令牌消费（`src/styles/tokens.css`——注意 mdui 颜色变量是 R,G,B 三通道数值，引用必须包 `rgb()`）。主题双轨同步：`data-theme`（手书）+ `mdui-theme-*` class（mdui），shell store 统一切换。
+- 页面布局：`PageShell` 组件全站统一居中限宽列（`src/components/common/PageShell.vue`）；弹窗统一 `ModalShell`（mdui-dialog 承载）。设置大窗口 / 任务详情抽屉为自定义容器（非标准 dialog 形态）。
+- 品牌：产品名 Leifeng，禁用蜂鸟 logo 与迅雷字样做品牌；仅登录二维码等「功能属实」场景保留迅雷 App 提示。
+- 视觉验收：主模型无多模态——截图走查一律派视觉子代理（glm-5.3-flash）读图出报告，禁止臆断；不再做原版像素 diff。
+- 数据面 100% 走真实 RPC（`leifeng.ui.v2.*`），无 fallback 伪装；daemon RPC 面之外的能力直接隐藏，不伪装。
+- 交互关键元素带 `data-testid`；e2e 用语义选择器（role/label/text）优先。mdui 组件注意点：`@mdui/mcp`（.mcp.json）可查 API；segmented-button-group 必须带 `selects`；mdui-dialog 无内置 role 须宿主补 `role="dialog"`；Web Component 上 v-model 不可用，用 `:checked`/`:value` + `@change`。
 - 品牌：产品名 Leifeng，禁用蜂鸟 logo 与迅雷字样做品牌；仅登录二维码等「功能属实」场景保留迅雷 App 提示。
 - 视觉验收：主模型无多模态——截图走查一律派视觉子代理（glm-5.3-flash）读图出报告，禁止臆断；不再做原版像素 diff。
 - 数据面 100% 走真实 RPC（`leifeng.ui.v2.*`），无 fallback 伪装；daemon RPC 面之外的能力直接隐藏，不伪装。

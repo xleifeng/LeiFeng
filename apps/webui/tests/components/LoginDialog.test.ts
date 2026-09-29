@@ -31,7 +31,7 @@ describe('LoginDialog', () => {
 
   it('renders a generated QR image after starting device login', async () => {
     const wrapper = mount(LoginDialog, { global: { plugins: [VueQueryPlugin] } })
-    await wrapper.find('button.primary-button').trigger('click')
+    await wrapper.find('mdui-button.primary-button').trigger('click')
     await flushPromises()
     expect(mocks.toDataURL).toHaveBeenCalledWith('https://login.example.test/device?code=UC-1', expect.objectContaining({ width: 220 }))
     expect(wrapper.find('img.login-qr').attributes('src')).toBe('data:image/png;base64,qr')

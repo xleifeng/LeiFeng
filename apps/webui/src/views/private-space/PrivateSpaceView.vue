@@ -61,10 +61,10 @@ import PageShell from '../../components/common/PageShell.vue'
 <template>
   <PageShell title="私人空间" subtitle="锁定后隐藏任务名称、来源和保存路径" class="private-space-page">
     <template #actions>
-      <button v-if="store.unlocked" class="secondary-button" @click="showPassword = true">修改密码</button>
-      <button v-if="store.unlocked" class="primary-button" @click="lock">锁定</button>
-      <button v-else-if="store.status?.configured" class="primary-button" @click="showUnlock = true">解锁</button>
-      <button v-else class="primary-button" @click="showSetup = true">启用私人空间</button>
+      <mdui-button variant="tonal" class="secondary-button" v-if="store.unlocked"  @click="showPassword = true">修改密码</mdui-button>
+      <mdui-button variant="filled" class="primary-button" v-if="store.unlocked"  @click="lock">锁定</mdui-button>
+      <mdui-button variant="filled" class="primary-button" v-else-if="store.status?.configured"  @click="showUnlock = true">解锁</mdui-button>
+      <mdui-button variant="filled" class="primary-button" v-else  @click="showSetup = true">启用私人空间</mdui-button>
     </template>
 
     <div class="private-status-strip">
@@ -91,13 +91,13 @@ import PageShell from '../../components/common/PageShell.vue'
         <article v-for="task in tasksQuery.data.value.items" :key="task.id || task.taskId" class="private-task-row">
           <span class="file-icon"><FolderLock :size="20" /></span>
           <div class="data-row-main"><strong>{{ task.displayName }}</strong><span>{{ task.lifecycle || '任务' }} · {{ formatBytes(task.completedBytes) }} / {{ formatBytes(task.totalBytes) }}</span><small>{{ task.savePath || '私人下载目录' }}</small></div>
-          <button class="secondary-button" :disabled="!targetDirectory.trim()" @click="moveOut(task)">移出</button>
+          <mdui-button variant="tonal" class="secondary-button" :disabled="!targetDirectory.trim()" @click="moveOut(task)">移出</mdui-button>
         </article>
       </div>
     </template>
 
-    <div v-if="showUnlock" class="modal-layer" @mousedown.self="showUnlock = false"><section class="modal-card"><PrivateUnlockDialog @unlocked="unlockDone" @close="showUnlock = false" /></section></div>
-    <div v-if="showSetup" class="modal-layer" @mousedown.self="showSetup = false"><section class="modal-card"><PrivateSetupDialog @setup="setupDone" @close="showSetup = false" /></section></div>
-    <div v-if="showPassword" class="modal-layer" @mousedown.self="showPassword = false"><section class="modal-card"><PrivateChangePasswordDialog @changed="showPassword = false; notice = '私人空间密码已更新'" @close="showPassword = false" /></section></div>
+    <mdui-dialog v-if="showUnlock" open close-on-overlay-click close-on-esc role="dialog" aria-modal="true" aria-label="解锁私人空间" @closed="showUnlock = false"><PrivateUnlockDialog @unlocked="unlockDone" @close="showUnlock = false" /></mdui-dialog>
+    <mdui-dialog v-if="showSetup" open close-on-overlay-click close-on-esc role="dialog" aria-modal="true" aria-label="设置私人空间" @closed="showSetup = false"><PrivateSetupDialog @setup="setupDone" @close="showSetup = false" /></mdui-dialog>
+    <mdui-dialog v-if="showPassword" open close-on-overlay-click close-on-esc role="dialog" aria-modal="true" aria-label="修改私人空间密码" @closed="showPassword = false"><PrivateChangePasswordDialog @changed="showPassword = false; notice = '私人空间密码已更新'" @close="showPassword = false" /></mdui-dialog>
   </PageShell>
 </template>

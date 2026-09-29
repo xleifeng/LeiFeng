@@ -2,36 +2,11 @@
 
 .app-shell { display: flex; width: 100%; height: 100%; overflow: hidden; background: var(--md-surface); }
 
-/* ---- Navigation Rail（M3：窄竖条，激活椭圆 pill） ---- */
-.nav-rail {
-  z-index: 20; display: flex; flex: 0 0 var(--md-rail-w); flex-direction: column; align-items: center;
-  width: var(--md-rail-w); height: 100%; padding: 12px 0 16px; gap: 4px;
-  background: var(--md-surface);
-}
-.rail-brand { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 14px; }
-.rail-items { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-.rail-item {
-  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding: 2px 0 6px;
-  color: var(--md-on-surface-variant); font-size: 12px; font-weight: 500; text-align: center;
-  transition: color var(--md-motion-fast);
-}
-.rail-item-icon {
-  position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: var(--md-shape-full);
-  transition: background var(--md-motion-fast), color var(--md-motion-fast);
-}
-.rail-item:hover .rail-item-icon { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
-.rail-item.router-link-active { color: var(--md-primary); }
-.rail-item.router-link-active .rail-item-icon { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-/* M3 rail 激活态：label 同步变色加粗（Google 系惯例：图标容器 + 文字双通道反馈） */
-.rail-item.router-link-active .rail-item-label { color: var(--md-primary); font-weight: 700; }
-.rail-item-badge {
-  position: absolute; top: -2px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: var(--md-shape-full); display: grid; place-items: center;
-  background: var(--md-primary); color: var(--md-on-primary); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums;
-}
-.rail-spacer { flex: 1; }
-.rail-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-.side-backdrop { display: none; }
+/* ---- 导航：mdui-navigation-rail（桌面）/ mdui-navigation-bar（窄屏），形态全由组件自带 ---- */
+.nav-rail { z-index: 20; flex: 0 0 auto; height: 100%; background: var(--md-surface); }
+.nav-rail .rail-items { height: 100%; }
+.rail-brand { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto; }
+.nav-bar-mobile { position: fixed; z-index: 50; right: 0; bottom: 0; left: 0; }
 
 /* ---- 顶栏（M3 top app bar：搜索大圆角横贯） ---- */
 .top-bar {
@@ -59,16 +34,8 @@
 .account-button:hover .account-avatar { box-shadow: var(--md-elev-1); }
 .account-button.is-vip .account-avatar { color: var(--md-warning); background: var(--md-warning-container); }
 
-/* ---- FAB（M3 extended：新建任务） ---- */
-.fab-new-task {
-  position: fixed; z-index: 40; right: 28px; bottom: 28px;
-  display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 22px;
-  border-radius: var(--md-shape-lg); background: var(--md-primary); color: var(--md-on-primary);
-  font-size: 14.5px; font-weight: 500; letter-spacing: .1px; box-shadow: var(--md-elev-2);
-  transition: box-shadow var(--md-motion-fast), transform var(--md-motion-fast), background var(--md-motion-fast);
-}
-.fab-new-task:hover { box-shadow: var(--md-elev-3); transform: translateY(-1px); background: var(--md-primary-hover); }
-.fab-new-task:active { transform: scale(.97); }
+/* ---- FAB（mdui-fab extended：M3 规范件，此处只管定位） ---- */
+.fab-new-task { position: fixed; z-index: 40; right: 28px; bottom: 28px; }
 
 /* ---- 主区 ---- */
 .app-main { display: flex; flex: 1; min-width: 0; flex-direction: column; height: 100%; }
@@ -94,20 +61,9 @@
 @media (max-width: 760px) {
   .app-shell { flex-direction: column; }
   .app-main { flex: 1; min-height: 0; }
-  .nav-rail {
-    position: fixed; right: 0; bottom: 0; left: 0; top: auto; z-index: 50;
-    flex-direction: row; width: 100%; height: 64px; padding: 0 8px; gap: 0;
-    background: var(--md-surface-container); box-shadow: 0 -1px 3px rgb(0 0 0 / 8%);
-  }
-  .rail-brand { display: none; }
-  .rail-items { flex-direction: row; justify-content: space-around; gap: 0; }
-  .rail-item { flex: 1; width: auto; }
-  .rail-spacer { display: none; }
-  .rail-footer { flex-direction: row; width: auto; }
-  .rail-footer .rail-item { min-width: 64px; }
   .top-bar { padding: 10px 12px 6px; }
   .top-search { height: 44px; }
-  .fab-new-task { right: 16px; bottom: 76px; }
-  .app-content { padding-bottom: 72px; }
+  .fab-new-task { right: 16px; bottom: 96px; }
+  .app-content { padding-bottom: 88px; }
   .app-content.is-task-surface { padding-bottom: 0; }
 }

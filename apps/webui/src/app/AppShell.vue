@@ -53,11 +53,11 @@ function handleTheme() { shell.theme = shell.theme === 'light' ? 'dark' : 'light
 
 <template>
   <div class="app-shell" data-testid="app-shell">
-    <NavRail :open="shell.navOpen" :counts="countsQuery.data.value || null" :version="bootstrapQuery.data.value?.daemonVersion" @close="shell.navOpen = false" @settings="openSettings" />
+    <NavRail :counts="countsQuery.data.value || null" :version="bootstrapQuery.data.value?.daemonVersion" @settings="openSettings" />
     <div class="app-main">
       <TopBar :search="shell.search" :account-label="accountLabel" :account-vip="bootstrapQuery.data.value?.account.isVip" :offline="offline" :theme="shell.theme" @update:search="shell.search = $event" @account="openAccount" @retry="retry" @paste="handlePaste" @theme="handleTheme" />
       <main class="app-content" :class="{ 'is-task-surface': taskSurface }"><RouterView /></main>
     </div>
-    <button class="fab-new-task" data-testid="new-task-button" aria-label="新建任务" @click="openNewTask"><Plus :size="22" :stroke-width="2.2" />新建任务</button>
+    <mdui-fab class="fab-new-task" data-testid="new-task-button" extended aria-label="新建任务" @click="openNewTask"><Plus slot="icon" :size="22" :stroke-width="2.2" />新建任务</mdui-fab>
   </div>
 </template>

@@ -52,11 +52,11 @@ await page.waitForSelector('[data-testid="task-row"]')
 await settle()
 await page.screenshot({ path: `${outDir}/01-task-center-light.png` })
 
-// 暗色
-await page.evaluate(() => { document.documentElement.dataset.theme = 'dark' })
+// 暗色（双轨：data-theme 驱动手书样式，mdui-theme-* 驱动 mdui 组件——与 shell store 同步逻辑一致）
+await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; document.documentElement.classList.remove('mdui-theme-light'); document.documentElement.classList.add('mdui-theme-dark') })
 await settle()
 await page.screenshot({ path: `${outDir}/02-task-center-dark.png` })
-await page.evaluate(() => { document.documentElement.dataset.theme = 'light' })
+await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; document.documentElement.classList.remove('mdui-theme-dark'); document.documentElement.classList.add('mdui-theme-light') })
 
 // 创建任务弹窗
 await page.getByRole('button', { name: '新建任务' }).click()
@@ -67,7 +67,7 @@ await page.keyboard.press('Escape')
 await page.getByLabel('关闭').first().click().catch(() => {})
 
 // 设置弹窗
-await page.getByRole('button', { name: '设置', exact: true }).click()
+await page.locator('.settings-link').click()
 await page.waitForSelector('[data-testid="settings-dialog"]')
 await settle()
 await page.screenshot({ path: `${outDir}/04-settings.png` })

@@ -49,8 +49,9 @@ onBeforeUnmount(() => window.removeEventListener(RPC_AUTH_REQUIRED_EVENT, requir
 </script>
 
 <template>
-  <div v-if="open" class="modal-layer connection-secret-layer" role="presentation">
-    <section class="modal-card connection-secret-dialog" role="dialog" aria-modal="true" aria-labelledby="connection-secret-title">
+  <!-- 鉴权墙：不可经遮罩/Esc 关闭（必须输入密钥），故不带 close-on-* -->
+  <mdui-dialog v-if="open" open role="dialog" aria-modal="true" aria-labelledby="connection-secret-title" class="connection-secret-dialog">
+    <div class="connection-secret-body">
       <div class="connection-secret-hero">
         <div class="connection-secret-icon"><KeyRound :size="25" /></div>
         <div>
@@ -68,14 +69,14 @@ onBeforeUnmount(() => window.removeEventListener(RPC_AUTH_REQUIRED_EVENT, requir
         </div>
         <p v-if="error" class="connection-secret-error" role="alert">{{ error }}</p>
         <label class="connection-secret-remember">
-          <input v-model="remember" type="checkbox" :disabled="pending" />
+          <mdui-checkbox :checked="remember" @change="remember = $event.target.checked" :disabled="pending" ></mdui-checkbox>
           <span>记住此浏览器</span>
         </label>
-        <button class="primary-button connection-secret-submit" type="submit" :disabled="pending">
+        <mdui-button variant="filled" class="primary-button connection-secret-submit" :disabled="pending" @click="connect">
           <ShieldCheck :size="17" />{{ pending ? '正在验证…' : '验证并连接' }}
-        </button>
+        </mdui-button>
       </form>
       <p class="connection-secret-help">密钥仅保存在此浏览器。可在服务主机运行 <code>cat ~/.local/state/leifeng/rpc-secret</code> 查看。</p>
-    </section>
-  </div>
+    </div>
+  </mdui-dialog>
 </template>

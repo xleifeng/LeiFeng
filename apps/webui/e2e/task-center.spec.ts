@@ -140,7 +140,7 @@ test('task group option creates a group and group view keeps parent before child
   await page.getByRole('button', { name: '新建任务' }).click()
   await page.getByLabel('粘贴下载链接').fill('http://fixture.test/file.bin')
   await page.getByRole('button', { name: '解析链接' }).click()
-  await page.getByText('同时创建任务组').click()
+  await page.locator('.create-group-setting mdui-checkbox').click()
   await page.getByLabel('任务组名称').fill('批量下载组')
   await page.getByRole('button', { name: '立即创建' }).click()
   await expect(page.getByText('创建结果')).toBeVisible()

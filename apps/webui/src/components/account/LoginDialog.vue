@@ -39,7 +39,7 @@ onBeforeUnmount(() => { if (flow.value === 'awaiting-scan' || flow.value === 'co
     <div v-if="!login" class="account-login-empty">
       <div class="account-login-icon">⌁</div><h3>登录迅雷账号</h3>
       <p>登录后可使用会员下载加速；账号凭据只保存在 daemon 钱包内。</p>
-      <button class="primary-button" :disabled="starting" @click="start">{{ starting ? '正在准备…' : '扫码登录' }}</button>
+      <mdui-button variant="filled" class="primary-button" :disabled="starting" @click="start">{{ starting ? '正在准备…' : '扫码登录' }}</mdui-button>
     </div>
     <div v-else class="account-login-active">
       <span>设备登录</span><h3>请使用迅雷 App 扫码</h3>
@@ -54,7 +54,7 @@ onBeforeUnmount(() => { if (flow.value === 'awaiting-scan' || flow.value === 'co
       <p v-if="qrError" class="settings-error">二维码生成失败，请点击“打开验证页面”：{{ qrError }}</p>
       <p v-if="flow === 'awaiting-scan'">等待扫码确认…</p><p v-else-if="flow === 'completing'">正在完成登录…</p>
       <p v-else-if="flow === 'failed'" class="settings-error">登录失败：{{ statusQuery.data.value?.loginFlow.problemCode === 'register-upstream' ? '会话注册失败' : statusQuery.data.value?.loginFlow.problemCode === 'profile-upstream' ? '账号资料获取失败' : statusQuery.data.value?.loginFlow.problemCode === 'completion-upstream' ? '登录信息保存失败' : statusQuery.data.value?.loginFlow.problemCode || '上游服务错误' }}</p>
-      <div class="modal-actions"><button class="secondary-button" @click="cancel">取消</button><button class="primary-button" @click="start">刷新二维码</button></div>
+      <div class="modal-actions"><mdui-button variant="tonal" class="secondary-button" @click="cancel">取消</mdui-button><mdui-button variant="filled" class="primary-button" @click="start">刷新二维码</mdui-button></div>
     </div>
     <p v-if="error" class="settings-error">{{ error }}</p><p v-if="statusQuery.isError.value" class="settings-error">账号状态暂不可用</p>
   </div>

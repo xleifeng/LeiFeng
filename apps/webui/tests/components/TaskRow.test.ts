@@ -12,7 +12,7 @@ describe('TaskRow', () => {
   it('emits the complete task id and renders filenames as text', async () => {
     const wrapper = mount(TaskRow, { props: { task, selected: false, focused: false } })
     expect(wrapper.find('.task-name').text()).toBe('<img>')
-    await wrapper.find('.task-check input').trigger('change')
+    await wrapper.find('.task-check mdui-checkbox').trigger('change')
     expect(wrapper.emitted('select')?.[0][0]).toEqual({ taskId: task.taskId, mode: 'only' })
     await wrapper.find('[aria-label="暂停"]').trigger('click')
     expect(wrapper.emitted('command')?.[0][0]).toEqual({ taskId: task.taskId, command: 'pause' })

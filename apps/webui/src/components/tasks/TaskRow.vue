@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, CirclePause, Ellipsis, FolderOpen, MoreHorizontal, Pause, Play, RotateCcw, AlertCircle, FileArchive } from '@lucide/vue'
+import { CirclePause, Ellipsis, FolderOpen, MoreHorizontal, Pause, Play, RotateCcw, AlertCircle, FileArchive } from '@lucide/vue'
 import type { TaskCommand, TaskListItemV2 } from '../../api/contracts/v2/tasks'
 
 const props = defineProps<{ task: TaskListItemV2; selected: boolean; focused: boolean; pending?: boolean; density?: 'comfortable' | 'compact' }>()
@@ -47,19 +47,19 @@ function onContext(event: MouseEvent) { event.preventDefault(); emit('contextmen
 
 <template>
   <article class="task-row" :class="[{ selected, focused, pending }, `density-${density || 'comfortable'}`]" tabindex="0" data-testid="task-row" @click="onSelect" @dblclick="emit('open', task.taskId)" @contextmenu="onContext">
-    <label class="task-check" @click.stop><input type="checkbox" :checked="selected" :aria-label="`选择 ${task.displayName}`" @change="onSelect" /><span class="checkmark"><Check v-if="selected" :size="13" /></span></label>
+    <label class="task-check" @click.stop><mdui-checkbox :checked="selected" :aria-label="`选择 ${task.displayName}`" @change="onSelect"></mdui-checkbox></label>
     <div class="task-type-icon" :class="iconTone(task)"><component :is="iconFor(task)" :size="20" stroke-width="1.8" /></div>
     <div class="task-main">
       <div class="task-name-line"><span class="task-name" :title="task.displayName">{{ task.displayName }}</span><span v-for="badge in task.badges" :key="badge" class="task-badge" :class="`badge-${badge}`">{{ badge === 'vip' ? 'VIP' : badge === 'private' ? '私人' : 'BT' }}</span></div>
       <div class="task-subline"><span :class="`task-status status-${task.lifecycle}`">{{ statusText[task.lifecycle] }}</span><span v-if="task.lifecycle === 'failed' && task.error">{{ task.error.message }}</span><span v-else-if="task.lifecycle === 'downloading' && task.etaSeconds !== null">剩余 {{ time(task.etaSeconds) }}</span><span v-else-if="task.lifecycle === 'missing'">请检查本地文件</span><span v-else>{{ task.completedBytes ? `${bytes(task.completedBytes)} / ${bytes(task.totalBytes)}` : bytes(task.totalBytes) }}</span></div>
-      <div class="task-progress-line"><div class="task-progress"><span :style="{ width: `${Math.min(100, task.progress * 100)}%` }" :class="`progress-${task.lifecycle}`" /></div><span class="task-percent">{{ percent(task.progress) }}</span></div>
+      <div class="task-progress-line"><mdui-linear-progress class="task-progress" :class="`progress-${task.lifecycle}`" :max="1" :value="Math.min(1, task.progress)"></mdui-linear-progress><span class="task-percent">{{ percent(task.progress) }}</span></div>
     </div>
     <div class="task-speed">{{ speed(task.downloadBytesPerSecond) }}</div>
     <div class="task-row-actions" @click.stop>
-      <button v-if="has('pause')" class="row-action" aria-label="暂停" @click="send('pause')"><Pause :size="16" /></button>
-      <button v-else-if="has('start')" class="row-action" aria-label="开始" @click="send('start')"><Play :size="16" /></button>
-      <button v-else-if="task.lifecycle === 'failed' && has('retry')" class="row-action" aria-label="重试" @click="send('redownload')"><RotateCcw :size="16" /></button>
-      <button class="row-action" aria-label="更多操作" @click="emit('contextmenu', { taskId: task.taskId, x: 0, y: 0 })"><MoreHorizontal :size="18" /></button>
+      <mdui-button-icon v-if="has('pause')" class="row-action" aria-label="暂停" @click="send('pause')"><Pause :size="16" /></mdui-button-icon>
+      <mdui-button-icon v-else-if="has('start')" class="row-action" aria-label="开始" @click="send('start')"><Play :size="16" /></mdui-button-icon>
+      <mdui-button-icon v-else-if="task.lifecycle === 'failed' && has('retry')" class="row-action" aria-label="重试" @click="send('redownload')"><RotateCcw :size="16" /></mdui-button-icon>
+      <mdui-button-icon class="row-action" aria-label="更多操作" @click="emit('contextmenu', { taskId: task.taskId, x: 0, y: 0 })"><MoreHorizontal :size="18" /></mdui-button-icon>
     </div>
     <span v-if="pending" class="task-pending" aria-label="操作处理中"><Ellipsis :size="17" /></span>
   </article>

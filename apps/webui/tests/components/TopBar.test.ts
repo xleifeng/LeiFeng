@@ -9,7 +9,7 @@ describe('TopBar', () => {
     expect(wrapper.emitted('update:search')?.[0]).toEqual(['ubuntu'])
     await wrapper.get('button[aria-label="账户"]').trigger('click')
     expect(wrapper.emitted('account')).toHaveLength(1)
-    await wrapper.get('button[aria-label="切换主题"]').trigger('click')
+    await wrapper.get('mdui-button-icon[aria-label="切换主题"]').trigger('click')
     expect(wrapper.emitted('theme')).toHaveLength(1)
   })
 })
