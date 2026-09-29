@@ -4,14 +4,18 @@
 // 消费方（task-shell / product-services）只面向 hub.default()——不再硬编码
 // 'leifengKernel:thunder'，任意内核可独立成在（qbit-only 等）。
 // 默认内核解析：显式 defaultKernelId > KERNEL_PROTOCOL_ROUTES 表序中第一个
-// 已注册内核 > null。
+// 已注册内核 > NullKernel slot（零内核降级——软件与内核不强相关，全部内核
+// 插件被禁用时 daemon 仍成在：仓库/设置/历史/插件管理照常，下载类操作经
+// NullKernel 诚实报 NOT_SUPPORTED）。
 const { KERNEL_PROTOCOL_ROUTES } = require('../src/domain/create-router');
+const { createNullKernelSlot } = require('../src/domain/null-kernel');
 const { plugin } = require('./shared.cjs');
 
 const kernelHub = plugin('leifeng-kernel-hub', ['leifengConfig'], (ctx, options = {}) => {
   const slots = new Map();
   const explicitDefault = typeof options.defaultKernelId === 'string' && options.defaultKernelId
     ? options.defaultKernelId : null;
+  const nullSlot = createNullKernelSlot();
 
   function register(slot) {
     if (!slot || typeof slot !== 'object') throw new TypeError('kernel-hub: slot must be an object');
@@ -32,7 +36,7 @@ const kernelHub = plugin('leifeng-kernel-hub', ['leifengConfig'], (ctx, options 
       const slot = slots.get(kernelId);
       if (slot) return slot;
     }
-    return null;
+    return nullSlot;
   }
 
   const get = (id) => slots.get(id) || null;

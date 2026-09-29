@@ -12,8 +12,10 @@ const { plugin } = require('./shared.cjs');
 const productCore = plugin('leifeng-product-core', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengPrivateSpace', 'leifengMediaCapture', 'leifengRemoteAccess', 'leifengHistoryLinks', 'leifengUiRegistry'], (ctx) => {
   const { appConfig } = ctx.leifengConfig;
   const { taskRepository, settingsRepository, operationRepository } = ctx.leifengRepositories;
+  // 零内核装配：hub 返回 NullKernel slot（bootstrap/diagnostics 诚实降级，
+  // engine 段 sdkReady=false、能力面 protocols 空）——软件与内核不强相关。
   const kernelSlot = ctx.leifengKernelHub.default();
-  if (!kernelSlot) throw new Error('product-core: no kernel registered (enable a kernel plugin)');
+  if (!kernelSlot) throw new Error('product-core: no kernel slot from hub');
   const { kernel: driver, eventBus, diagnosticEvents } = kernelSlot;
   const { auth = null, vipManager = null, accountService = null } = kernelSlot.account || {};
   const { policyService } = ctx.leifengTasks;

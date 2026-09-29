@@ -32,10 +32,12 @@ const { plugin } = require('./shared.cjs');
 const taskShell = plugin('leifeng-task-shell', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengRpc'], (ctx) => {
   const { appConfig, runtimeDir, downloadDir } = ctx.leifengConfig;
   const r = ctx.leifengRepositories;
-  // kernel-any-only：经 hub 取默认内核（不再硬编码 thunder 槽）；account/
-  // nativeBtLookup 是迅雷富件，缺席即诚实降级（qbit-only）。
+  // kernel-any-only：经 hub 取默认内核（不再硬编码 thunder 槽）；零内核装配时
+  // hub 返回 NullKernel slot（软件与内核不强相关——下载类操作经其诚实报
+  // NOT_SUPPORTED，仓库/设置/历史照常服务）；account/nativeBtLookup 是迅雷
+  // 富件，缺席即诚实降级（qbit-only / null-kernel）。
   const kernelSlot = ctx.leifengKernelHub.default();
-  if (!kernelSlot) throw new Error('task-shell: no kernel registered (enable a kernel plugin)');
+  if (!kernelSlot) throw new Error('task-shell: no kernel slot from hub');
   const { kernel: driver, eventBus } = kernelSlot;
   const { vipManager } = kernelSlot.account || {};
   const operationLock = new OperationLock();
