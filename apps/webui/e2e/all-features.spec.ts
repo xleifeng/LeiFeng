@@ -26,35 +26,35 @@ async function mockAllFeatures(page: Page, requests: Array<{ method: string, inp
     const input = body.params?.[0] || {}
     requests.push({ method: body.method, input })
     let result: unknown = null
-    if (body.method === 'thunder.ui.v2.bootstrap') result = bootstrap
-    else if (body.method === 'thunder.ui.v2.tasks.counts') result = counts
-    else if (body.method === 'thunder.ui.v2.tasks.query') {
+    if (body.method === 'leifeng.ui.v2.bootstrap') result = bootstrap
+    else if (body.method === 'leifeng.ui.v2.tasks.counts') result = counts
+    else if (body.method === 'leifeng.ui.v2.tasks.query') {
       const items = taskItems.filter((task) => input.view === 'completed' ? task.lifecycle === 'completed' : input.view === 'trash' ? task.lifecycle === 'recycled' : !['completed', 'recycled'].includes(String(task.lifecycle)))
       result = { items, total: items.length, nextCursor: null, snapshotRevision: 1, repositoryRevision: 1, counts: { ...counts, all: taskItems.length, active: taskItems.filter((task) => !['completed', 'recycled'].includes(String(task.lifecycle))).length, completed: taskItems.filter((task) => task.lifecycle === 'completed').length } }
     }
-    else if (body.method === 'thunder.ui.v2.history.query') result = { items: [] }
-    else if (body.method === 'thunder.ui.v2.links.query') result = { items: [] }
-    else if (body.method === 'thunder.ui.v2.links.save') result = { id: 'link-1', sourceFingerprint: String(input.source), kind: input.kind, title: input.title, source: input.source, privateSpace: false, favorite: false, revision: 1, tags: [] }
-    else if (body.method === 'thunder.ui.v2.private.getStatus') result = { configured: false, unlocked: false, directoryConfigured: false, metadataEncrypted: true, downloadContentEncrypted: false, requiresEncryptedFilesystemForAtRest: true }
-    else if (body.method === 'thunder.ui.v2.private.setup') result = { configured: true, directory: '/downloads/.private', status: {} }
-    else if (body.method === 'thunder.ui.v2.private.queryTasks') result = { items: [] }
-    else if (body.method === 'thunder.ui.v2.remote.nodes.query') result = { items: [] }
-    else if (body.method === 'thunder.ui.v2.capture.clients.query' || body.method === 'thunder.ui.v2.remote.server.clients.query') result = { items: [] }
-    else if (body.method === 'thunder.ui.v2.capture.startPairing') result = { pairingId: 'capture-pair', code: '123456', expiresAt: now + 60_000 }
-    else if (body.method === 'thunder.ui.v2.capture.desktop.provision') result = { clientId: 'desktop', endpoint: 'http://127.0.0.1', configPath: '/tmp/e2e-config' }
-    else if (body.method === 'thunder.ui.v2.remote.server.startPairing') result = { pairingId: 'remote-pair', code: '654321', expiresAt: now + 60_000, serverFingerprint: 'AA' }
-    else if (body.method === 'thunder.ui.v2.remote.server.stopPairing') result = { stopped: true }
-    else if (body.method === 'thunder.ui.v2.diagnostics.get') result = { apiVersion: 2, daemonVersion: 'e2e', startedAt: now - 1000, now, hostname: 'e2e', repositoryRevision: 1, counts, engine: { healthy: true }, taskDb: { writable: true }, auth: null, vip: null, privateSpace: {}, media: {}, remoteNodes: { items: [] }, settings: {}, filesystem: {}, events: [] }
-    else if (body.method === 'thunder.ui.v2.diagnostics.events.query') result = []
-    else if (body.method === 'thunder.ui.v2.diagnostics.checks.run') result = { ok: true, checkId: input.checkId }
-    else if (body.method === 'thunder.ui.v2.diagnostics.exports.prepare') result = { exportId: 'export-1', expiresAt: now + 60_000, files: ['diagnostics.json'], warnings: [] }
-    else if (body.method === 'thunder.ui.v2.policies.get') result = { revision: 1, policy, lastApplied: null, fullSpeed: false }
-    else if (body.method === 'thunder.ui.v2.policies.update') result = { revision: 2, policy: input.patch, lastApplied: null, fullSpeed: false, applied: true }
-    else if (body.method === 'thunder.ui.v2.schedules.getDownloadLimitWindow') result = { configured: false, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null, revision: 1 }
-    else if (body.method === 'thunder.ui.v2.schedules.setDownloadLimitWindow') result = { configured: true, enabled: input.enabled, startLocalTime: input.startLocalTime, endLocalTime: input.endLocalTime, timezone: input.timezone, activeNow: false, scheduleIds: [], problemCode: null, revision: 2, runtime: { applied: true, reason: 'e2e' } }
-    else if (body.method === 'thunder.ui.v2.account.get') result = { loginFlow: { state: 'idle' }, account: { ...bootstrap.account, checkedAt: null }, credential: { refreshTokenPresent: false, accessTokenExpiresAt: null }, session: { registered: false, lastKeepAliveAt: null }, engine: { notified: false, notifiedAt: null } }
-    else if (body.method === 'thunder.ui.v2.account.startLogin') result = { verificationUrl: 'https://example.com/device-login', userCode: null, expiresIn: 300, interval: 2 }
-    else if (body.method === 'thunder.ui.v2.account.cancelLogin') result = { cancelled: true }
+    else if (body.method === 'leifeng.ui.v2.history.query') result = { items: [] }
+    else if (body.method === 'leifeng.ui.v2.links.query') result = { items: [] }
+    else if (body.method === 'leifeng.ui.v2.links.save') result = { id: 'link-1', sourceFingerprint: String(input.source), kind: input.kind, title: input.title, source: input.source, privateSpace: false, favorite: false, revision: 1, tags: [] }
+    else if (body.method === 'leifeng.ui.v2.private.getStatus') result = { configured: false, unlocked: false, directoryConfigured: false, metadataEncrypted: true, downloadContentEncrypted: false, requiresEncryptedFilesystemForAtRest: true }
+    else if (body.method === 'leifeng.ui.v2.private.setup') result = { configured: true, directory: '/downloads/.private', status: {} }
+    else if (body.method === 'leifeng.ui.v2.private.queryTasks') result = { items: [] }
+    else if (body.method === 'leifeng.ui.v2.remote.nodes.query') result = { items: [] }
+    else if (body.method === 'leifeng.ui.v2.capture.clients.query' || body.method === 'leifeng.ui.v2.remote.server.clients.query') result = { items: [] }
+    else if (body.method === 'leifeng.ui.v2.capture.startPairing') result = { pairingId: 'capture-pair', code: '123456', expiresAt: now + 60_000 }
+    else if (body.method === 'leifeng.ui.v2.capture.desktop.provision') result = { clientId: 'desktop', endpoint: 'http://127.0.0.1', configPath: '/tmp/e2e-config' }
+    else if (body.method === 'leifeng.ui.v2.remote.server.startPairing') result = { pairingId: 'remote-pair', code: '654321', expiresAt: now + 60_000, serverFingerprint: 'AA' }
+    else if (body.method === 'leifeng.ui.v2.remote.server.stopPairing') result = { stopped: true }
+    else if (body.method === 'leifeng.ui.v2.diagnostics.get') result = { apiVersion: 2, daemonVersion: 'e2e', startedAt: now - 1000, now, hostname: 'e2e', repositoryRevision: 1, counts, engine: { healthy: true }, taskDb: { writable: true }, auth: null, vip: null, privateSpace: {}, media: {}, remoteNodes: { items: [] }, settings: {}, filesystem: {}, events: [] }
+    else if (body.method === 'leifeng.ui.v2.diagnostics.events.query') result = []
+    else if (body.method === 'leifeng.ui.v2.diagnostics.checks.run') result = { ok: true, checkId: input.checkId }
+    else if (body.method === 'leifeng.ui.v2.diagnostics.exports.prepare') result = { exportId: 'export-1', expiresAt: now + 60_000, files: ['diagnostics.json'], warnings: [] }
+    else if (body.method === 'leifeng.ui.v2.policies.get') result = { revision: 1, policy, lastApplied: null, fullSpeed: false }
+    else if (body.method === 'leifeng.ui.v2.policies.update') result = { revision: 2, policy: input.patch, lastApplied: null, fullSpeed: false, applied: true }
+    else if (body.method === 'leifeng.ui.v2.schedules.getDownloadLimitWindow') result = { configured: false, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null, revision: 1 }
+    else if (body.method === 'leifeng.ui.v2.schedules.setDownloadLimitWindow') result = { configured: true, enabled: input.enabled, startLocalTime: input.startLocalTime, endLocalTime: input.endLocalTime, timezone: input.timezone, activeNow: false, scheduleIds: [], problemCode: null, revision: 2, runtime: { applied: true, reason: 'e2e' } }
+    else if (body.method === 'leifeng.ui.v2.account.get') result = { loginFlow: { state: 'idle' }, account: { ...bootstrap.account, checkedAt: null }, credential: { refreshTokenPresent: false, accessTokenExpiresAt: null }, session: { registered: false, lastKeepAliveAt: null }, engine: { notified: false, notifiedAt: null } }
+    else if (body.method === 'leifeng.ui.v2.account.startLogin') result = { verificationUrl: 'https://example.com/device-login', userCode: null, expiresIn: 300, interval: 2 }
+    else if (body.method === 'leifeng.ui.v2.account.cancelLogin') result = { cancelled: true }
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: 1, result }) })
   })
 }
@@ -81,7 +81,7 @@ test('link library preserves protocols and rejects search text', async ({ page }
   const input = page.getByPlaceholder(/粘贴 HTTP/)
   await input.fill('ftp://fixture.test/archive.zip')
   await page.getByRole('button', { name: '保存链接' }).click()
-  await expect.poll(() => lastRequest(requests, 'thunder.ui.v2.links.save')?.input.kind).toBe('ftp')
+  await expect.poll(() => lastRequest(requests, 'leifeng.ui.v2.links.save')?.input.kind).toBe('ftp')
   await input.fill('ordinary search text')
   await page.getByRole('button', { name: '保存链接' }).click()
   await expect(page.getByText(/请输入 HTTP/)).toBeVisible()
@@ -113,7 +113,7 @@ test('private setup and account login render their security-critical flows', asy
   await setup.getByLabel('密码', { exact: true }).fill('e2e-password')
   await setup.getByLabel('确认密码').fill('e2e-password')
   await setup.getByRole('button', { name: '启用私人空间' }).click()
-  await expect.poll(() => lastRequest(requests, 'thunder.ui.v2.private.setup')?.input.password).toBe('e2e-password')
+  await expect.poll(() => lastRequest(requests, 'leifeng.ui.v2.private.setup')?.input.password).toBe('e2e-password')
   await page.getByRole('button', { name: '取消' }).click()
   await page.getByRole('button', { name: '账户' }).click()
   await page.getByRole('button', { name: '扫码登录' }).click()
@@ -133,7 +133,7 @@ test('limit dialog can clear both limits and about component details work', asyn
   await checks.nth(2).uncheck()
   await expect(dialog.getByRole('button', { name: '确认' })).toBeEnabled()
   await dialog.getByRole('button', { name: '确认' }).click()
-  await expect.poll(() => lastRequest(requests, 'thunder.ui.v2.policies.update')?.input.patch).toMatchObject({ globalDownloadLimit: null, globalUploadLimit: null })
+  await expect.poll(() => lastRequest(requests, 'leifeng.ui.v2.policies.update')?.input.patch).toMatchObject({ globalDownloadLimit: null, globalUploadLimit: null })
   await page.getByRole('button', { name: '关于迅雷' }).click()
   const about = page.getByRole('dialog', { name: '关于迅雷' })
   await about.getByRole('button', { name: '查看组件版本' }).click()

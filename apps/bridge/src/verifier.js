@@ -1,5 +1,5 @@
 // verifier.js — 种子会话的 piece 校验引擎。
-// P1：全量 recheck（tlei 完成后一次跑完）；P2 预留游标式增量（verifyUpTo）。
+// P1：全量 recheck（leifeng 完成后一次跑完）；P2 预留游标式增量（verifyUpTo）。
 // 铁律：sha1 不通过的 piece 永不标记 verified —— 防污染 swarm 的唯一闸门。
 
 'use strict';

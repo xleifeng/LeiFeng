@@ -12,11 +12,6 @@ test('config resolves all paths once and rejects unsafe roots', () => {
   assert.throws(() => loadConfig({ repoRoot: dir, env: { HOME: '/tmp/home', THUNDERD_RUNTIME_DIR: '/' } }), (error) => error.code === 'UNSAFE_PATH');
 });
 
-test('production config disables legacy RPC by default', () => {
-  const config = loadConfig({ env: { HOME: '/tmp/thunder-test-home', THUNDERD_RUNTIME_DIR: '/tmp/thunder-runtime-v2', THUNDERD_DOWNLOAD_DIR: '/tmp/thunder-download-v2' }, repoRoot: '/tmp/repo-v2' });
-  assert.equal(config.legacyRpcEnabled, false);
-});
-
 // ---- 引擎模式两态 + auto ----
 test('engineMode：auto 按平台解析，显式值校验，旧 windows-native 不再接受', () => {
   assert.equal(engineMode('auto', 'linux'), 'wine');
@@ -96,13 +91,13 @@ test('mergeConfigFile 直接暴露的合并语义（env 已设置的键不被文
 // ---- SDK 版本派生（沿有行为） ----
 test('SDK version derives matching numeric version code from name or program dir', () => {
   assert.equal(versionCodeFromName('25.0.90.1592'), 2500901592);
-  assert.equal(versionNameFromProgramDir('C:\\tlei-sdk\\Thunder-25.0.90.1592\\program'), '25.0.90.1592');
-  assert.equal(versionNameFromProgramDir('/opt/tlei-sdk/Thunder-25.0.90.1592/program'), '25.0.90.1592');
+  assert.equal(versionNameFromProgramDir('C:\\leifeng-sdk\\Thunder-25.0.90.1592\\program'), '25.0.90.1592');
+  assert.equal(versionNameFromProgramDir('/opt/leifeng-sdk/Thunder-25.0.90.1592/program'), '25.0.90.1592');
   assert.equal(versionCodeFromName('bad', 123), 123);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cfg-sdk-'));
   const config = loadConfig({ repoRoot: dir, env: configEnv(dir, {
     THUNDERD_ENGINE_MODE: 'native',
-    THUNDERD_PROGRAM_DIR: 'C:\\tlei-sdk\\Thunder-25.0.90.1592\\program',
+    THUNDERD_PROGRAM_DIR: 'C:\\leifeng-sdk\\Thunder-25.0.90.1592\\program',
   }) });
   assert.equal(config.engineMode, 'native');
   assert.equal(config.sdkVersionName, '25.0.90.1592');

@@ -1,5 +1,5 @@
 {
-  "name": "@tlei/cordis-include",
+  "name": "@leifeng/cordis-include",
   "version": "1.0.4",
   "type": "module",
   "main": "lib/index.js",
@@ -21,8 +21,8 @@
   "dependencies": {
     "cosmokit": "^1.8.1",
     "js-yaml": "^4.1.0",
-    "@tlei/cordis": "4.0.0-rc.7",
-    "@tlei/cordis-loader": "1.0.0-rc.5"
+    "@leifeng/cordis": "4.0.0-rc.7",
+    "@leifeng/cordis-loader": "1.0.0-rc.5"
   },
   "private": true
 }

@@ -57,7 +57,7 @@ function createQbitClient({ port = 8085, host = '127.0.0.1', timeoutMs = 10000, 
   }
 
   // 上传 .torrent（multipart）。有限重试：qbit 短暂不可用时 hybrid 前期工作
-  // （tlei 任务、会话）已就绪，单次超时放弃会拖死整个编排。
+  // （leifeng 任务、会话）已就绪，单次超时放弃会拖死整个编排。
   async function addTorrent(torrentBuf, { name = 'seed.torrent', retries = 2 } = {}) {
     let lastError;
     for (let attempt = 0; attempt <= retries; attempt++) {

@@ -5,7 +5,6 @@ const { spawn } = require('node:child_process');
 const { TaskRegistry } = require('../src/registry');
 const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
-const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
@@ -73,24 +72,30 @@ const { RemotePairingService } = require('../src/services/remote-pairing-service
 const { RemoteNodeService } = require('../src/services/remote-node-service');
 const { RemoteTaskService } = require('../src/services/remote-task-service');
 const { MtlsClient } = require('../src/remote/mtls-client');
-const { createThunderUiV2Methods } = require('../src/rpc/thunder-ui-v2-methods');
 const { DaemonControlServer } = require('../src/control/server');
 const { DaemonControlDispatcher } = require('../src/control/dispatcher');
 const { productServices } = require('./product-services.cjs');
+const { shellFallbackOperations } = require('../src/domain/shell-capabilities');
+const { createTaskRpcMethods } = require('../src/rpc/task-rpc-methods');
+const { createTaskControlMethods } = require('../src/rpc/task-control-methods');
 const { plugin } = require('./shared.cjs');
 
-const taskCore = plugin('tlei-task-core', ['tleiConfig', 'tleiRepositories', 'tleiEngine', 'tleiObservation', 'tleiAuth'], (ctx) => {
-  const { appConfig, runtimeDir, downloadDir } = ctx.tleiConfig;
-  const r = ctx.tleiRepositories;
-  const { driver, taskDbReaders } = ctx.tleiEngine;
-  const { eventBus } = ctx.tleiObservation;
-  const { auth, vipManager } = ctx.tleiAuth;
+const taskShell = plugin('leifeng-task-shell', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengRpc'], (ctx) => {
+  const { appConfig, runtimeDir, downloadDir } = ctx.leifengConfig;
+  const r = ctx.leifengRepositories;
+  // kernel-any-only：经 hub 取默认内核（不再硬编码 thunder 槽）；account/
+  // taskDbReaders 是迅雷富件，缺席即诚实降级（qbit-only）。
+  const kernelSlot = ctx.leifengKernelHub.default();
+  if (!kernelSlot) throw new Error('task-shell: no kernel registered (enable a kernel plugin)');
+  const { kernel: driver, eventBus, taskDbReaders } = kernelSlot;
+  const { vipManager } = kernelSlot.account || {};
   const operationLock = new OperationLock();
-  const taskService = new TaskService({ tasks: r.taskRepository, driver, vip: vipManager, seedStore: r.seedStore, operationLock, eventBus });
+  const taskService = new TaskService({ tasks: r.taskRepository, driver, vip: vipManager ?? null, seedStore: r.seedStore, operationLock, eventBus });
   const taskGroupService = new TaskGroupService({ tasks: r.taskRepository, taskService });
   const createTaskService = new CreateTaskService({ tasks: r.taskRepository, driver, settings: r.settingsRepository,
     operationLock, runtimeDir, seedStore: r.seedStore, ftpSecrets: r.ftpSecretStore,
-    taskDbPath: driver.taskDbPath, readNativeBtTasks: taskDbReaders.readNativeBtTasks,
+    taskDbPath: driver.taskDbPath, readNativeBtTasks: taskDbReaders?.readNativeBtTasks ?? null,
+    defaultKernelId: kernelSlot.kernelId,
     magnetTimeoutSec: appConfig.magnetTimeoutSec });
   const settingsService = new SettingsService({ settings: r.settingsRepository, driver });
   const policyService = new DownloadPolicyService({ settings: r.settingsRepository, driver,
@@ -113,9 +118,7 @@ const taskCore = plugin('tlei-task-core', ['tleiConfig', 'tleiRepositories', 'tl
   const systemIntegrationService = new SystemIntegrationService({ resolver: safePathResolver, tasks: r.taskRepository, processRunner });
   const taskQueryService = new TaskQueryService({ tasks: r.taskRepository,
     runtimeCapabilities: () => ({ native: driver.nativeCapabilities && driver.nativeCapabilities.flat || driver.nativeCapabilities || {},
-      fallbackOperations: { recycle: true, recover: true, rename: true, move: true, redownload: true,
-        btSelection: true, btSequential: true, open: systemIntegrationService.getCapabilities().openOnHost === true,
-        showInFolder: systemIntegrationService.getCapabilities().showInFolder === true, copyInfo: true } }) });
+      fallbackOperations: shellFallbackOperations(systemIntegrationService) }) });
   const protocolParser = new ProtocolParser({ driver });
   const magnetMetadata = new MagnetMetadataService({ drafts: r.draftRepository, driver, seedStore: r.seedStore,
     runtimeDir, timeoutMs: appConfig.magnetTimeoutSec * 1000 });
@@ -134,7 +137,8 @@ const taskCore = plugin('tlei-task-core', ['tleiConfig', 'tleiRepositories', 'tl
   const onBootError = (error) => console.error('[thunderd] engine boot failed (retrying):', error.message);
   const onUp = ({ generation } = {}) => { policyService.onEngineUp(generation || driver._generation)
     .catch((error) => console.error('[thunderd] policy apply failed:', error.message)); scheduler.onEngineUp(); };
-  driver.on('down', onDown); driver.on('bootError', onBootError); driver.on('up', onUp);
+  // 经域事件订阅内核事件（不再直接订 driver——壳层只见 KernelPort 词汇）
+  eventBus.on('kernel.down', onDown); eventBus.on('kernel.bootError', onBootError); eventBus.on('kernel.up', onUp);
   const unsubs = [
     eventBus.on('task.observation', (event) => scheduler.recordSpeedSample(event)),
     eventBus.on('task.transition', (event) => { scheduler.onTaskTransition(event); completionActions.onTaskTransition(event); }),
@@ -161,23 +165,38 @@ const taskCore = plugin('tlei-task-core', ['tleiConfig', 'tleiRepositories', 'tl
     }, 1000);
     timers = [draftSweepTimer, metadataPollTimer, groupRefreshTimer];
     for (const timer of timers) timer.unref?.();
-    ctx.tleiObservation.start();
-    ctx.tleiEngine.start();
+    kernelSlot.start();
     scheduler.requestReconcile('startup');
     scheduleService.start();
     idleController.start();
   }
-  ctx.provide('tleiTasks', { operationLock, taskService, taskQueryService, taskGroupService,
+  ctx.provide('leifengTasks', { operationLock, taskService, taskQueryService, taskGroupService,
     createTaskService, createDraftService, operationService, settingsService, policyService,
     scheduler, scheduleService, idleController, completionActions, pathService,
     safePathResolver, fileOperationService, systemIntegrationService, magnetMetadata,
     protocolParser, processRunner, activate });
+  // ---- RPC 注册（rpc-plugin-registration）：task 域 v2 面 + daemon.v1.torrent 控制面。
+  // activate（引擎拉起）原由 control-rpc 装配完成后代调，rpc-host 在本插件之前
+  // 已监听，改装配尾部自激活——对外时序等价（RPC 可达前引擎已在拉起）。
+  const withdrawV2 = ctx.leifengRpc.registry.register('task-shell', createTaskRpcMethods({
+    taskService, taskQueryService, operationService, createTaskService, createDraftService,
+    groupService: taskGroupService, settingsService, policyService, scheduler, scheduleService,
+    completionActions, systemIntegration: systemIntegrationService, operations: r.operationRepository, eventBus,
+  }));
+  const withdrawControl = ctx.leifengRpc.registry.register('task-shell', createTaskControlMethods({
+    createDraftService, tasks: r.taskRepository, seedStore: r.seedStore, config: appConfig,
+  }));
+  const withdrawHealth = ctx.leifengRpc.registry.provideHealthStatus('task-shell', 'repositories', () => ({
+    revision: Number(r.taskRepository.repositoryRevision) || 0,
+  }));
+  activate();
   return () => {
+    withdrawV2(); withdrawControl(); withdrawHealth();
     for (const timer of timers) clearInterval(timer);
-    driver.off('down', onDown); driver.off('bootError', onBootError); driver.off('up', onUp);
+    eventBus.off('kernel.down', onDown); eventBus.off('kernel.bootError', onBootError); eventBus.off('kernel.up', onUp);
     for (const unsubscribe of unsubs) unsubscribe?.();
     scheduler.stop(); scheduleService.stop(); idleController.stop(); completionActions.stop();
   };
 });
 
-module.exports = { taskCore };
+module.exports = { taskShell };

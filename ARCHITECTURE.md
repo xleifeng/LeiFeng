@@ -9,7 +9,7 @@ Browser / CLI / desktop integration / remote node
                          v
                  apps/web-api/src/main.js
                          |
-                         | @tlei/daemon-client
+                         | @leifeng/daemon-client
                          | JSON-RPC 2.0 + Content-Length framing
                          | Unix domain socket, mode 0600
                          v
@@ -36,7 +36,7 @@ Browser / CLI / desktop integration / remote node
 | External Web API | `apps/web-api/src/` | `/jsonrpc`, `/api/v2/*`, WebUI assets, HTTP security context and remote mTLS | Direct imports from daemon internals |
 | Web application | `apps/webui/src/` | Native-style presentation and user interaction | Filesystem or native engine access |
 
-The architecture test `apps/daemon/test/architecture/external-web-api-boundary.test.js` enforces the most important dependency rule: the external Web API may reach the daemon only through `@tlei/daemon-client`.
+The architecture test `apps/daemon/test/architecture/external-web-api-boundary.test.js` enforces the most important dependency rule: the external Web API may reach the daemon only through `@leifeng/daemon-client`.
 
 ## API boundaries
 
@@ -65,7 +65,7 @@ Existing URLs and `thunder.ui.v2.*` method names remain compatible. HTTP authent
 
 ### Native engine API
 
-`apps/daemon/host/src/driver.js` and `apps/daemon/host/src/engine-client.js` are the only daemon-side entry to `apps/daemon/engine/engine.js`. This JSON-lines protocol is an implementation detail for native SDK isolation. It is not exported by `@tlei/daemon-client` and is not available to the Web API.
+`apps/daemon/host/src/driver.js` and `apps/daemon/host/src/engine-client.js` are the only daemon-side entry to `apps/daemon/engine/engine.js`. This JSON-lines protocol is an implementation detail for native SDK isolation. It is not exported by `@leifeng/daemon-client` and is not available to the Web API.
 
 ## Startup modes
 

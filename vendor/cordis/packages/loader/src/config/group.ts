@@ -1,4 +1,4 @@
-import { Context, Service } from '@tlei/cordis'
+import { Context, Service } from '@leifeng/cordis'
 import { Entry, EntryOptions } from './entry.ts'
 import { EntryTree } from './tree.ts'
 

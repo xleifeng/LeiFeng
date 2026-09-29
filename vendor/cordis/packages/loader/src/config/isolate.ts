@@ -1,4 +1,4 @@
-import { Context } from '@tlei/cordis'
+import { Context } from '@leifeng/cordis'
 import { Dict } from 'cosmokit'
 import { Entry } from './entry.ts'
 

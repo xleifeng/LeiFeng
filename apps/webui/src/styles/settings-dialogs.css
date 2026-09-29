@@ -44,6 +44,16 @@
 .settings-field-row.is-wide { width: min(730px, 100%); }
 .settings-field-row.is-reference-row { min-height: 44px; }
 .settings-sub-action { display: flex; align-items: center; min-height: 48px; gap: 18px; color: #535d70; font-size: 14px; }
+.plugin-manager-row { align-items: flex-start; min-height: 44px; }
+.plugin-manager-row.is-locked { color: #a4abb6; opacity: .72; }
+.plugin-manager-row.is-locked input { cursor: default; }
+.plugin-manager-label { display: flex; flex-direction: column; gap: 2px; line-height: 18px; }
+.plugin-manager-id { color: #303747; font-size: 13px; }
+.plugin-manager-row.is-locked .plugin-manager-id { color: #535d70; }
+.plugin-manager-provides { color: #8a909c; font-family: var(--xl-font-num); font-size: 12px; }
+.plugin-manager-message { margin: 0 0 14px; color: #2fa36b; font-size: 12px; }
+.plugin-manager-message.is-error { color: #d44a4a; }
+.plugin-manager-message.is-error button { margin-left: 6px; color: #226df5; }
 .settings-window-savebar { position: fixed; z-index: 2; right: 28px; bottom: 20px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
 .settings-save-message { color: #2fa36b; font-size: 12px; }
 .settings-save-message.is-error { color: #d44a4a; }

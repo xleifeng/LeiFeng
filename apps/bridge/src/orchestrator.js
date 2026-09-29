@@ -1,8 +1,8 @@
 // orchestrator.js — P2 混合加速编排器。
-// 形态：磁力 → [tlei 下载（P2SP，sequential）] + [qbit 下载（swarm）+ 桥 web seed（增量供种）]
+// 形态：磁力 → [leifeng 下载（P2SP，sequential）] + [qbit 下载（swarm）+ 桥 web seed（增量供种）]
 //      → 两路数据在 qbit 侧拼装成完整文件 → qbit 做种回哺。
-// 混合逻辑：qbit 自带 swarm 源；桥把 tlei 已验证增量喂给 qbit；互补兜底（swarm 封迅雷 /
-//      P2SP 无缓存均不影响另一路）。加速无效检测：tlei 长期停滞 → 停 tlei 任务止损。
+// 混合逻辑：qbit 自带 swarm 源；桥把 leifeng 已验证增量喂给 qbit；互补兜底（swarm 封迅雷 /
+//      P2SP 无缓存均不影响另一路）。加速无效检测：leifeng 长期停滞 → 停 leifeng 任务止损。
 
 'use strict';
 
@@ -20,8 +20,8 @@ function createOrchestrator({
   daemonPort = 16800,
   bridgeHost = '127.0.0.1',
   bridgePort = 7127,
-  savePath,                       // tlei 保存目录（--data）
-  stalledTimeoutMs = 10 * 60 * 1000, // tlei 停滞判定窗口（BT 乱序落盘下 5 分钟粒度太激进，真机误触过）
+  savePath,                       // leifeng 保存目录（--data）
+  stalledTimeoutMs = 10 * 60 * 1000, // leifeng 停滞判定窗口（BT 乱序落盘下 5 分钟粒度太激进，真机误触过）
   stalledRateBps = 10 * 1024,     // 低于此速率视为停滞
   recoveryIntervalMs = 20000,
   daemonClient = null,
@@ -48,13 +48,13 @@ function createOrchestrator({
       try {
         let cursor;
         do {
-          const page = await daemon.rpc('thunder.ui.v2.tasks.query', [{ limit: 200, ...(cursor ? { cursor } : {}) }]);
+          const page = await daemon.rpc('leifeng.ui.v2.tasks.query', [{ limit: 200, ...(cursor ? { cursor } : {}) }]);
           for (const item of page.items || []) {
             if (!['bt', 'magnet'].includes(item.kind)) continue;
             // 列表 DTO 先粗筛（sourceFingerprint 直接可判），减少 tasks.get N+1 往返
             const quick = /^(?:bt|magnet):(?:info|hash):([a-f0-9]{40})$/i.exec(item.sourceFingerprint || '')?.[1];
             if (quick && quick.toLowerCase() !== infohash) continue;
-            const task = await daemon.rpc('thunder.ui.v2.tasks.get', [{ taskId: item.taskId, includeFiles: false }]);
+            const task = await daemon.rpc('leifeng.ui.v2.tasks.get', [{ taskId: item.taskId, includeFiles: false }]);
             let hash = quick || /^(?:bt|magnet):(?:info|hash):([a-f0-9]{40})$/i.exec(task.sourceFingerprint || '')?.[1];
             if (!hash && /^magnet:\?/i.test(task.source || '')) {
               try { hash = (await parseTorrent(task.source)).infoHash; } catch {}
@@ -74,7 +74,7 @@ function createOrchestrator({
 
   async function removeFailedTask(taskId) {
     for (const command of ['recycle', 'delete-permanently']) {
-      const result = await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command, options: { deleteLocalFiles: false } }]);
+      const result = await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command, options: { deleteLocalFiles: false } }]);
       const item = result.results?.[0];
       if (!item?.ok) throw new Error(`${command} 失败: ${item?.error?.message || '未知错误'}`);
     }
@@ -137,21 +137,21 @@ function createOrchestrator({
   // 只做“进度观测”（verifiedCount / 磁盘字节），不再主动读 piece 数据。
 
   async function createBtTask(magnet, dataPath = savePath) {
-    const pre = await daemon.rpc('thunder.ui.v2.create.preflight', [{ inputs: [magnet], savePath: dataPath }]);
+    const pre = await daemon.rpc('leifeng.ui.v2.create.preflight', [{ inputs: [magnet], savePath: dataPath }]);
     const draft = pre.results?.[0];
     if (!draft?.ok) throw new Error(`preflight 失败: ${draft?.error?.message || '未知错误'}`);
     let d = draft.draft;
     for (let i = 0; i < 60 && d.state !== 'ready'; i++) {
       await sleep(2000);
-      d = await daemon.rpc('thunder.ui.v2.create.getDraft', [{ draftId: d.draftId }]);
+      d = await daemon.rpc('leifeng.ui.v2.create.getDraft', [{ draftId: d.draftId }]);
     }
     if (d.state !== 'ready') throw new Error('元数据等待超时');
     const patch = d.duplicate ? { duplicateResolution: 'redownload' }
       : d.options?.collision?.collision ? { duplicateResolution: 'overwrite-never' } : {};
     if (Object.keys(patch).length) {
-      d = await daemon.rpc('thunder.ui.v2.create.updateDraft', [{ draftId: d.draftId, ...patch }]);
+      d = await daemon.rpc('leifeng.ui.v2.create.updateDraft', [{ draftId: d.draftId, ...patch }]);
     }
-    const commit = await daemon.rpc('thunder.ui.v2.create.commit', [{ draftIds: [d.draftId] }]);
+    const commit = await daemon.rpc('leifeng.ui.v2.create.commit', [{ draftIds: [d.draftId] }]);
     const first = commit.results?.[0];
     const taskId = first?.taskIds?.[0];
     if (!taskId) {
@@ -173,7 +173,7 @@ function createOrchestrator({
     const check = async () => {
       if (!session.taskId || !sessions.has(session.infohash)) return;
       try {
-        const task = await daemon.rpc('thunder.ui.v2.tasks.get', [{ taskId: session.taskId, includeFiles: false }]);
+        const task = await daemon.rpc('leifeng.ui.v2.tasks.get', [{ taskId: session.taskId, includeFiles: false }]);
         if (task.lifecycle === 'failed') {
           if (Number(task.error?.nativeCode) === 208) {
             session.recoveryAttempts = (session.recoveryAttempts || 0) + 1;
@@ -187,7 +187,7 @@ function createOrchestrator({
             try {
               session.taskId = await createBtTask(magnet);
               log('orch', `208 恢复任务 ${oldId} → ${session.taskId}`);
-              await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [session.taskId], command: 'set-bt-scheduler', options: { btScheduler: 'sequential' } }]);
+              await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [session.taskId], command: 'set-bt-scheduler', options: { btScheduler: 'sequential' } }]);
               if (sessions.has(session.infohash)) scheduleRecovery(session, magnet);
             } catch (error) {
               log('orch', `208 后无法安全重建 (${error.code || 'unknown'})；保留 qbit 下载`);
@@ -207,7 +207,7 @@ function createOrchestrator({
             log('orch', `任务失败(${task.error.code})，引擎自愈重试 ${session.engineStartAttempts}/6（退避 ${wait >= 1000 ? `${wait / 1000}s` : `${wait}ms`} 后 start）`);
             session.recoveryTimer = setTimeout(async () => {
               try {
-                await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [session.taskId], command: 'start' }]);
+                await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [session.taskId], command: 'start' }]);
                 log('orch', `已对 ${session.taskId} 发出 start（引擎失败自愈）`);
               } catch (error) { log('orch', `start 重试失败: ${error.message}`); }
               if (sessions.has(session.infohash) && session.taskId) {
@@ -240,7 +240,7 @@ function createOrchestrator({
     session.recoveryTimer = setTimeout(check, recoveryIntervalMs);
   }
 
-  // ---- 混合加速：磁力 → tlei 任务 + qbit 种子（带 web seed URL）----
+  // ---- 混合加速：磁力 → leifeng 任务 + qbit 种子（带 web seed URL）----
   async function hybridDownload(magnet, { dataPath = savePath } = {}) {
     const { default: parseTorrent } = await import('parse-torrent');
     const infohash = (await parseTorrent(magnet)).infoHash?.toLowerCase();
@@ -259,20 +259,20 @@ function createOrchestrator({
         adoptTarget = engineFailed[0];
         log('orch', `接管引擎失败任务 ${adoptTarget.taskId}（${adoptTarget.error?.code}），先 start 救活`);
         try {
-          await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [adoptTarget.taskId], command: 'start' }]);
+          await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [adoptTarget.taskId], command: 'start' }]);
         } catch (e) { log('orch', `start 救活失败（转重建评估）: ${e.message}`); adoptTarget = null; }
       }
     }
     let taskId = adoptTarget?.taskId || null;
     let torrentBuf = null;
     if (taskId) {
-      log('orch', `接管已有 tlei 任务 ${taskId}`);
+      log('orch', `接管已有 leifeng 任务 ${taskId}`);
       // 接管含桥自身止损暂停过的任务：新桥进场 = 继续混合加速，显式恢复。
       // （用户在 webui 手动暂停的任务同理——hybrid 命令本身就是"要下载"的表达。）
       try {
-        const t = await daemon.rpc('thunder.ui.v2.tasks.get', [{ taskId, includeFiles: false }]);
+        const t = await daemon.rpc('leifeng.ui.v2.tasks.get', [{ taskId, includeFiles: false }]);
         if (t.lifecycle === 'paused') {
-          await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'start' }]);
+          await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'start' }]);
           log('orch', '接管的任务处于暂停态，已 start 恢复');
         }
       } catch (e) { log('orch', `接管恢复检查失败（继续）: ${e.message}`); }
@@ -290,14 +290,14 @@ function createOrchestrator({
       try { taskId = await createBtTask(magnet, dataPath); }
       catch (error) {
         if (error.code !== 'BT_NATIVE_SESSION_BUSY') throw error;
-        log('orch', '同 hash 原生会话未释放；跳过 tlei 重建，qbit 独立继续');
+        log('orch', '同 hash 原生会话未释放；跳过 leifeng 重建，qbit 独立继续');
       }
     }
-    log('orch', `tlei 任务 ${taskId}`);
+    log('orch', `leifeng 任务 ${taskId}`);
 
     // 顺序调度（游标校验最优）
     if (taskId) try {
-      await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'set-bt-scheduler', options: { btScheduler: 'sequential' } }]);
+      await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'set-bt-scheduler', options: { btScheduler: 'sequential' } }]);
       log('orch', '顺序调度已设置');
     } catch (e) { log('orch', `⚠ 顺序调度失败（继续，非致命）: ${e.message}`); }
 
@@ -351,15 +351,15 @@ function createOrchestrator({
       const patch = { draftId: draft.draftId, savePath: dataPath };
       if (draft.duplicate) patch.duplicateResolution = 'redownload';
       else if (draft.options?.collision?.collision) patch.duplicateResolution = 'overwrite-never';
-      draft = await daemon.rpc('thunder.ui.v2.create.updateDraft', [patch]);
-      const committed = await daemon.rpc('thunder.ui.v2.create.commit', [{ draftIds: [draft.draftId] }]);
+      draft = await daemon.rpc('leifeng.ui.v2.create.updateDraft', [patch]);
+      const committed = await daemon.rpc('leifeng.ui.v2.create.commit', [{ draftIds: [draft.draftId] }]);
       const first = committed.results?.[0];
       taskId = first?.taskIds?.[0];
       if (!taskId) { const error = new Error(first?.error?.message || 'torrent commit 未返回 taskId'); error.code = first?.error?.code || 'COMMIT_FAILED'; throw error; }
     }
     const session = await adoptTorrent(rawTorrentBuffer, healthy[0]?.savePath || dataPath);
     try {
-      await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'set-bt-scheduler', options: { btScheduler: 'sequential' } }]);
+      await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'set-bt-scheduler', options: { btScheduler: 'sequential' } }]);
     } catch (error) { log('orch', `顺序调度失败（继续）: ${error.code || 'unknown'}`); }
     const baseUrl = `http://${bridgeHost}:${bridgePort}/seeds/${infohash}/`;
     const { injected } = await injector.injectAndVerify(rawTorrentBuffer, baseUrl);
@@ -392,7 +392,7 @@ function createOrchestrator({
     }
   }
 
-  // ---- 停滞止损：tlei 无进展则停其任务（D10）----
+  // ---- 停滞止损：leifeng 无进展则停其任务（D10）----
   // 进度三信号任一成立即不算停滞（host 观测面冻结已实证，HANDOVER §2.5-④）：
   //   1. 验证推进（verifiedCount 增长——HTTP 按需验证驱动）
   //   2. 磁盘字节增长（唯一可信的数据面信号）
@@ -403,10 +403,10 @@ function createOrchestrator({
     const idleMs = Date.now() - session.lastProgressAt;
     if (idleMs < stalledTimeoutMs) return false;
     try {
-      const q = await daemon.rpc('thunder.ui.v2.tasks.query', [{ limit: 50 }]);
+      const q = await daemon.rpc('leifeng.ui.v2.tasks.query', [{ limit: 50 }]);
       const t = (q.items || []).find((x) => x.taskId === taskId);
-      if (!t) { log('orch', `tlei 任务 ${taskId} 已不在任务列表（外部删除）；停监控`); return true; }
-      if (t.lifecycle === 'failed') { log('orch', `tlei 任务失败(${t.error?.nativeCode || t.error?.code || 'unknown'})，保留 qbit 独立下载`); return true; }
+      if (!t) { log('orch', `leifeng 任务 ${taskId} 已不在任务列表（外部删除）；停监控`); return true; }
+      if (t.lifecycle === 'failed') { log('orch', `leifeng 任务失败(${t.error?.nativeCode || t.error?.code || 'unknown'})，保留 qbit 独立下载`); return true; }
       if (t.lifecycle === 'completed' || t.lifecycle === 'recycled') return false;
       // 信号 1：验证推进
       if (session.verifier.verifiedCount > session.lastVerified) {
@@ -427,8 +427,8 @@ function createOrchestrator({
       }
       // 三信号全灭且任务处于可暂停态 → 止损
       if (!['queued', 'downloading'].includes(t.lifecycle)) return false; // paused 等不重复 pause
-      await daemon.rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'pause' }]);
-      log('orch', `tlei 任务停滞 ${Math.round(idleMs / 1000)}s（验证/磁盘/host 速度均无进展），已暂停止损（qbit 独立继续）`);
+      await daemon.rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'pause' }]);
+      log('orch', `leifeng 任务停滞 ${Math.round(idleMs / 1000)}s（验证/磁盘/host 速度均无进展），已暂停止损（qbit 独立继续）`);
       return true;
     } catch (e) { log('orch', `止损检查失败: ${e.message}`); return false; }
   }

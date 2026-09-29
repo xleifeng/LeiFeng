@@ -2,12 +2,13 @@
 export const BASE = Object.freeze(['runtime-config']);
 export const DAEMON_CORE = Object.freeze([
   'repositories',
-  'engine-driver',
-  'event-observation',
-  'auth-vip',
-  'task-core',
+  'kernel-hub',
+  'rpc-host',
+  'kernel-thunder',
+  'kernel-qbit', // defaultEnabled:false（registry 声明）：常驻序内、默认不启动；patch 启用
+  'task-shell',
   'product-services',
-  'control-rpc',
+  'plugin-admin',
 ]);
 export const BRIDGE_HOST = Object.freeze([
   'bridge-daemon-client',

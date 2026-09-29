@@ -19,7 +19,7 @@ const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-ops-downl
 const targetDir = path.join(downloadDir, 'moved');
 // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
 const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
-  || path.join(process.env.HOME, 'tmp', `tlei-it-wine-${path.basename(runtime)}`);
+  || path.join(process.env.HOME, 'tmp', `leifeng-it-wine-${path.basename(runtime)}`);
 let daemon; let fixture;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -36,26 +36,26 @@ function startFixture() {
   const server = http.createServer((req, res) => { res.writeHead(200, { 'content-length': bytes.length, 'accept-ranges': 'bytes' }); if (req.method !== 'HEAD') res.end(bytes); else res.end(); });
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve({ server, bytes, sha, url: `http://127.0.0.1:${server.address().port}/ops.bin` })));
 }
-async function waitHealthy() { const deadline = Date.now() + 120000; for (;;) { try { const result = await rpc('thunder.ui.v2.bootstrap', []); if (result.engine?.transportReady && result.engine?.sdkReady) return; } catch {} if (Date.now() > deadline) throw new Error('engine did not become healthy'); await sleep(1000); } }
-async function waitTask(taskId, predicate) { const deadline = Date.now() + 90000; for (;;) { const result = await rpc('thunder.ui.v2.tasks.get', [{ taskId }]); if (predicate(result)) return result; if (Date.now() > deadline) throw new Error(`task operation timeout: ${result.lifecycle}`); await sleep(1000); } }
+async function waitHealthy() { const deadline = Date.now() + 120000; for (;;) { try { const result = await rpc('leifeng.ui.v2.bootstrap', []); if (result.engine?.transportReady && result.engine?.sdkReady) return; } catch {} if (Date.now() > deadline) throw new Error('engine did not become healthy'); await sleep(1000); } }
+async function waitTask(taskId, predicate) { const deadline = Date.now() + 90000; for (;;) { const result = await rpc('leifeng.ui.v2.tasks.get', [{ taskId }]); if (predicate(result)) return result; if (Date.now() > deadline) throw new Error(`task operation timeout: ${result.lifecycle}`); await sleep(1000); } }
 
 test('real V2 task operations rename → move → recycle → permanent delete', { skip: !enabled, timeout: 240000 }, async () => {
   fixture = await startFixture();
   daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'task-ops-it', THUNDERD_RUNTIME_DIR: runtime, THUNDERD_DOWNLOAD_DIR: downloadDir, WINEPREFIX: winePrefix }, stdio: ['ignore', 'inherit', 'inherit'] });
   try {
     await waitHealthy();
-    const preflight = await rpc('thunder.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: fixture.url }], savePath: downloadDir }]);
-    const draft = preflight.results[0].draft; const committed = await rpc('thunder.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'task-ops-create' }]);
+    const preflight = await rpc('leifeng.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: fixture.url }], savePath: downloadDir }]);
+    const draft = preflight.results[0].draft; const committed = await rpc('leifeng.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'task-ops-create' }]);
     const taskId = committed.results[0].taskIds[0]; const completed = await waitTask(taskId, (task) => task.lifecycle === 'completed');
-    const renamed = await rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'rename', expectedRevisions: { [taskId]: completed.revision }, options: { displayName: 'ops-renamed.bin' }, idempotencyKey: 'task-ops-rename' }]);
+    const renamed = await rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'rename', expectedRevisions: { [taskId]: completed.revision }, options: { displayName: 'ops-renamed.bin' }, idempotencyKey: 'task-ops-rename' }]);
     assert.equal(renamed.results[0].ok, true); assert.equal(fs.existsSync(path.join(downloadDir, 'ops-renamed.bin')), true);
-    const afterRename = await rpc('thunder.ui.v2.tasks.get', [{ taskId }]);
-    const moved = await rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'move', expectedRevisions: { [taskId]: afterRename.revision }, options: { targetDirectory: targetDir }, idempotencyKey: 'task-ops-move' }]);
+    const afterRename = await rpc('leifeng.ui.v2.tasks.get', [{ taskId }]);
+    const moved = await rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'move', expectedRevisions: { [taskId]: afterRename.revision }, options: { targetDirectory: targetDir }, idempotencyKey: 'task-ops-move' }]);
     assert.equal(moved.results[0].ok, true); assert.equal(fs.existsSync(path.join(targetDir, 'ops-renamed.bin')), true);
-    const afterMove = await rpc('thunder.ui.v2.tasks.get', [{ taskId }]);
-    const recycled = await rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'recycle', expectedRevisions: { [taskId]: afterMove.revision }, options: { deleteLocalFiles: false }, idempotencyKey: 'task-ops-recycle' }]);
-    assert.equal(recycled.results[0].ok, true); assert.equal((await rpc('thunder.ui.v2.trash.query', [{}])).items.some((item) => item.taskId === taskId), true);
-    const deleted = await rpc('thunder.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'delete-permanently', expectedRevisions: { [taskId]: (await rpc('thunder.ui.v2.tasks.get', [{ taskId }])).revision }, options: { deleteLocalFiles: true }, idempotencyKey: 'task-ops-delete' }]);
+    const afterMove = await rpc('leifeng.ui.v2.tasks.get', [{ taskId }]);
+    const recycled = await rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'recycle', expectedRevisions: { [taskId]: afterMove.revision }, options: { deleteLocalFiles: false }, idempotencyKey: 'task-ops-recycle' }]);
+    assert.equal(recycled.results[0].ok, true); assert.equal((await rpc('leifeng.ui.v2.trash.query', [{}])).items.some((item) => item.taskId === taskId), true);
+    const deleted = await rpc('leifeng.ui.v2.tasks.command', [{ taskIds: [taskId], command: 'delete-permanently', expectedRevisions: { [taskId]: (await rpc('leifeng.ui.v2.tasks.get', [{ taskId }])).revision }, options: { deleteLocalFiles: true }, idempotencyKey: 'task-ops-delete' }]);
     assert.equal(deleted.results[0].ok, true); assert.equal(fs.existsSync(path.join(targetDir, 'ops-renamed.bin')), false);
   } finally { try { fixture.server.close(); } catch {} try { daemon.kill('SIGTERM'); } catch {} await sleep(1500); }
 });

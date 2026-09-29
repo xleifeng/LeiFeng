@@ -75,7 +75,7 @@ onBeforeUnmount(() => window.removeEventListener(RPC_AUTH_REQUIRED_EVENT, requir
           <ShieldCheck :size="17" />{{ pending ? '正在验证…' : '验证并连接' }}
         </button>
       </form>
-      <p class="connection-secret-help">密钥仅保存在此浏览器。可在服务主机运行 <code>cat ~/.local/state/tlei/rpc-secret</code> 查看。</p>
+      <p class="connection-secret-help">密钥仅保存在此浏览器。可在服务主机运行 <code>cat ~/.local/state/leifeng/rpc-secret</code> 查看。</p>
     </section>
   </div>
 </template>

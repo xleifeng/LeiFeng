@@ -59,16 +59,16 @@ const POLICY_SNAPSHOT = { revision: 1, policy: POLICY, lastApplied: null, fullSp
 
 function mockRpc(method: string | undefined): unknown {
   switch (method) {
-    case 'thunder.ui.v2.bootstrap': return BOOTSTRAP
-    case 'thunder.ui.v2.tasks.counts': return COUNTS
-    case 'thunder.ui.v2.tasks.query': return TASKS_QUERY
-    case 'thunder.ui.v2.policies.get': return POLICY_SNAPSHOT
-    case 'thunder.ui.v2.policies.update': return { ...POLICY_SNAPSHOT, revision: 2, applied: true, applyProblems: [] }
-    case 'thunder.ui.v2.policies.enableFullSpeed': return { ...POLICY_SNAPSHOT, revision: 2, fullSpeed: true, applied: true, applyProblems: [] }
-    case 'thunder.ui.v2.policies.restoreLimits': return { ...POLICY_SNAPSHOT, revision: 2, applied: true, applyProblems: [] }
-    case 'thunder.ui.v2.schedules.getDownloadLimitWindow': return { configured: false, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null }
-    case 'thunder.ui.v2.schedules.setDownloadLimitWindow': return { configured: false, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null, revision: 0 }
-    case 'thunder.ui.v2.proxy.test': return { reachable: true, elapsedMs: 12 }
+    case 'leifeng.ui.v2.bootstrap': return BOOTSTRAP
+    case 'leifeng.ui.v2.tasks.counts': return COUNTS
+    case 'leifeng.ui.v2.tasks.query': return TASKS_QUERY
+    case 'leifeng.ui.v2.policies.get': return POLICY_SNAPSHOT
+    case 'leifeng.ui.v2.policies.update': return { ...POLICY_SNAPSHOT, revision: 2, applied: true, applyProblems: [] }
+    case 'leifeng.ui.v2.policies.enableFullSpeed': return { ...POLICY_SNAPSHOT, revision: 2, fullSpeed: true, applied: true, applyProblems: [] }
+    case 'leifeng.ui.v2.policies.restoreLimits': return { ...POLICY_SNAPSHOT, revision: 2, applied: true, applyProblems: [] }
+    case 'leifeng.ui.v2.schedules.getDownloadLimitWindow': return { configured: false, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null }
+    case 'leifeng.ui.v2.schedules.setDownloadLimitWindow': return { configured: false, enabled: false, startLocalTime: '00:00', endLocalTime: '23:59', timezone: 'Asia/Shanghai', activeNow: false, scheduleIds: [], problemCode: null, revision: 0 }
+    case 'leifeng.ui.v2.proxy.test': return { reachable: true, elapsedMs: 12 }
     default: return null
   }
 }

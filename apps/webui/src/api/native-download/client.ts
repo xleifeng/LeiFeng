@@ -69,7 +69,7 @@ export async function rpcV2<T>(method: string, params: unknown[] = [], signal?: 
     throwRpcProblem(String(fallbackError.code || 'RPC_ERROR'), fallbackError.message || 'RPC 请求失败')
   }
   const result = payload.result as T
-  if (method === 'thunder.ui.v2.bootstrap') {
+  if (method === 'leifeng.ui.v2.bootstrap') {
     const security = (result as { security?: { csrfToken?: string } } | null)?.security
     if (security?.csrfToken) setCsrfToken(security.csrfToken)
   }

@@ -1,5 +1,5 @@
 {
-  "name": "@tlei/cordis-loader",
+  "name": "@leifeng/cordis-loader",
   "description": "Loader for cordis",
   "version": "1.0.0-rc.5",
   "type": "module",
@@ -36,7 +36,7 @@
   ],
   "dependencies": {
     "cosmokit": "^1.8.1",
-    "@tlei/cordis": "4.0.0-rc.7"
+    "@leifeng/cordis": "4.0.0-rc.7"
   },
   "private": true
 }

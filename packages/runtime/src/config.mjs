@@ -1,7 +1,7 @@
 import { PROFILES } from './profiles.mjs';
 
 const ROW_KEYS = new Set(['id', 'enabled', 'config']);
-const ENTRY_KEYS = new Set(['plugin', 'provides', 'requires', 'defaults', 'schema', 'configKeys']);
+const ENTRY_KEYS = new Set(['plugin', 'provides', 'requires', 'defaults', 'schema', 'configKeys', 'defaultEnabled']);
 const SECRET_KEY = /(?:secret|token|password|passkey|session|peer.?id|user.?code|auth|cookie|credential|private.?key)/i;
 
 function isRecord(value) {
@@ -65,7 +65,7 @@ function serviceNames(value) {
   return Object.keys(value);
 }
 
-function applyPatch(rows, patch, label) {
+function applyPatch(rows, patch, label, definitions) {
   if (patch === undefined) return;
   if (!Array.isArray(patch)) throw new TypeError(`${label} must be an array`);
   const seen = new Set();
@@ -75,7 +75,23 @@ function applyPatch(rows, patch, label) {
     if (typeof item.id !== 'string' || !item.id) throw new TypeError(`${label}: missing ID`);
     if (seen.has(item.id)) throw new TypeError(`${label}: duplicate plugin ID: ${item.id}`);
     seen.add(item.id);
-    const row = rows.get(item.id);
+    let row = rows.get(item.id);
+    if (!row && definitions && definitions.has(item.id)) {
+      // registry 里注册但不在 profile 里的插件（如 kernel-qbit 参照内核）：
+      // patch 显式提及即可加入装配（默认启用，patch 可关）。
+      const definition = definitions.get(item.id);
+      row = {
+        id: item.id,
+        enabled: definition.defaultEnabled ?? true,
+        config: structuredClone(definition.defaults ?? {}),
+        provides: serviceNames(definition.provides ?? definition.plugin.provide),
+        requires: serviceNames(definition.requires ?? definition.plugin.inject),
+        plugin: definition.plugin,
+        schema: definition.schema ?? definition.plugin.Config,
+        configKeys: definition.configKeys,
+      };
+      rows.set(item.id, row);
+    }
     if (!row) throw new TypeError(`${label}: unknown plugin ID: ${item.id}`);
     if (item.enabled !== undefined && typeof item.enabled !== 'boolean') {
       throw new TypeError(`${label}: ${item.id}.enabled must be boolean`);
@@ -100,7 +116,7 @@ export function composeProfile({ profile, registry, profilePatch, userPatch }) {
     if (!definition) throw new TypeError(`${profile}: missing plugin ${id}`);
     rows.set(id, {
       id,
-      enabled: true,
+      enabled: definition.defaultEnabled ?? true,
       config: structuredClone(definition.defaults ?? {}),
       provides: serviceNames(definition.provides ?? definition.plugin.provide),
       requires: serviceNames(definition.requires ?? definition.plugin.inject),
@@ -109,8 +125,8 @@ export function composeProfile({ profile, registry, profilePatch, userPatch }) {
       configKeys: definition.configKeys,
     });
   }
-  applyPatch(rows, profilePatch, 'profile patch');
-  applyPatch(rows, userPatch, 'user patch');
+  applyPatch(rows, profilePatch, 'profile patch', definitions);
+  applyPatch(rows, userPatch, 'user patch', definitions);
   const active = [...rows.values()].filter(row => row.enabled);
   const providers = new Map();
   for (const row of active) {

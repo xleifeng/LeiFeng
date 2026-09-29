@@ -1,9 +1,9 @@
-# @tlei/daemon-client
+# @leifeng/daemon-client
 
 Local applications use this package to reach a running Thunder daemon core without importing its services, repositories or native driver.
 
 ```js
-const { DaemonClient, controlSocketPath } = require('@tlei/daemon-client');
+const { DaemonClient, controlSocketPath } = require('@leifeng/daemon-client');
 
 const runtimeDir = process.env.THUNDERD_RUNTIME_DIR;
 const client = new DaemonClient({
@@ -11,7 +11,7 @@ const client = new DaemonClient({
 });
 
 const health = await client.health();
-const tasks = await client.invoke('thunder.ui.v2.tasks.query', [{}], {
+const tasks = await client.invoke('leifeng.ui.v2.tasks.query', [{}], {
   authorization: `Bearer ${process.env.THUNDERD_RPC_SECRET || ''}`,
   bearerToken: process.env.THUNDERD_RPC_SECRET || '',
   isLoopback: true,

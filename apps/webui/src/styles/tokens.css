@@ -1,16 +1,16 @@
 :root {
   --xl-sidebar-width: 180px;
   --xl-topbar-height: 70px;
-  --xl-content-bg: #f6f6f6;
+  --xl-content-bg: #f6f6f6; /* 原版实渲染顶栏/侧栏底色（像素实测，原 tokens-orig 覆盖层收口） */
   --xl-panel-bg: #fff;
-  --xl-text-primary: #1f2329;
-  --xl-text-secondary: #7b818c;
-  --xl-text-tertiary: #a4a9b2;
-  --xl-border: #e8e9eb;
-  --xl-blue: #3478f6;
-  --xl-blue-hover: #2468e8;
-  --xl-danger: #e5484d;
-  --xl-success: #29a36a;
+  --xl-text-primary: #272e3b; /* 原版三级灰阶（收口自 tokens-orig） */
+  --xl-text-secondary: #86909c;
+  --xl-text-tertiary: #c9cdd4;
+  --xl-border: #e5e6eb;
+  --xl-blue: #226df5; /* 主色 — 迅雷蓝（收口自 tokens-orig；侧栏激活、链接、按钮 hover 用 hover 色） */
+  --xl-blue-hover: #1a5fd8;
+  --xl-danger: #ff4d4f;
+  --xl-success: #1bd08d;
   --xl-radius-control: 8px;
   --xl-radius-panel: 12px;
   --xl-row-height: 72px;

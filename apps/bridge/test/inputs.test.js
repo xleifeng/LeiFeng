@@ -71,9 +71,9 @@ test('E4 torrent uploads through daemon draft and passes injected webseed to Rec
     uploadTorrent: async (bytes) => { assert.ok(bytes.equals(raw)); calls.push('upload'); return { draftId: 'd1', options: {} }; },
     rpc: async (method, params) => {
       calls.push(method);
-      if (method === 'thunder.ui.v2.tasks.query') return { items: [], nextCursor: null };
-      if (method === 'thunder.ui.v2.create.updateDraft') { assert.equal(params[0].savePath, dir); return { draftId: 'd1' }; }
-      if (method === 'thunder.ui.v2.create.commit') return { results: [{ ok: true, taskIds: ['t1'] }] };
+      if (method === 'leifeng.ui.v2.tasks.query') return { items: [], nextCursor: null };
+      if (method === 'leifeng.ui.v2.create.updateDraft') { assert.equal(params[0].savePath, dir); return { draftId: 'd1' }; }
+      if (method === 'leifeng.ui.v2.create.commit') return { results: [{ ok: true, taskIds: ['t1'] }] };
       throw new Error(`unexpected RPC ${method}`);
     },
   };
@@ -88,6 +88,6 @@ test('E4 torrent uploads through daemon draft and passes injected webseed to Rec
     const after = await (await import('parse-torrent')).default(added.buffer);
     assert.equal(after.infoHash, result.infohash);
     assert.ok(after.urlList[0].includes(`/seeds/${result.infohash}/`));
-    assert.deepEqual(calls, ['thunder.ui.v2.tasks.query', 'upload', 'thunder.ui.v2.create.updateDraft', 'thunder.ui.v2.create.commit', 'thunder.ui.v2.tasks.command']);
+    assert.deepEqual(calls, ['leifeng.ui.v2.tasks.query', 'upload', 'leifeng.ui.v2.create.updateDraft', 'leifeng.ui.v2.create.commit', 'leifeng.ui.v2.tasks.command']);
   } finally { orchestrator.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

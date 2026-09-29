@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { Context, FiberState } from '@tlei/cordis'
+import { Context, FiberState } from '@leifeng/cordis'
 
 test('provider unload releases dependent plugin', async () => {
   const root = new Context()
   const released = []
   const provider = await root.plugin(ctx => {
-    ctx.provide('tleiProbe', {})
+    ctx.provide('leifengProbe', {})
   })
-  const consumer = await root.plugin({ inject: ['tleiProbe'], apply() { return () => released.push('consumer') } })
+  const consumer = await root.plugin({ inject: ['leifengProbe'], apply() { return () => released.push('consumer') } })
   assert.equal(consumer.state, FiberState.ACTIVE)
   await provider.dispose()
   assert.equal(consumer.state, FiberState.PENDING)

@@ -28,6 +28,8 @@ export const capabilitySchema = z.object({
   streamInBrowser: z.boolean().optional(),
   remoteNodes: z.boolean().optional(),
   cloudDrive: z.boolean(),
+  /** 可用 UI 面集合；旧 daemon 无此字段 = 不门控 */
+  views: z.array(z.string()).optional(),
 })
 
 export const bootstrapV2Schema = z.object({

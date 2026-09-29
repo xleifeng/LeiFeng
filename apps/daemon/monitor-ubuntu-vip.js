@@ -153,11 +153,11 @@ async function sample() {
   let vip = null;
   let daemonError = null;
   try {
-    bootstrap = await rpc('thunder.ui.v2.bootstrap', [{}]);
-    globalVip = await rpc('thunder.ui.v2.vip.getGlobalState', [{}]);
-    const queried = await rpc('thunder.ui.v2.tasks.query', [{ search: sampleName, limit: 50 }]);
+    bootstrap = await rpc('leifeng.ui.v2.bootstrap', [{}]);
+    globalVip = await rpc('leifeng.ui.v2.vip.getGlobalState', [{}]);
+    const queried = await rpc('leifeng.ui.v2.tasks.query', [{ search: sampleName, limit: 50 }]);
     task = chooseTask(queried);
-    if (task) vip = await rpc('thunder.ui.v2.vip.getTaskState', [{ taskId: task.taskId }]);
+    if (task) vip = await rpc('leifeng.ui.v2.vip.getTaskState', [{ taskId: task.taskId }]);
   } catch (error) { daemonError = { code: error.code || 'RPC_ERROR', message: String(error.message || error).slice(0, 240) }; }
 
   const hostRecord = readHostRecord(task && task.taskId);

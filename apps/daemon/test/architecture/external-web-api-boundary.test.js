@@ -18,7 +18,7 @@ test('external Web API imports daemon only through daemon-client', () => {
 
 test('daemon core entry does not create HTTP or HTTPS servers', () => {
   const source = fs.readFileSync(path.join(__dirname, '../../host/src/main.js'), 'utf8');
-  const plugins = fs.readFileSync(path.join(__dirname, '../../host/plugins/control-rpc.cjs'), 'utf8');
+  const plugins = fs.readFileSync(path.join(__dirname, '../../host/plugins/rpc-host.cjs'), 'utf8');
   assert.doesNotMatch(source, /createRpcServer|createWebApiServer|http\.createServer|https\.createServer|MtlsServer/);
   assert.match(source, /entry\.mjs.*thunderd-core/s);
   assert.match(plugins, /DaemonControlServer/);

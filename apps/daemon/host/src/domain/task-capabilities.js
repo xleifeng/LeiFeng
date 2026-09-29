@@ -43,11 +43,12 @@ function computeTaskCapabilities(record = {}, runtime = {}) {
   });
 }
 
-function computeGlobalCapabilities({ native = {}, environment = {}, protocols = [] } = {}) {
+function computeGlobalCapabilities({ native = {}, environment = {}, protocols = [], views = [] } = {}) {
   const has = (name) => native[name] === true || native[name] === 'verified' || native[name] === 'present';
   const fallback = environment.fallbackOperations || {};
   const available = (name) => has(name) || fallback[name] === true;
   return Object.freeze({
+    views: [...new Set(views)],
     protocols: [...new Set(protocols)],
     taskControl: has('startPause'),
     recycle: available('recycle'),

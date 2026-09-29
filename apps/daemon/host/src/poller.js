@@ -1,7 +1,6 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { readTasks, hasSqlite } = require('./taskdb-reader');
 const { reduceObservation } = require('./domain/task-status');
 
 // TaskDb 已验证状态：8=complete、9=error，下载中和暂停都可能表现为 5。
@@ -22,7 +21,9 @@ class ProgressPoller {
     this.dbPath = opts.dbPath || null;
     this.intervalMs = opts.intervalMs || 1000;
     this.stallMs = opts.stallMs || 10000;
-    this.readTasksFn = opts.readTasksFn || (this.dbPath && hasSqlite ? ((ids) => readTasks(this.dbPath, ids)) : null);
+    // 观察通道由构造方注入（kernel-thunder 提供引擎快照或 TaskDb 直读）；
+    // poller 自身不带内核特有回退（壳/内核边界守卫）
+    this.readTasksFn = opts.readTasksFn || null;
     this.statFn = opts.statFn || ((p) => fs.statSync(p).size);
     this._timer = null;
     this._prev = new Map(); // gid -> {size, at, lastGrowthAt}

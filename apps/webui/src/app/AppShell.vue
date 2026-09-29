@@ -8,6 +8,7 @@ import { useShellStore } from '../stores/shell'
 import { useOverlayStore } from '../stores/overlay'
 import { useCommandCenterStore } from '../stores/command-center'
 import { useCreateTaskStore } from '../stores/create-task'
+import { useUiCapabilitiesStore } from '../stores/ui-capabilities'
 import { isDownloadInput } from '../domain/download-input'
 import NativeSidebar from '../components/layout/NativeSidebar.vue'
 import NativeTopbar from '../components/layout/NativeTopbar.vue'
@@ -16,9 +17,19 @@ const shell = useShellStore()
 const overlay = useOverlayStore()
 const commandCenter = useCommandCenterStore()
 const createTask = useCreateTaskStore()
+const uiCapabilities = useUiCapabilitiesStore()
 const route = useRoute()
 const router = useRouter()
 const bootstrapQuery = useQuery({ queryKey: ['v2-bootstrap'], queryFn: getBootstrapV2, refetchInterval: 15000, refetchOnWindowFocus: true, retry: 1 })
+// bootstrap 每 15s 重拉，views 能力集合随之刷新（daemon 侧插件装载状态 → UI 门控）
+watch(() => bootstrapQuery.data.value?.capabilities.views, (views) => uiCapabilities.setViews(views), { immediate: true })
+// 门控激活时刻（views 从缺省到到达）重新评估当前路由：守卫只挡新导航，已落在
+// 不可用能力页上的直达导航（含运行期插件路由）需在此回退
+watch(() => uiCapabilities.gating, (gated) => {
+  if (!gated) return
+  const capability = route.meta.capability as string | undefined
+  if (capability && !uiCapabilities.enabled(capability)) router.replace('/download')
+})
 const countsQuery = useQuery({ queryKey: ['v2-task-counts'], queryFn: getTaskCounts, refetchInterval: 3000, refetchOnWindowFocus: true, retry: 1 })
 const offline = computed(() => bootstrapQuery.isError.value && !bootstrapQuery.data.value)
 watch(offline, (value) => commandCenter.setOffline(value), { immediate: true })

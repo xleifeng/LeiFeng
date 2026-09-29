@@ -53,7 +53,7 @@ class RequestAuth {
   }
 
   isMutation(method) {
-    return /^thunder\.ui\.v2\./.test(String(method || '')) && !READ_ONLY_METHOD.test(String(method || ''));
+    return /^leifeng\.ui\.v2\./.test(String(method || '')) && !READ_ONLY_METHOD.test(String(method || ''));
   }
 
   assertRpc({ method, csrfToken, principalId, origin, host, port, userAgent = '', clientType = '', isLoopback = false } = {}) {

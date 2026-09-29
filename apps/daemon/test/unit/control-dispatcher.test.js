@@ -6,18 +6,28 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { DaemonControlDispatcher } = require('../../host/src/control/dispatcher');
+const { RpcRegistry } = require('../../host/src/rpc/registry');
+const { createTaskControlMethods } = require('../../host/src/rpc/task-control-methods');
+const { createProductControlMethods } = require('../../host/src/rpc/product-control-methods');
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'control-dispatcher-')); const uploadsDir = path.join(root, 'uploads'); fs.mkdirSync(uploadsDir);
   let imports = 0; let released = 0;
-  const dispatcher = new DaemonControlDispatcher({
-    config: { runtimeDir: root, uploadsDir, maxTorrentUploadBytes: 1024, version: 'test', rpcSecret: '' },
-    handle: async (method, params) => ({ method, params }), driver: { isHealthy: () => true, sdkReady: true, _generation: 2 },
+  const services = {
     tasks: { repositoryRevision: 3, require: () => ({ displayName: 'demo', seedRef: 'sha256:x' }) }, seedStore: { resolve: () => path.join(root, 'seed.torrent') },
     createDraftService: { createTorrentDraftFromFile: async () => ({ draftId: `draft-${++imports}` }) },
     media: { issueToken: () => ({ token: 'token' }), resolveContent: () => ({ target: path.join(root, 'media.bin'), status: 200, mimeType: 'application/octet-stream', disposition: 'inline', etag: 'etag', start: 0, end: 0, length: 1, availableBytes: 1, complete: true, contentRange: null, task: { displayName: 'media.bin' }, release: () => { released += 1; } }) },
     capture: { tokens: { isOriginAllowed: () => true }, authenticate: () => null }, diagnostics: {}, remotePairing: { clients: new Map() }, taskQueryService: {}, operationService: {},
+  };
+  const config = { runtimeDir: root, uploadsDir, maxTorrentUploadBytes: 1024, version: 'test', rpcSecret: '' };
+  const registry = new RpcRegistry();
+  registry.register('test:task', createTaskControlMethods({ ...services, config }));
+  registry.register('test:product', createProductControlMethods({ ...services, config }));
+  const dispatcher = new DaemonControlDispatcher({
+    config, handle: async (method, params) => ({ method, params }), registry,
   });
+  registry.provideHealthStatus('test:kernel', 'engine', () => ({ transportReady: true, sdkReady: true, generation: 2 }));
+  registry.provideHealthStatus('test:task', 'repositories', () => ({ revision: 3 }));
   return { root, uploadsDir, dispatcher, imports: () => imports, released: () => released };
 }
 

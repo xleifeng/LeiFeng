@@ -6,6 +6,8 @@
 /.browser-test/
 /.runtime*/
 /.superpowers/
+# 运行时前端插件目录（用户把示例拷贝/软链进来，不入库；样例在 examples/frontend-plugins/）
+/plugins-frontend/
 # spec/plan 与报告属本地过程文档，不入库（2026-09-24 拍板）
 /docs/
 /downloads/

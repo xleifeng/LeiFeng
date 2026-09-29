@@ -18,8 +18,8 @@ const cleanup = (code) => {
   try { fixture && fixture.close(); } catch {}
   // 清理自建隔离 WINEPREFIX
   try {
-    const prefix = path.join(process.env.HOME, 'tmp', `tlei-it-wine-smoke-${process.pid}`);
-    if (prefix.startsWith(path.join(process.env.HOME, 'tmp', 'tlei-it-wine-'))) fs.rmSync(prefix, { recursive: true, force: true });
+    const prefix = path.join(process.env.HOME, 'tmp', `leifeng-it-wine-smoke-${process.pid}`);
+    if (prefix.startsWith(path.join(process.env.HOME, 'tmp', 'leifeng-it-wine-'))) fs.rmSync(prefix, { recursive: true, force: true });
   } catch {}
   setTimeout(() => process.exit(code), 300);
 };
@@ -53,7 +53,7 @@ async function main() {
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', WINEDEBUG: '-all', WINEESYNC: '1',
       // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
       WINEPREFIX: process.env.THUNDERD_IT_WINEPREFIX
-        || path.join(process.env.HOME, 'tmp', `tlei-it-wine-smoke-${process.pid}`),
+        || path.join(process.env.HOME, 'tmp', `leifeng-it-wine-smoke-${process.pid}`),
       '01KVYZS23XBRBTN7XTFFPAXQNV_SDK_Platform': '64' },
     cwd: path.join(repoRoot, 'thunder_x', 'program'), stdio: ['ignore', logFd, logFd],
   });

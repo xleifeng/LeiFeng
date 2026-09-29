@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
-const { DaemonClient } = require('@tlei/daemon-client');
+const { DaemonClient } = require('@leifeng/daemon-client');
 const { loadWebApiConfig } = require('./config');
 const { createWebApiServer } = require('./server');
 const { createTorrentUploadRoute } = require('./routes/torrent-upload');
@@ -38,7 +38,8 @@ async function main() {
     createDiagnosticExportRoute({ client }),
   ];
   const staticDir = fs.existsSync(config.webUiDir) ? config.webUiDir : null;
-  const server = createWebApiServer({ client, host: config.host, port: config.port, maxBodyBytes: config.maxBodyBytes, staticDir, routes });
+  const frontendPluginsDir = config.frontendPluginsDir && fs.existsSync(config.frontendPluginsDir) ? config.frontendPluginsDir : null;
+  const server = createWebApiServer({ client, host: config.host, port: config.port, maxBodyBytes: config.maxBodyBytes, staticDir, routes, frontendPluginsDir });
   let remoteServer = null;
   const remoteReady = config.remoteListen && config.remoteCertDir && [config.remoteKeyPath, config.remoteCertPath, config.remoteCaPath].every((file) => fs.existsSync(file));
   if (remoteReady) {
@@ -49,6 +50,7 @@ async function main() {
   server.listen(config.port, config.host, () => {
     console.log(`[thunder-web-api] HTTP/JSON-RPC on http://${config.host}:${config.port}/  daemon_pid=${health.pid}  control=${config.controlSocketPath}`);
     if (staticDir) console.log(`[thunder-web-api] Web UI source=${staticDir}`);
+    if (frontendPluginsDir) console.log(`[thunder-web-api] frontend plugins source=${frontendPluginsDir}`);
     if (remoteServer) console.log(`[thunder-web-api] remote mTLS on ${config.remoteListen.host}:${config.remoteListen.port}`);
   });
 

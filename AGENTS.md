@@ -1,6 +1,6 @@
 # AGENTS.md
 
-tlei 是迅雷（Thunder）Linux 下载栈的逆向移植与产品化仓库：thunderd daemon 直连原生下载 SDK（Wine 引擎），配外部 Web API、原生风格 WebUI 与 webseed-bridge（P2SP→BT 输血桥）。全部运行时装配走 Cordis 插件树与 profile launcher。动手前先读 [ARCHITECTURE.md](ARCHITECTURE.md)。
+leifeng 是迅雷（Thunder）Linux 下载栈的逆向移植与产品化仓库：thunderd daemon 直连原生下载 SDK（Wine 引擎），配外部 Web API、原生风格 WebUI 与 webseed-bridge（P2SP→BT 输血桥）。全部运行时装配走 Cordis 插件树与 profile launcher。动手前先读 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## Repository layout
 
@@ -47,7 +47,7 @@ node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 
 ## 在线实例与测试纪律
 
-- 真机常驻实例：daemon 16800、桥 7127、qbit 8085。测试一律用隔离端口与临时 runtime（`THUNDERD_RUNTIME_DIR` / `THUNDERD_PORT` 指到 `/home/yj/tmp/tlei-<用途>` 等家目录下隔离目录，**禁用 /tmp**），不得重启或清理在线实例与 `.p0/a1-hybrid` 基线。
+- 真机常驻实例：daemon 16800、桥 7127、qbit 8085。测试一律用隔离端口与临时 runtime（`THUNDERD_RUNTIME_DIR` / `THUNDERD_PORT` 指到 `/home/yj/tmp/leifeng-<用途>` 等家目录下隔离目录，**禁用 /tmp**），不得重启或清理在线实例与 `.p0/a1-hybrid` 基线。
 - 换版部署先记录 PID / 端口 / 磁盘余量并给出回退步骤，获用户授权后才执行。
 - 磁盘配额打满时 SQLite 报 `disk I/O error`，会造成大面积假性测试失败——先查配额再查代码。`/tmp` 是有用户配额的 tmpfs，写满还会让 Claude Code 的 Bash 工具全线失灵（2026-09-24 实测），故一切测试临时写入走家目录。
 
@@ -86,7 +86,7 @@ node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 - 许可线：允许 import 原版 CSS / 字体 / 3D 插画 / 蜂鸟 logo（个人使用，禁再分发）；资产放 `apps/webui/src/assets/orig/` 并保留 NOTICE.md。
 - 验收：Playwright 固定视口 1200×760、deviceScaleFactor=1、字体加载后截图，与 `docs/ui-reference/orig-*.png` 做 pixelmatch diff，mismatch ≤5%（threshold 0.1 容抗锯齿）；超阈值出报告人工复核。
 - 弹窗用页内 dialog 模态（`useDialog()` 单例注册表 + Teleport），组件名沿用原版 kebab；遮罩 / 圆角 / 宽高按 `orig-modal-*.png` 定死，不自适应。
-- 数据面 100% 走真实 RPC（thunder.ui.* / aria2.*），无 fallback 伪装；daemon RPC 面之外的原版设置项直接隐藏，不伪装。
+- 数据面 100% 走真实 RPC（`leifeng.ui.v2.*`），无 fallback 伪装；daemon RPC 面之外的原版设置项直接隐藏，不伪装。
 
 ## Vendoring
 
@@ -96,6 +96,9 @@ node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 
 - 阶段 1（已交付）：daemon 双进程直连原生 SDK；HTTP/HTTPS 下载 + aria2 兼容 RPC 子集 + thunder.* 扩展；落盘名分叉已由 poller 回读 TaskDb 根治。
 - 阶段 1.5（已交付）：登录集成（OAuth2 device flow → session 注册 → 引擎通知桥链），探针依据 `recon/login-inject/RESULTS.md`。
+- 下载内核插件化（已交付，2026-09-28）：KernelPort 契约（36 方法）+ kernel-thunder 三合一 + task-shell 拆分 + kernelId/协议路由 + kernel-qbit 参照内核（默认 disabled，验证契约完备性，缺口清单在 docs/specs/2026-09-28-kernel-pluggable-p3.md §5）；壳层产品 RPC 面为 `leifeng.ui.v2.*`，v1 aria2/thunder 兼容面已整层删除（2026-09-28，docs/specs/2026-09-28-remove-legacy-rpc.md）。
+- 壳 RPC 注册化（已交付，2026-09-28）：RpcRegistry——壳零业务方法，93+20 方法全由插件注册；account/vip 随 kernel-thunder（守卫钉死注册点）。
+- 任意内核独立成在 + leifeng 改名（已交付，2026-09-29）：kernel-hub 聚合槽（消费方经 `default()` 取内核，不硬编码 thunder）；kernel-qbit 常驻序内 `defaultEnabled:false`，patch 两行即 qbit-only；项目词汇 tlei→leifeng 全量改名（包名 `@leifeng/*`，spec docs/specs/2026-09-29-kernel-any-only-and-rename-leifeng.md）。
 - 当前主线：Cordis 插件化（一切皆插件、三 profile）与桥产品化；过程 spec / plan 在 `docs/`（本地，不入库）。
 
 ## Editing these instructions

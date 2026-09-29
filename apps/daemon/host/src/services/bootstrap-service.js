@@ -2,9 +2,11 @@
 
 const { computeGlobalCapabilities } = require('../domain/task-capabilities');
 const { classifyVipAccount } = require('../vip-account');
+const { ALWAYS: ALWAYS_UI_CAPABILITIES } = require('../domain/ui-capabilities');
+const { shellFallbackOperations } = require('../domain/shell-capabilities');
 
 class BootstrapService {
-  constructor({ repository, settings, driver, auth = null, accountService = null, vipService = null, privateSpace = null, capabilityProvider = null, config, policyService = null, mediaService = null, requestAuth = null, remoteEnabledProvider = null } = {}) {
+  constructor({ repository, settings, driver, auth = null, accountService = null, vipService = null, privateSpace = null, capabilityProvider = null, config, policyService = null, mediaService = null, requestAuth = null, remoteEnabledProvider = null, uiCapabilitiesProvider = null } = {}) {
     this.repository = repository;
     this.settings = settings;
     this.driver = driver;
@@ -18,15 +20,18 @@ class BootstrapService {
     this.mediaService = mediaService;
     this.requestAuth = requestAuth;
     this.remoteEnabledProvider = remoteEnabledProvider;
+    this.uiCapabilitiesProvider = uiCapabilitiesProvider;
   }
 
   async getSnapshot(context = {}) {
-    const [account, engine, settings, native, privateStatus] = await Promise.all([
+    const [account, engine, settings, native, privateStatus, protocols] = await Promise.all([
       this.accountService && typeof this.accountService.getStatus === 'function' ? this.accountService.getStatus({ refresh: false }).catch(() => ({ account: { valid: false } })) : this.auth && typeof this.auth.getStatus === 'function' ? this.auth.getStatus({ refresh: false }).catch(() => ({ account: { valid: false } })) : { account: { valid: false } },
       this._engineSummary(),
       this.settings ? this.settings.get() : { revision: 0, desired: {}, applied: null },
       this.capabilityProvider ? Promise.resolve(this.capabilityProvider()) : {},
       this.privateSpace ? this.privateSpace.getStatus() : { configured: false, unlocked: false },
+      // P2：协议能力由内核声明（KernelPort.getSupportedProtocols），壳层不再硬编码
+      this.driver && typeof this.driver.getSupportedProtocols === 'function' ? this.driver.getSupportedProtocols().catch(() => []) : [],
     ]);
     const tier = classifyVipAccount(account && account.account || {});
     const accountSummary = account && account.account ? {
@@ -43,7 +48,7 @@ class BootstrapService {
       isPlatinumVip: false, isPanVip: false, userVas: 0, vipType: 0, vipLevel: 0 };
     const media = this.mediaService?.getCapabilities?.() || { openOnHost: false, streamInBrowser: false };
     const vipFeatures = this.vipService?.getFeatureCapabilities?.() || { superChannel: false, speedTrial: false };
-    const capabilities = computeGlobalCapabilities({ native: native && native.flat ? native.flat : native, environment: { fallbackOperations: { recycle: true, recover: true, rename: true, move: true, redownload: true, btSelection: true, btSequential: true }, globalRateLimit: true, schedules: true, idleDownload: true, completionActions: true, powerActions: this.config.allowPowerActions === true, linkSync: 'local-only', superChannel: vipFeatures.superChannel === true, speedTrial: vipFeatures.speedTrial === true, openOnHost: media.openOnHost === true, streamInBrowser: media.streamInBrowser === true, remoteNodes: this.remoteEnabledProvider ? this.remoteEnabledProvider() === true : false }, protocols: ['http', 'https', 'ftp', 'magnet', 'bt', 'ed2k', 'thunder'] });
+    const capabilities = computeGlobalCapabilities({ native: native && native.flat ? native.flat : native, environment: { fallbackOperations: shellFallbackOperations(null), globalRateLimit: true, schedules: true, idleDownload: true, completionActions: true, powerActions: this.config.allowPowerActions === true, linkSync: 'local-only', superChannel: vipFeatures.superChannel === true, speedTrial: vipFeatures.speedTrial === true, openOnHost: media.openOnHost === true, streamInBrowser: media.streamInBrowser === true, remoteNodes: this.remoteEnabledProvider ? this.remoteEnabledProvider() === true : false }, protocols, views: this.uiCapabilitiesProvider ? this.uiCapabilitiesProvider() : [...ALWAYS_UI_CAPABILITIES] });
     const csrf = this.requestAuth?.issue?.({ principalId: context.bearerToken || 'loopback', origin: context.origin, host: this.config.host, port: this.config.port }) || null;
     return {
       apiVersion: 2,

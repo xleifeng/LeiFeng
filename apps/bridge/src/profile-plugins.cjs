@@ -39,7 +39,7 @@ function createBridgePluginRegistry({
       const client = daemonClientFactory({ host: config.daemonHost, port: config.daemonPort,
         bearerToken: config.bearerToken, csrfToken: config.csrfToken, origin: config.origin, nonce: config.nonce });
       if (config.mode === 'hybrid') {
-        const account = await client.rpc('thunder.ui.v2.account.refresh', [{}]);
+        const account = await client.rpc('leifeng.ui.v2.account.refresh', [{}]);
         if (!account.account?.valid || !account.session?.registered || !account.engine?.notified) {
           throw new Error('迅雷登录验收未通过：账号、session、原生引擎通知须全部有效');
         }

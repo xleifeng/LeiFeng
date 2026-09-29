@@ -6,6 +6,13 @@
     <meta name="theme-color" content="#f6f6f6" />
     <meta name="description" content="迅雷 Linux 下载管理界面" />
     <title>迅雷 Linux</title>
+    <script>
+      // 主题预置：Vue 挂载前同步写入 data-theme，防止首帧闪白（与 stores/shell.ts 的持久化 key 一致）
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem('ThunderNativeUI.Theme.v1') || 'light'
+      } catch { document.documentElement.dataset.theme = 'light' }
+    </script>
   </head>
   <body>
     <div id="app"></div>

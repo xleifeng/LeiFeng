@@ -17,7 +17,8 @@ function startFixture({ bytes, throttleChunk = 0, throttleMs = 0, path: urlPath 
     if (u === '/redirect') { res.writeHead(302, { location: '/' + urlPath }); return res.end(); }
     if (u === '/nohead' && req.method === 'HEAD') { res.writeHead(405); return res.end(); }
     // 放行所有 .bin 路径（引擎按 URL basename 落盘，须与各链路 out/taskName 对齐——Task 0 授权模式）
-    if (u !== '/nohead' && !/^\/[a-z0-9]+\.bin$/.test(u)) { res.writeHead(404); return res.end(); }
+    // 字符集须含 '-'（如 restart-victim.bin）：漏了会被 fixture 404 → v2 preflight 源探测拒绝建任务
+    if (u !== '/nohead' && !/^\/[a-z0-9-]+\.bin$/.test(u)) { res.writeHead(404); return res.end(); }
     let start = 0, end = data.length - 1;
     const m = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
     if (m) {

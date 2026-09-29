@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { rpcV2 } from '../../api/native-download/client'
 const props = defineProps<{ taskId?: string }>()
 const input = ref(props.taskId || '')
-const query = useQuery({ queryKey: ['v2-task-diagnostic', input], queryFn: () => rpcV2('thunder.ui.v2.diagnostics.tasks.get', [{ taskId: input.value }]), enabled: false })
+const query = useQuery({ queryKey: ['v2-task-diagnostic', input], queryFn: () => rpcV2('leifeng.ui.v2.diagnostics.tasks.get', [{ taskId: input.value }]), enabled: false })
 function run() { if (input.value.trim()) query.refetch() }
 </script>
 

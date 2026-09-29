@@ -1,4 +1,4 @@
-import { Context, Fiber, Inject } from '@tlei/cordis'
+import { Context, Fiber, Inject } from '@leifeng/cordis'
 import { deepEqual, isNullable } from 'cosmokit'
 import { Loader } from '../index.ts'
 import { EntryGroup } from './group.ts'

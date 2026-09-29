@@ -73,11 +73,11 @@ test('bridge-host hybrid runs torrent draft against fake daemon and recipient', 
       uploadTorrent: async () => { calls.push('upload'); return { draftId: 'draft' }; },
       rpc: async (method) => {
         calls.push(method);
-        if (method === 'thunder.ui.v2.account.refresh') return { account: { valid: true }, session: { registered: true }, engine: { notified: true } };
-        if (method === 'thunder.ui.v2.tasks.query') return { items: [], nextCursor: null };
-        if (method === 'thunder.ui.v2.create.updateDraft') return { draftId: 'draft' };
-        if (method === 'thunder.ui.v2.create.commit') return { results: [{ ok: true, taskIds: ['task'] }] };
-        if (method === 'thunder.ui.v2.tasks.command') return { results: [{ ok: true }] };
+        if (method === 'leifeng.ui.v2.account.refresh') return { account: { valid: true }, session: { registered: true }, engine: { notified: true } };
+        if (method === 'leifeng.ui.v2.tasks.query') return { items: [], nextCursor: null };
+        if (method === 'leifeng.ui.v2.create.updateDraft') return { draftId: 'draft' };
+        if (method === 'leifeng.ui.v2.create.commit') return { results: [{ ok: true, taskIds: ['task'] }] };
+        if (method === 'leifeng.ui.v2.tasks.command') return { results: [{ ok: true }] };
         throw new Error(`unexpected ${method}`);
       },
     }),

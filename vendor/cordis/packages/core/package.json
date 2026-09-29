@@ -1,5 +1,5 @@
 {
-  "name": "@tlei/cordis",
+  "name": "@leifeng/cordis",
   "description": "Meta-Framework for Modern Applications",
   "version": "4.0.0-rc.7",
   "sideEffects": false,

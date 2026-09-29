@@ -178,15 +178,16 @@ node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 
 | 插件 | 职责 | 提供 |
 |---|---|---|
-| `runtime-config` | 配置加载、目录创建、单实例锁 | `tleiConfig` |
-| `repositories` | 任务/设置/草稿/种子/SQLite 持久层 + secret stores | `tleiRepositories` |
-| `engine-driver` | 引擎进程选择（Wine/Windows 原生）、启动、TaskDb 读取 | `tleiEngine` |
-| `event-observation` | 领域事件总线、进度 poller、诊断缓冲 | `tleiObservation` |
-| `auth-vip` | 凭据钱包、OAuth2 登录管理、会员加速 | `tleiAuth` |
-| `task-core` | 任务域全量服务（创建/查询/操作/调度/策略/元数据）+ 定时器 | `tleiTasks` |
-| `product-services` | 历史、链接库、私空、媒体、捕获、通知、远程节点 | `tleiProducts` |
-| `control-rpc` | control socket + RPC 方法面（依赖齐后才对外监听） | `tleiControl` |
-| `web-api-process` | **托管 web-api 子进程**：spawn、崩溃重启、有界退出 | `tleiWebApi` |
+| `runtime-config` | 配置加载、目录创建、单实例锁 | `leifengConfig` |
+| `repositories` | 任务/设置/草稿/种子/SQLite 持久层 + secret stores | `leifengRepositories` |
+| `kernel-hub` | **下载内核聚合槽**：内核插件注册 slot，消费方经 `default()` 取用（任意内核可独立成在，2026-09-29） | `leifengKernelHub` |
+| `rpc-host` | **RPC 传输与注册机制宿主**：RpcRegistry + control socket；不持有业务方法（一切 RPC 由插件注册，2026-09-28） | `leifengRpc` |
+| `kernel-thunder` | 迅雷内核三合一：引擎进程（Wine/Windows 原生）、观察通道、账号/会员；注册 `account.*`/`vip.*`；slot 注册进 hub | `leifengKernel:thunder` |
+| `kernel-qbit` | qBittorrent 参照内核（常驻序内 `defaultEnabled:false`；patch 启用即 qbit-only） | `leifengKernel:qbit` |
+| `task-shell` | 任务域全量服务（创建/查询/操作/调度/策略/元数据）+ 定时器；注册 task 域 RPC | `leifengTasks` |
+| `product-services` | 历史、链接库、私空、媒体、捕获、通知、远程节点；注册 product 域 RPC | `leifengProducts` |
+| `plugin-admin` | 官方插件管理面（装配查询 + enabled 持久化 + UI 能力注入）；注册 `plugins.*` | `leifengPluginAdmin` |
+| `web-api-process` | **托管 web-api 子进程**：spawn、崩溃重启、有界退出 | `leifengWebApi` |
 
 **桥侧**（`apps/bridge/src/profile-plugins.cjs`，`bridge-host`）：
 

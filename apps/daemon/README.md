@@ -21,25 +21,25 @@ node apps/daemon/host/src/entry.mjs --profile thunderd --config ./my.json
 
 完成 `npm --prefix webui install && npm --prefix webui run build` 后，外部 `web-api` 进程在同一端口提供迅雷原生风格 WebUI：打开 `http://127.0.0.1:16800/` 即可。新界面直接接入任务、扫码登录、VIP、设置和引擎诊断，不依赖 Electron 或第三方下载面板。可用 `THUNDERD_WEBUI_DIR` 指向另一份静态构建目录；目录不存在时只提供 JSON-RPC，不影响 daemon core。
 
-V2 任务、创建、操作、策略、账号、私人空间、本地资料、媒体 Range、桌面集成、通知、浏览器接管和远程节点组件均已接入。V2 请求不把 secret 放进 params，而使用 `Authorization: Bearer <THUNDERD_RPC_SECRET>`；私人域另外使用 `X-Thunder-Private-Session`，只存浏览器 sessionStorage。浏览器 mutation 由 bootstrap 下发短期 CSRF token，自动随 WebUI 请求发送；CLI 可在 loopback 上不带 Origin 运行，生产临时排障可设置 `THUNDERD_CSRF=0`。默认 `THUNDERD_LEGACY_RPC=0`，生产入口只开放 `thunder.ui.v2.*`；旧兼容 handler 仅为迁移回归保留，必须显式设置 `THUNDERD_LEGACY_RPC=1` 才启用。任务数据写入 `${THUNDERD_RUNTIME_DIR}/data/tasks.json`，本地资料数据库写入 `data/thunder-data.db`（启动前 backup，迁移 001–004），诊断事件和导出均脱敏并以 ZIP 流式输出。试用加速与账号链接同步仍保持不可用；不调用云盘接口。远程 mTLS listener 只有显式证书配置后才启动。
+V2 任务、创建、操作、策略、账号、私人空间、本地资料、媒体 Range、桌面集成、通知、浏览器接管和远程节点组件均已接入。V2 请求不把 secret 放进 params，而使用 `Authorization: Bearer <THUNDERD_RPC_SECRET>`；私人域另外使用 `X-Thunder-Private-Session`，只存浏览器 sessionStorage。浏览器 mutation 由 bootstrap 下发短期 CSRF token，自动随 WebUI 请求发送；CLI 可在 loopback 上不带 Origin 运行，生产临时排障可设置 `THUNDERD_CSRF=0`。RPC 入口只开放 `leifeng.ui.v2.*`（v1 兼容面已删除，2026-09-28）。任务数据写入 `${THUNDERD_RUNTIME_DIR}/data/tasks.json`，本地资料数据库写入 `data/thunder-data.db`（启动前 backup，迁移 001–004），诊断事件和导出均脱敏并以 ZIP 流式输出。试用加速与账号链接同步仍保持不可用；不调用云盘接口。远程 mTLS listener 只有显式证书配置后才启动。
 
 ```bash
 # V2 查询
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":1,"method":"thunder.ui.v2.tasks.query","params":[{}]}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"leifeng.ui.v2.tasks.query","params":[{}]}'
 # V2 任务操作（taskIds 必须是完整 taskId）
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":2,"method":"thunder.ui.v2.tasks.command","params":[{"taskIds":["<taskId>"],"command":"pause","idempotencyKey":"cli-1"}]}'
+  -d '{"jsonrpc":"2.0","id":2,"method":"leifeng.ui.v2.tasks.command","params":[{"taskIds":["<taskId>"],"command":"pause","idempotencyKey":"cli-1"}]}'
 # 回收并明确本地文件策略
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":5,"method":"thunder.ui.v2.tasks.command","params":[{"taskIds":["<taskId>"],"command":"recycle","options":{"deleteLocalFiles":false},"idempotencyKey":"recycle-1"}]}'
+  -d '{"jsonrpc":"2.0","id":5,"method":"leifeng.ui.v2.tasks.command","params":[{"taskIds":["<taskId>"],"command":"recycle","options":{"deleteLocalFiles":false},"idempotencyKey":"recycle-1"}]}'
 # BT 种子导出只接收 taskId，不暴露 seed cache 路径
 curl -L -H 'Authorization: Bearer my-secret' -o task.torrent http://127.0.0.1:16800/api/v2/tasks/<taskId>/torrent
 # V2 新建任务：先预检，再 commit；不会把原始 URL 直接交给 UI 创建
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":3,"method":"thunder.ui.v2.create.preflight","params":[{"inputs":[{"kind":"link","value":"https://example.com/file.bin"}]}]}'
+  -d '{"jsonrpc":"2.0","id":3,"method":"leifeng.ui.v2.create.preflight","params":[{"inputs":[{"kind":"link","value":"https://example.com/file.bin"}]}]}'
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":4,"method":"thunder.ui.v2.create.commit","params":[{"draftIds":["<draftId>"],"expectedRevisions":{"<draftId>":1},"idempotencyKey":"create-1"}]}'
+  -d '{"jsonrpc":"2.0","id":4,"method":"leifeng.ui.v2.create.commit","params":[{"draftIds":["<draftId>"],"expectedRevisions":{"<draftId>":1},"idempotencyKey":"create-1"}]}'
 # torrent 使用 raw body 上传，不走 JSON base64
 curl -s -H 'Authorization: Bearer my-secret' -H 'Content-Type: application/x-bittorrent' -H 'X-Thunder-Filename: sample.torrent' \
   --data-binary @sample.torrent http://127.0.0.1:16800/api/v2/create-drafts/torrent
@@ -67,20 +67,20 @@ node --test apps/daemon/test/unit/local-data-domains.test.js apps/daemon/test/un
 ```bash
 # 账号状态（DTO 不含 uid/token/sessionId）
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":10,"method":"thunder.ui.v2.account.get","params":[]}'
+  -d '{"jsonrpc":"2.0","id":10,"method":"leifeng.ui.v2.account.get","params":[]}'
 # 初始化私人空间；首次 setup 后必须再 unlock，下载内容是否静态加密取决于用户文件系统
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":11,"method":"thunder.ui.v2.private.setup","params":[{"password":"change-me"}]}'
+  -d '{"jsonrpc":"2.0","id":11,"method":"leifeng.ui.v2.private.setup","params":[{"password":"change-me"}]}'
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":12,"method":"thunder.ui.v2.private.unlock","params":[{"password":"change-me"}]}'
+  -d '{"jsonrpc":"2.0","id":12,"method":"leifeng.ui.v2.private.unlock","params":[{"password":"change-me"}]}'
 # unlock 返回的 session token 只放请求头，不放 params；生产脚本不得写入 shell history
 curl -s -H 'Authorization: Bearer my-secret' -H 'X-Thunder-Private-Session: <private-session>' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":13,"method":"thunder.ui.v2.private.queryTasks","params":[{}]}'
+  -d '{"jsonrpc":"2.0","id":13,"method":"leifeng.ui.v2.private.queryTasks","params":[{}]}'
 # 本地历史与链接库
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":14,"method":"thunder.ui.v2.history.query","params":[{"limit":50}]}'
+  -d '{"jsonrpc":"2.0","id":14,"method":"leifeng.ui.v2.history.query","params":[{"limit":50}]}'
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":15,"method":"thunder.ui.v2.links.query","params":[{"favorite":true}]}'
+  -d '{"jsonrpc":"2.0","id":15,"method":"leifeng.ui.v2.links.query","params":[{"favorite":true}]}'
 ```
 
 ## V2 快速上手
@@ -88,18 +88,18 @@ curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
 ```bash
 # 查询任务（taskId 是 V2 opaque id）
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":1,"method":"thunder.ui.v2.tasks.query","params":[{"view":"downloading"}]}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"leifeng.ui.v2.tasks.query","params":[{"view":"downloading"}]}'
 # 任务操作
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":2,"method":"thunder.ui.v2.tasks.command","params":[{"taskIds":["<taskId>"],"command":"pause","idempotencyKey":"pause-1"}]}'
+  -d '{"jsonrpc":"2.0","id":2,"method":"leifeng.ui.v2.tasks.command","params":[{"taskIds":["<taskId>"],"command":"pause","idempotencyKey":"pause-1"}]}'
 # 系统诊断（返回脱敏快照）
 curl -s -H 'Authorization: Bearer my-secret' 127.0.0.1:16800/jsonrpc \
-  -d '{"jsonrpc":"2.0","id":3,"method":"thunder.ui.v2.diagnostics.get","params":[]}'
+  -d '{"jsonrpc":"2.0","id":3,"method":"leifeng.ui.v2.diagnostics.get","params":[]}'
 ```
 
-V2 应用方法由 `apps/daemon/host/src/rpc/` 与对应的 service/repository 实现，私有 daemon Node API 位于 `apps/daemon/host/src/control/`，公共 HTTP/Web API 位于 `apps/web-api/src/`，外部应用客户端位于 `packages/daemon-client/`。当前已实现 HTTP/HTTPS、FTP、BT、磁力、ed2k、thunder://、登录、策略、媒体、系统集成和 `thunder.ui.v2.*` 原生下载门面。生产默认不启用旧 RPC。
+V2 应用方法由 `apps/daemon/host/src/rpc/` 与对应的 service/repository 实现，私有 daemon Node API 位于 `apps/daemon/host/src/control/`，公共 HTTP/Web API 位于 `apps/web-api/src/`，外部应用客户端位于 `packages/daemon-client/`。当前已实现 HTTP/HTTPS、FTP、BT、磁力、ed2k、thunder://、登录、策略、媒体、系统集成和 `leifeng.ui.v2.*` 原生下载门面。旧 RPC 兼容层已删除，RPC 面只有 `leifeng.ui.v2.*`。
 
-媒体与系统集成入口：完成任务可通过 `/api/v2/tasks/<taskId>/files/<fileIndex>/media-token` 获取短期 Range 播放令牌；`thunder.ui.v2.system.openFile/showInFolder/openFolder` 只接收 taskId；`thunder.ui.v2.capture.startPairing` 用于浏览器扩展配对；`thunder.ui.v2.diagnostics.get` 返回脱敏诊断。Linux 协议关联需显式运行 `apps/daemon/integration/install-desktop-integration.sh --user`，不会在 daemon 启动时修改系统关联。
+媒体与系统集成入口：完成任务可通过 `/api/v2/tasks/<taskId>/files/<fileIndex>/media-token` 获取短期 Range 播放令牌；`leifeng.ui.v2.system.openFile/showInFolder/openFolder` 只接收 taskId；`leifeng.ui.v2.capture.startPairing` 用于浏览器扩展配对；`leifeng.ui.v2.diagnostics.get` 返回脱敏诊断。Linux 协议关联需显式运行 `apps/daemon/integration/install-desktop-integration.sh --user`，不会在 daemon 启动时修改系统关联。
 
 最终删除迁移期兼容代码前严格按门禁顺序执行：
 
@@ -122,7 +122,7 @@ node apps/daemon/host/bin/migrate-v2.js --runtime "$THUNDERD_RUNTIME_DIR" --veri
 - 目标文件已存在 → 引擎自动加 `(1)` 后缀落盘（如 `f(1).bin`），不覆盖旧文件；daemon 回读 TaskDb `Name` 列对齐真实落盘名，`tellStatus.files[0].path` 始终指向真实文件。
 - 部署必须保留完整 `thunder_x/program/SDK/`（69 文件，gitignored，属迅雷不可再分发）。
 - 日志：`daemon/.runtime/engine.log`（引擎）、stdout（宿主）。
-- 生产 RPC 只开放 V2 原生下载域；旧兼容 handler 默认关闭（`THUNDERD_LEGACY_RPC=0`）。磁力、BT 和 eD2k/thunder 链接全部从 V2 create preflight/commit 进入统一任务编排。
+- RPC 只开放 `leifeng.ui.v2.*`（v1 兼容面已于 2026-09-28 整层删除）。磁力、BT 和 eD2k/thunder 链接全部从 V2 create preflight/commit 进入统一任务编排。
 
 ## systemd 部署
 
@@ -140,10 +140,10 @@ daemon unit 使用 `run.sh --systemd --core-only` 前台运行，Web API unit �
 
 ## P2SP 登录态与 VIP 高速
 
-- **P2SP 登录态**：`thunder.ui.v2.account.*` 登录成功后，daemon 通过官方 notify 序列把 uid 灌入引擎全局；P2SP 下载由引擎内部使用该登录态，不需要逐任务传 uid。引擎崩溃或重启后，driver 会从凭据钱包重新执行通知序列。
+- **P2SP 登录态**：`leifeng.ui.v2.account.*` 登录成功后，daemon 通过官方 notify 序列把 uid 灌入引擎全局；P2SP 下载由引擎内部使用该登录态，不需要逐任务传 uid。引擎崩溃或重启后，driver 会从凭据钱包重新执行通知序列。
 - **登录态可观测性**：`engine.notified` 只表示通知序列已执行，不等同于 native 内部登录态已被直接读取；账号、token 和 session 仍以宿主 HTTP 自证及钱包状态为准。
 - **VIP 高速控制链**：2026-07-31 复审已证伪“token 只能来自 native `onNewToken` 事件”。daemon 现在由 Linux Node 主动请求 `speed/speedup`，从钱包/session、SDK peer ID 和 TaskDb CID/GCID 构造逐任务 cert，并经 Wine 引擎调用 `enableDcdnWithVipCert`；按服务端周期刷新、暂停/终态 disable、引擎代际失效和退避均已接入。协议链和资源效果的验收边界见仓库根目录的 `UBUNTU_VIP_RETEST_REPORT.md`。
-- **VIP RPC**：`thunder.ui.v2.vip.getTaskState`、`thunder.ui.v2.vip.setTaskEnabled`、`thunder.ui.v2.vip.retryTask` 提供脱敏状态和开关。RPC 不返回 uid、session、peer ID、token 或 cert。
+- **VIP RPC**：`leifeng.ui.v2.vip.getTaskState`、`leifeng.ui.v2.vip.setTaskEnabled`、`leifeng.ui.v2.vip.retryTask` 提供脱敏状态和开关。RPC 不返回 uid、session、peer ID、token 或 cert。
 - **VIP 配置**：`THUNDERD_VIP_ENABLED=0|1`（默认 1）、`THUNDERD_VIP_API_ORIGIN`、`THUNDERD_XLSDK_CRASHINFO`、`THUNDERD_VIP_SCAN_MS`（500–30000）、`THUNDERD_VIP_MAX_BACKOFF_SEC`（30–1800）。钱包不可恢复时只进入 `auth-required`，不会自动生成二维码。
 - **VIP 效果边界**：`VipReceiveSize=0` 不能单独判授权失败——官方 GUI 对同类资源收到 `DcdnStatusCode.Success` 时该计数也为 0。现阶段只确认控制链可实现，不承诺任意资源一定命中 VIP 通道；生产验收仍需选取官方 GUI 确实产生 VIP 字节的同资源对照。
 - **单实例**：daemon 在 `THUNDERD_RUNTIME_DIR/thunderd.lock` 写入 PID；同一 runtime 目录中旧实例存活时拒绝并发启动，旧 PID 已死或锁损坏时可回收。`run.sh` 使用 lockfile PID 精确停止，不做模糊进程匹配。
@@ -155,13 +155,13 @@ daemon unit 使用 `run.sh --systemd --core-only` 前台运行，Web API unit �
 
 ```bash
 # 发起登录（WebUI 将 verificationUrl 渲染为二维码）
-curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":1,"method":"thunder.ui.v2.account.startLogin","params":[{}]}'
+curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":1,"method":"leifeng.ui.v2.account.startLogin","params":[{}]}'
 # 查登录状态
-curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":2,"method":"thunder.ui.v2.account.get","params":[{}]}'
+curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":2,"method":"leifeng.ui.v2.account.get","params":[{}]}'
 # 强制刷新 access token 并重新查询会员权益
-curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":3,"method":"thunder.ui.v2.account.refresh","params":[{}]}'
+curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":3,"method":"leifeng.ui.v2.account.refresh","params":[{}]}'
 # 登出
-curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":4,"method":"thunder.ui.v2.account.logout","params":[{}]}'
+curl -s 127.0.0.1:16800/jsonrpc -d '{"jsonrpc":"2.0","id":4,"method":"leifeng.ui.v2.account.logout","params":[{}]}'
 ```
 
 - `startLogin` → `{verificationUrl, userCode, expiresIn, interval}`：WebUI 直接生成可扫描二维码，链接与 `userCode` 作为备用。

@@ -6,6 +6,7 @@ const path = require('path');
 const { spawn, execFile } = require('child_process');
 const { EngineClient } = require('./engine-client');
 const { repairTorrentSdkResult } = require('./domain/native-text');
+const { supportedProtocols } = require('./domain/create-router');
 
 const DEFAULT_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 32000, 60000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -103,6 +104,9 @@ class EngineDriverBase extends EventEmitter {
 
   isHealthy() { return this._healthy && this.sdkReady && this.client.isConnected(); }
   enginePid() { return this.child && !this.child.killed ? this.child.pid : null; }
+  // P2：内核协议能力声明（KernelPort 契约方法，与观察方法同返回 Promise）。
+  // 单一来源是 domain/create-router 的路由表——迅雷内核静态面，双实现一致。
+  async getSupportedProtocols() { return supportedProtocols(); }
 
   // engine.log 大小轮转：append-only 无上限会吃盘（Wine 崩溃时的句柄 dump 一次可数 KB，
   // respawn 循环下增长加速）。每次 boot 前检查，超限轮转保留一份旧档。

@@ -5,7 +5,6 @@ const { spawn } = require('node:child_process');
 const { TaskRegistry } = require('../src/registry');
 const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
-const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
@@ -73,14 +72,13 @@ const { RemotePairingService } = require('../src/services/remote-pairing-service
 const { RemoteNodeService } = require('../src/services/remote-node-service');
 const { RemoteTaskService } = require('../src/services/remote-task-service');
 const { MtlsClient } = require('../src/remote/mtls-client');
-const { createThunderUiV2Methods } = require('../src/rpc/thunder-ui-v2-methods');
 const { DaemonControlServer } = require('../src/control/server');
 const { DaemonControlDispatcher } = require('../src/control/dispatcher');
 const { productServices } = require('./product-services.cjs');
 const { plugin } = require('./shared.cjs');
 
-const repositories = plugin('tlei-repositories', ['tleiConfig'], (ctx) => {
-  const { appConfig, runtimeDir, downloadDir } = ctx.tleiConfig;
+const repositories = plugin('leifeng-repositories', ['leifengConfig'], (ctx) => {
+  const { appConfig, runtimeDir, downloadDir } = ctx.leifengConfig;
   const taskRepository = new TaskRepository({ filePath: appConfig.tasksPath, legacyFilePath: appConfig.legacyRegistryPath });
   taskRepository.load();
   const registry = TaskRegistry.fromRepository(taskRepository);
@@ -103,7 +101,7 @@ const repositories = plugin('tlei-repositories', ['tleiConfig'], (ctx) => {
   const historyRepository = new HistoryRepository({ db: dataDatabase });
   const linkRepository = new LinkRepository({ db: dataDatabase });
   const seedStore = new SeedStore({ rootDir: appConfig.seedsDir });
-  ctx.provide('tleiRepositories', {
+  ctx.provide('leifengRepositories', {
     taskRepository, registry, settingsRepository, ftpSecretStore, proxySecretStore,
     scheduleRepository, recentPathRepository, draftRepository, operationRepository,
     privateSecretStore, mediaSecretStore, captureTokenStore, remoteNodeRepository,

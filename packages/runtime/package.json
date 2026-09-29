@@ -1,5 +1,5 @@
 {
-  "name": "@tlei/runtime",
+  "name": "@leifeng/runtime",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,6 +11,6 @@
     "test": "mkdir -p \"${TMPDIR:-$HOME/tmp}\"; TMPDIR=\"${TMPDIR:-$HOME/tmp}\" node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@tlei/cordis": "file:../../vendor/cordis/packages/core"
+    "@leifeng/cordis": "file:../../vendor/cordis/packages/core"
   }
 }

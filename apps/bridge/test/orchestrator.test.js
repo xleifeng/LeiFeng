@@ -90,9 +90,9 @@ test('hybrid 接管同 hash 已有任务，不提交新建草稿', async () => {
   const daemonClient = {
     rpc: async (method) => {
       calls.push(method);
-      if (method === 'thunder.ui.v2.tasks.query') return { items: [task], nextCursor: null };
-      if (method === 'thunder.ui.v2.tasks.get') return task;
-      if (method === 'thunder.ui.v2.tasks.command') return { results: [{ ok: true }] };
+      if (method === 'leifeng.ui.v2.tasks.query') return { items: [task], nextCursor: null };
+      if (method === 'leifeng.ui.v2.tasks.get') return task;
+      if (method === 'leifeng.ui.v2.tasks.command') return { results: [{ ok: true }] };
       throw new Error(`unexpected RPC ${method}`);
     },
     exportTorrent: async () => raw,
@@ -103,7 +103,7 @@ test('hybrid 接管同 hash 已有任务，不提交新建草稿', async () => {
     const result = await orch.hybridDownload(`magnet:?xt=urn:btih:${parsed.infoHash}`);
     assert.equal(result.taskId, 'existing');
     assert.equal(result.session.taskId, 'existing');
-    assert.equal(calls.includes('thunder.ui.v2.create.commit'), false);
+    assert.equal(calls.includes('leifeng.ui.v2.create.commit'), false);
   } finally { orch.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -113,9 +113,9 @@ test('原生会话占用且无种子元数据时，qbit 独立接管磁力', asy
   const magnet = `magnet:?xt=urn:btih:${'a'.repeat(40)}`;
   let added = false;
   const daemonClient = { rpc: async (method) => {
-    if (method === 'thunder.ui.v2.tasks.query') return { items: [], nextCursor: null };
-    if (method === 'thunder.ui.v2.create.preflight') return { results: [{ ok: true, draft: { draftId: 'd1', state: 'ready' } }] };
-    if (method === 'thunder.ui.v2.create.commit') return { results: [{ ok: false, error: { code: 'BT_NATIVE_SESSION_BUSY' } }] };
+    if (method === 'leifeng.ui.v2.tasks.query') return { items: [], nextCursor: null };
+    if (method === 'leifeng.ui.v2.create.preflight') return { results: [{ ok: true, draft: { draftId: 'd1', state: 'ready' } }] };
+    if (method === 'leifeng.ui.v2.create.commit') return { results: [{ ok: false, error: { code: 'BT_NATIVE_SESSION_BUSY' } }] };
     throw new Error(`unexpected RPC ${method}`);
   } };
   const orch = createOrchestrator({ savePath: dir, daemonClient, qbitClient: { addMagnet: async (value) => { added = value === magnet; } } });
@@ -133,13 +133,13 @@ test('异步 208 删除失败任务并更新 session taskId', async () => {
   const parsed = await (await import('parse-torrent')).default(raw);
   let commits = 0; const commands = [];
   const daemonClient = { rpc: async (method, params) => {
-    if (method === 'thunder.ui.v2.tasks.query') return { items: [], nextCursor: null };
-    if (method === 'thunder.ui.v2.create.preflight') return { results: [{ ok: true, draft: { draftId: 'd1', state: 'ready' } }] };
-    if (method === 'thunder.ui.v2.create.commit') return { results: [{ ok: true, taskIds: [++commits === 1 ? 'old' : 'new'] }] };
-    if (method === 'thunder.ui.v2.tasks.get') return params[0].taskId === 'old'
+    if (method === 'leifeng.ui.v2.tasks.query') return { items: [], nextCursor: null };
+    if (method === 'leifeng.ui.v2.create.preflight') return { results: [{ ok: true, draft: { draftId: 'd1', state: 'ready' } }] };
+    if (method === 'leifeng.ui.v2.create.commit') return { results: [{ ok: true, taskIds: [++commits === 1 ? 'old' : 'new'] }] };
+    if (method === 'leifeng.ui.v2.tasks.get') return params[0].taskId === 'old'
       ? { taskId: 'old', lifecycle: 'failed', error: { nativeCode: 208 } }
       : { taskId: 'new', lifecycle: 'queued' };
-    if (method === 'thunder.ui.v2.tasks.command') { commands.push(params[0].command); return { results: [{ ok: true }] }; }
+    if (method === 'leifeng.ui.v2.tasks.command') { commands.push(params[0].command); return { results: [{ ok: true }] }; }
     throw new Error(`unexpected RPC ${method}`);
   }, exportTorrent: async () => raw };
   const orch = createOrchestrator({ savePath: dir, daemonClient, qbitClient: { addTorrent: async () => true }, recoveryIntervalMs: 10 });
@@ -160,16 +160,16 @@ test('引擎失败(START_FAILED)自动 start 重试救回任务，不删除不�
   // 场景：任务先健康；引擎重启后变 START_FAILED；桥发 start；daemon 恢复为 downloading。
   let phase = 'healthy'; const commands = []; let starts = 0;
   const daemonClient = { rpc: async (method, params) => {
-    if (method === 'thunder.ui.v2.tasks.query') return { items: [], nextCursor: null };
-    if (method === 'thunder.ui.v2.create.preflight') return { results: [{ ok: true, draft: { draftId: 'd1', state: 'ready' } }] };
-    if (method === 'thunder.ui.v2.create.commit') return { results: [{ ok: true, taskIds: ['t1'] }] };
-    if (method === 'thunder.ui.v2.tasks.get') {
+    if (method === 'leifeng.ui.v2.tasks.query') return { items: [], nextCursor: null };
+    if (method === 'leifeng.ui.v2.create.preflight') return { results: [{ ok: true, draft: { draftId: 'd1', state: 'ready' } }] };
+    if (method === 'leifeng.ui.v2.create.commit') return { results: [{ ok: true, taskIds: ['t1'] }] };
+    if (method === 'leifeng.ui.v2.tasks.get') {
       if (params[0].taskId !== 't1') throw new Error('unexpected taskId');
       return phase === 'healthy' ? { taskId: 't1', lifecycle: 'downloading' }
         : phase === 'failed' ? { taskId: 't1', lifecycle: 'failed', error: { code: 'START_FAILED', retryable: true } }
         : { taskId: 't1', lifecycle: 'downloading' };
     }
-    if (method === 'thunder.ui.v2.tasks.command') {
+    if (method === 'leifeng.ui.v2.tasks.command') {
       commands.push(params[0].command);
       if (params[0].command === 'start' && params[0].taskIds[0] === 't1') { starts++; phase = 'recovered'; }
       return { results: [{ ok: true }] };
@@ -202,7 +202,7 @@ test('matchingTasks 翻页遇 CURSOR_EXPIRED 从首页重开', async () => {
     sourceFingerprint: `bt:info:${parsed.infoHash}` };
   const daemonClient = {
     rpc: async (method, params) => {
-      if (method === 'thunder.ui.v2.tasks.query') {
+      if (method === 'leifeng.ui.v2.tasks.query') {
         pageCalls++;
         if (params[0].cursor && !expiredOnce) {
           // 翻第二页时列表已变更 → 游标失效
@@ -217,7 +217,7 @@ test('matchingTasks 翻页遇 CURSOR_EXPIRED 从首页重开', async () => {
         }
         return { items: [], nextCursor: null };
       }
-      if (method === 'thunder.ui.v2.tasks.get') return target;
+      if (method === 'leifeng.ui.v2.tasks.get') return target;
       throw new Error(`unexpected RPC ${method}`);
     },
     exportTorrent: async () => raw,
@@ -240,11 +240,11 @@ test('hybrid 接管引擎失败(START_FAILED)任务：先 start 救活，不重�
     sourceFingerprint: `bt:info:${parsed.infoHash}`,
     error: { code: 'START_FAILED', retryable: true } };
   const daemonClient = { rpc: async (method, params) => {
-    if (method === 'thunder.ui.v2.tasks.query') return { items: [task], nextCursor: null };
-    if (method === 'thunder.ui.v2.tasks.get') return task; // 接管判定时仍是 failed；start 后由 recovery 监控续观
-    if (method === 'thunder.ui.v2.tasks.command') { commands.push(params[0].command); return { results: [{ ok: true }] }; }
-    if (method === 'thunder.ui.v2.create.commit') { commits++; throw new Error('unexpected commit'); }
-    if (method === 'thunder.ui.v2.create.preflight') { commits++; throw new Error('unexpected preflight'); }
+    if (method === 'leifeng.ui.v2.tasks.query') return { items: [task], nextCursor: null };
+    if (method === 'leifeng.ui.v2.tasks.get') return task; // 接管判定时仍是 failed；start 后由 recovery 监控续观
+    if (method === 'leifeng.ui.v2.tasks.command') { commands.push(params[0].command); return { results: [{ ok: true }] }; }
+    if (method === 'leifeng.ui.v2.create.commit') { commits++; throw new Error('unexpected commit'); }
+    if (method === 'leifeng.ui.v2.create.preflight') { commits++; throw new Error('unexpected preflight'); }
     throw new Error(`unexpected RPC ${method}`);
   }, exportTorrent: async () => raw };
   const orch = createOrchestrator({ savePath: dir, daemonClient, qbitClient: { addTorrent: async () => true } });

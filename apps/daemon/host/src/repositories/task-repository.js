@@ -135,7 +135,7 @@ function normalizeFileList(record) {
 
 function legacyExtras(record) {
   const known = new Set([
-    'schemaVersion', 'gid', 'id', 'engineId', 'parentId', 'taskType', 'kind', 'status', 'lifecycle', 'url', 'source', 'sourceFingerprint', 'infoId', 'infoHash',
+    'schemaVersion', 'gid', 'id', 'engineId', 'kernelId', 'parentId', 'taskType', 'kind', 'status', 'lifecycle', 'url', 'source', 'sourceFingerprint', 'infoId', 'infoHash',
     'taskName', 'displayName', 'savePath', 'selectedFileIndices', 'fileLists', 'files', 'totalLength', 'totalBytes', 'completedLength', 'completedBytes',
     'downloadSpeed', 'downloadBytesPerSecond', 'uploadSpeed', 'uploadBytesPerSecond', 'queuePosition', 'taskSpeedLimit', 'privateSpace', 'createdAt',
     'startedAt', 'completedAt', 'recycledAt', 'updatedAt', 'error', 'errorCode', 'errorMessage', 'vip', 'vipEnabled', 'vipState', 'vipReceivedLength',
@@ -157,6 +157,9 @@ function normalizeTaskRecord(input = {}, { clock = Date, idFactory } = {}) {
     schemaVersion: SCHEMA_VERSION,
     id,
     engineId: Number.isSafeInteger(Number(input.engineId)) && Number(input.engineId) > 0 ? Number(input.engineId) : null,
+    // P2：任务归属内核。旧记录无此字段 → 默认 'thunder'（当前唯一内核），
+    // 空串归一为 null（未知）。写入路径由 create 路由落实际值。
+    kernelId: input.kernelId === undefined ? 'thunder' : (String(input.kernelId || '').trim() || null),
     parentId: input.parentId ? String(input.parentId) : null,
     group: input.group && typeof input.group === 'object' ? { id: String(input.group.id || input.parentId || ''), label: String(input.group.label || input.group.name || '任务组') } : input.groupLabel ? { id: String(input.parentId || ''), label: String(input.groupLabel) } : null,
     groupResult: input.groupResult === 'partial-failed' || input.groupResult === 'failed' ? input.groupResult : null,

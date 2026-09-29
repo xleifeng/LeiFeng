@@ -5,7 +5,6 @@ const { spawn } = require('node:child_process');
 const { TaskRegistry } = require('../src/registry');
 const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
-const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
@@ -73,21 +72,20 @@ const { RemotePairingService } = require('../src/services/remote-pairing-service
 const { RemoteNodeService } = require('../src/services/remote-node-service');
 const { RemoteTaskService } = require('../src/services/remote-task-service');
 const { MtlsClient } = require('../src/remote/mtls-client');
-const { createThunderUiV2Methods } = require('../src/rpc/thunder-ui-v2-methods');
 const { DaemonControlServer } = require('../src/control/server');
 const { DaemonControlDispatcher } = require('../src/control/dispatcher');
 const { productServices } = require('./product-services.cjs');
 const { plugin } = require('./shared.cjs');
 
-const webApiProcess = plugin('tlei-web-api-process', ['tleiConfig', 'tleiControl'], (ctx) => {
-  const { repoRoot, env } = ctx.tleiConfig;
+const webApiProcess = plugin('leifeng-web-api-process', ['leifengConfig', 'leifengRpc'], (ctx) => {
+  const { repoRoot, env } = ctx.leifengConfig;
   const entry = path.join(repoRoot, 'apps', 'web-api', 'src', 'main.js');
   let child = null;
   let timer = null;
   let stopping = false;
   // 控制通道路径必须显式下发：win32 的 named pipe 由 appConfig 推导（THUNDERD_CONTROL_SOCKET
   // 常未设置），不传则子进程回退拼 runtime 下的 .sock 文件路径，永远连不上 daemon。
-  const childEnv = { ...env, THUNDERD_CONTROL_SOCKET: ctx.tleiConfig.appConfig.controlSocketPath };
+  const childEnv = { ...env, THUNDERD_CONTROL_SOCKET: ctx.leifengConfig.appConfig.controlSocketPath };
   function start() {
     if (stopping) return;
     child = spawn(process.execPath, [entry], { cwd: repoRoot, env: childEnv, stdio: 'inherit' });
@@ -100,7 +98,7 @@ const webApiProcess = plugin('tlei-web-api-process', ['tleiConfig', 'tleiControl
     });
   }
   start();
-  ctx.provide('tleiWebApi', { current: () => child });
+  ctx.provide('leifengWebApi', { current: () => child });
   return async () => {
     stopping = true;
     if (timer) clearTimeout(timer);

@@ -5,7 +5,6 @@ const { spawn } = require('node:child_process');
 const { TaskRegistry } = require('../src/registry');
 const { ProgressPoller } = require('../src/poller');
 const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
-const { createMethodHandler } = require('../src/methods');
 const { hasSqlite, readVipTasks, readNativeBtTasks } = require('../src/taskdb-reader');
 const { CredentialWallet } = require('../src/auth-wallet');
 const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
@@ -73,13 +72,13 @@ const { RemotePairingService } = require('../src/services/remote-pairing-service
 const { RemoteNodeService } = require('../src/services/remote-node-service');
 const { RemoteTaskService } = require('../src/services/remote-task-service');
 const { MtlsClient } = require('../src/remote/mtls-client');
-const { createThunderUiV2Methods } = require('../src/rpc/thunder-ui-v2-methods');
 const { DaemonControlServer } = require('../src/control/server');
 const { DaemonControlDispatcher } = require('../src/control/dispatcher');
 const { productServices } = require('./product-services.cjs');
+const { createUiCapabilityRegistry } = require('../src/domain/ui-capabilities');
 const { plugin, repoRoot } = require('./shared.cjs');
 
-const runtimeConfig = plugin('tlei-runtime-config', [], (ctx, options = {}) => {
+const runtimeConfig = plugin('leifeng-runtime-config', [], (ctx, options = {}) => {
   const env = { ...process.env, ...(options.env || {}) };
   const appConfig = loadConfig({ env, repoRoot });
   const runtimeDir = appConfig.runtimeDir;
@@ -95,7 +94,8 @@ const runtimeConfig = plugin('tlei-runtime-config', [], (ctx, options = {}) => {
   if (appConfig.engineMode === 'wine' && !hasSqlite) {
     console.error('[thunderd] WARN: sqlite3 CLI not found; observation degrades to filesystem-only');
   }
-  ctx.provide('tleiConfig', { appConfig, runtimeDir, downloadDir, repoRoot, env });
+  ctx.provide('leifengConfig', { appConfig, runtimeDir, downloadDir, repoRoot, env });
+  ctx.provide('leifengUiRegistry', createUiCapabilityRegistry());
   return () => releaseLock(lockPath, process.pid);
 });
 

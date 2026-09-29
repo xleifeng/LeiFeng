@@ -14,7 +14,7 @@ test('external Web API preserves JSON-RPC envelopes and forwards request context
   let received;
   const client = { invoke: async (method, params, context) => { received = { method, params, context }; if (method === 'fail') throw Object.assign(new Error('nope'), { code: 'EXPECTED' }); return { ok: true }; } };
   const handler = createWebRequestHandler({ client, host: '127.0.0.1', port: 16800 });
-  const result = await post(handler, { jsonrpc: '2.0', id: 1, method: 'thunder.ui.v2.bootstrap', params: [{ keep: true }] }, { authorization: 'Bearer secret', origin: 'http://127.0.0.1:16800' });
+  const result = await post(handler, { jsonrpc: '2.0', id: 1, method: 'leifeng.ui.v2.bootstrap', params: [{ keep: true }] }, { authorization: 'Bearer secret', origin: 'http://127.0.0.1:16800' });
   assert.deepEqual(result.result, { ok: true }); assert.equal(received.context.bearerToken, 'secret'); assert.equal(received.context.isLoopback, true); assert.deepEqual(received.params, [{ keep: true }]);
   assert.equal((await post(handler, 'not json')).error.code, -32700);
   assert.equal((await post(handler, { jsonrpc: '2.0', id: 2, method: 'fail' })).error.code, 'EXPECTED');

@@ -69,18 +69,18 @@ test('readNativeBtTasks finds persisted BT rows and filters by native path/name'
     );
     CREATE TABLE BtTask(TaskId BIGINT PRIMARY KEY, InfoId BLOB, SeedFile TEXT);
     INSERT INTO TaskBase VALUES
-      (11,5,'Z:\\srv\\tlei-test\\downloads','ubuntu.iso',100,1000,0),
-      (12,9,'Z:\\srv\\tlei-test\\downloads','ubuntu.iso',900,1000,8),
+      (11,5,'Z:\\srv\\leifeng-test\\downloads','ubuntu.iso',100,1000,0),
+      (12,9,'Z:\\srv\\leifeng-test\\downloads','ubuntu.iso',900,1000,8),
       (13,5,'Z:\\home\\other','ubuntu.iso',800,1000,0);
     INSERT INTO BtTask VALUES
       (11,X'00112233445566778899AABBCCDDEEFF00112233','seed-a'),
       (12,X'00112233445566778899AABBCCDDEEFF00112233','seed-b'),
       (13,X'00112233445566778899AABBCCDDEEFF00112233','seed-c');
   `]);
-  const rows = await readNativeBtTasks(db, '00112233445566778899AABBCCDDEEFF00112233', { savePath: '/srv/tlei-test/downloads', taskName: 'ubuntu.iso' });
+  const rows = await readNativeBtTasks(db, '00112233445566778899AABBCCDDEEFF00112233', { savePath: '/srv/leifeng-test/downloads', taskName: 'ubuntu.iso' });
   assert.deepEqual(rows, [
-    { engineId: 12, status: 9, savePath: 'Z:\\srv\\tlei-test\\downloads', name: 'ubuntu.iso', totalReceiveSize: 900, resourceSize: 1000, failureErrorCode: 8 },
-    { engineId: 11, status: 5, savePath: 'Z:\\srv\\tlei-test\\downloads', name: 'ubuntu.iso', totalReceiveSize: 100, resourceSize: 1000, failureErrorCode: 0 },
+    { engineId: 12, status: 9, savePath: 'Z:\\srv\\leifeng-test\\downloads', name: 'ubuntu.iso', totalReceiveSize: 900, resourceSize: 1000, failureErrorCode: 8 },
+    { engineId: 11, status: 5, savePath: 'Z:\\srv\\leifeng-test\\downloads', name: 'ubuntu.iso', totalReceiveSize: 100, resourceSize: 1000, failureErrorCode: 0 },
   ]);
 });
 

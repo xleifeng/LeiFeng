@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const net = require('node:net');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { FrameDecoder, encodeFrame, DEFAULT_MAX_FRAME_BYTES } = require('@tlei/daemon-client');
+const { FrameDecoder, encodeFrame, DEFAULT_MAX_FRAME_BYTES } = require('@leifeng/daemon-client');
 
 function rpcError(error) {
   return {

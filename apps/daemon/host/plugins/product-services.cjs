@@ -12,7 +12,8 @@ const { HistoryService } = require('../src/services/history-service');
 const { LinkLibraryService } = require('../src/services/link-library-service');
 const { LinkSyncService } = require('../src/services/link-sync-service');
 const { LinkSyncAdapter } = require('../src/adapters/link-sync-adapter');
-const { AccountService } = require('../src/services/account-service');
+const { createProductRpcMethods } = require('../src/rpc/product-rpc-methods');
+const { createProductControlMethods } = require('../src/rpc/product-control-methods');
 const { DiagnosticsService } = require('../src/services/diagnostics-service');
 const { BootstrapService } = require('../src/services/bootstrap-service');
 const { RemotePairingService } = require('../src/services/remote-pairing-service');
@@ -29,22 +30,29 @@ const { parseListenAddress } = require('../src/config');
 // auth: auth/vipManager；tasks: createDraftService, policyService,
 // fileOperationService, pathService, safePathResolver。
 const productServices = {
-  name: 'tlei-product-services',
-  inject: ['tleiConfig', 'tleiRepositories', 'tleiEngine', 'tleiObservation', 'tleiAuth', 'tleiTasks'],
+  name: 'leifeng-product-services',
+  inject: ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengUiRegistry'],
   apply(ctx) {
-    const { appConfig, env } = ctx.tleiConfig;
+    const { appConfig, env } = ctx.leifengConfig;
+    // UI 能力贡献：本插件存在即代表这些 WebUI 面可用；插件卸载/禁用时随清理撤销。
+    const withdrawUiCapabilities = ctx.leifengUiRegistry.contribute('product-services', [
+      'history', 'link-library', 'private-space', 'media', 'capture', 'remote',
+    ]);
     const {
       taskRepository, settingsRepository, operationRepository, historyRepository,
       linkRepository, remoteNodeRepository, privateSecretStore, mediaSecretStore,
       captureTokenStore,
-    } = ctx.tleiRepositories;
-    const { driver } = ctx.tleiEngine;
-    const { eventBus, diagnosticEvents } = ctx.tleiObservation;
-    const { auth, vipManager } = ctx.tleiAuth;
+    } = ctx.leifengRepositories;
+    // kernel-any-only：经 hub 取默认内核；account 槽是迅雷富件，缺席即诚实降级
+    //（qbit-only：bootstrap account.valid=false、diagnostics 账号段缺席）。
+    const kernelSlot = ctx.leifengKernelHub.default();
+    if (!kernelSlot) throw new Error('product-services: no kernel registered (enable a kernel plugin)');
+    const { kernel: driver, eventBus, diagnosticEvents } = kernelSlot;
+    const { auth = null, vipManager = null, accountService = null } = kernelSlot.account || {};
     const {
       createDraftService, policyService, fileOperationService, pathService,
       safePathResolver, processRunner,
-    } = ctx.tleiTasks;
+    } = ctx.leifengTasks;
 
     const notificationService = new NotificationService({
       eventBus, tasks: taskRepository,
@@ -124,9 +132,11 @@ const productServices = {
       createDraftService, eventBus,
     });
     const linkSyncService = new LinkSyncService({ adapter: new LinkSyncAdapter({ enabled: false }) });
-    const accountService = new AccountService({
-      auth, vip: vipManager, privateSpace, linkSync: linkSyncService, eventBus,
-    });
+    // AccountService 已随迅雷绑定域归 kernel-thunder（rpc-plugin-registration）：
+    // 从 kernel account 槽取实例，本插件只做 shell 协作者晚绑定注入（logout
+    // 协调链恢复现语义）——注入前 kernel 侧 logout 只做 auth 清理。qbit-only
+    // 下 account 槽整体缺席，跳过注入（与缺席语义一致）。
+    if (accountService) accountService.attachShellCollaborators({ privateSpace, linkSync: linkSyncService });
     const diagnosticsService = new DiagnosticsService({
       config: appConfig, tasks: taskRepository, driver, settings: settingsRepository,
       events: diagnosticEvents, privateSpace, media: mediaService,
@@ -145,16 +155,33 @@ const productServices = {
       accountService, vipService: vipManager, privateSpace,
       capabilityProvider: () => driver.nativeCapabilities || {}, config: appConfig,
       policyService, mediaService, requestAuth, remoteEnabledProvider: remoteCredentialsReady,
+      uiCapabilitiesProvider: () => ctx.leifengUiRegistry.snapshot(),
     });
 
-    ctx.provide('tleiProducts', {
+    ctx.provide('leifengProducts', {
       processRunner, notificationService, privateSpace, mediaService, captureService,
       remotePairingService, remoteNodeService, remoteTaskService, remoteCredentialsReady,
       historyService, linkService, linkSyncService, accountService,
       diagnosticsService, requestRateLimiter, requestAuth, bootstrapService,
     });
+    // ---- RPC 注册（rpc-plugin-registration）：product 域 v2 面 + daemon.v1 控制面；
+    // dispatcher 的 CSRF/限流守卫属本插件构造的产品域状态，晚注入 rpc-host。
+    const withdrawV2 = ctx.leifengRpc.registry.register('product-services', createProductRpcMethods({
+      bootstrapService, privateSpace, historyService, linkService, media: mediaService,
+      capture: captureService, remotePairing: remotePairingService, remoteNodes: remoteNodeService,
+      remoteTasks: remoteTaskService, diagnostics: diagnosticsService, driver,
+      operations: operationRepository, eventBus,
+    }));
+    const withdrawControl = ctx.leifengRpc.registry.register('product-services', createProductControlMethods({
+      media: mediaService, capture: captureService, diagnostics: diagnosticsService,
+      remotePairing: remotePairingService, taskQueryService: ctx.leifengTasks.taskQueryService,
+      operationService: ctx.leifengTasks.operationService, createDraftService, config: appConfig,
+    }));
+    ctx.leifengRpc.attachAuth({ requestAuth, rateLimiter: requestRateLimiter });
     let privateSweepTimer;
     ctx.effect(() => async () => {
+      withdrawV2(); withdrawControl();
+      withdrawUiCapabilities();
       if (privateSweepTimer) clearInterval(privateSweepTimer);
       notificationService.stop();
       remoteNodeService.stop();

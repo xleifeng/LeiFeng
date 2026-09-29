@@ -1,4 +1,4 @@
-import { Context } from '@tlei/cordis';
+import { Context } from '@leifeng/cordis';
 import { readFile } from 'node:fs/promises';
 import { composeProfile, dumpConfig } from './config.mjs';
 

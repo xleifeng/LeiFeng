@@ -29,6 +29,16 @@ class AccountService {
   async startLogin() { return this.auth.startLogin(); }
   async cancelLogin() { if (typeof this.auth.cancelLogin === 'function') return this.auth.cancelLogin(); return { cancelled: false }; }
   async logout() { await this.vip?.disableAll?.({ reason: 'logout' }).catch?.(() => {}); this.privateSpace?.lockAll?.('logout', { clearKey: true }); await this.linkSync?.stopAndClearSession?.().catch?.(() => {}); const result = await this.auth.logout(); this.eventBus?.emit?.('account.changed', { state: 'logged-out' }); return result || { loggedOut: true }; }
+  // 迅雷绑定域 RPC 归 kernel-thunder 后（2026-09-28 rpc-plugin-registration），
+  // shell 协作者（privateSpace / linkSync）由 product-services 晚绑定注入——
+  // kernel 装配期二者尚未存在，注入前的窗口内 logout 只做 auth 清理（与
+  // qbit-only 缺席语义一致）。返回是否首次绑定成功，供装配层断言时序。
+  attachShellCollaborators({ privateSpace = null, linkSync = null } = {}) {
+    let bound = false;
+    if (privateSpace && !this.privateSpace) { this.privateSpace = privateSpace; bound = true; }
+    if (linkSync && !this.linkSync) { this.linkSync = linkSync; bound = true; }
+    return bound;
+  }
 }
 
 module.exports = { AccountService };

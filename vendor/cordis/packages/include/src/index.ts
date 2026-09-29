@@ -1,5 +1,5 @@
-import { EntryOptions, EntryTree, isJsExpr } from '@tlei/cordis-loader'
-import { Context, Service } from '@tlei/cordis'
+import { EntryOptions, EntryTree, isJsExpr } from '@leifeng/cordis-loader'
+import { Context, Service } from '@leifeng/cordis'
 import { extname } from 'node:path'
 import { access, constants, readFile, rename, writeFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'

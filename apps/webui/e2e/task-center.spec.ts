@@ -27,19 +27,19 @@ test.beforeEach(async ({ page }, testInfo) => {
       { ...task, taskId: 'group-1', kind: 'group', displayName: '批量下载组', totalBytes: 100, completedBytes: 40, group: { id: 'group-1', label: '批量下载组' }, capabilities: ['pause', 'removeRecord'] },
       { ...task, taskId: 'group-child-1', parentTaskId: 'group-1', displayName: 'file.bin', group: { id: 'group-1', label: '批量下载组' } },
     ]
-    const result = body.method === 'thunder.ui.v2.bootstrap'
+    const result = body.method === 'leifeng.ui.v2.bootstrap'
       ? { apiVersion: 2, daemonVersion: 'e2e', repositoryRevision: 1, serverTime: Date.now(), capabilities: { protocols: ['http'], taskControl: true, recycle: true, recover: false, rename: false, move: false, redownload: false, perTaskRateLimit: false, btFileSelection: false, btSequential: false, globalRateLimit: true, proxy: false, p2pSwitch: false, cloudDrive: false }, engine: { transportReady: true, sdkReady: true, enginePid: 1, queue: 0, dht: 0, p2p: true, p2s: true, restarts: 0, uptimeMs: 100 }, account: { valid: false, isVip: false, vipType: 0, vipLevel: 0 }, policy: { revision: 0, desired: {}, applied: null }, security: { authRequired: false, csrfRequired: false, loopback: true } }
-        : body.method === 'thunder.ui.v2.tasks.counts'
+        : body.method === 'leifeng.ui.v2.tasks.counts'
         ? { all: trashView ? (trashCleared ? 0 : 1) : 1, active: trashView ? 0 : 1, completed: 0, trash: trashView && !trashCleared ? 1 : 0, private: 0, repositoryRevision: 1 }
-        : body.method === 'thunder.ui.v2.trash.empty'
+        : body.method === 'leifeng.ui.v2.trash.empty'
           ? (() => { trashCleared = true; return { operationId: 'e2e-trash-op', acceptedAt: Date.now(), results: [{ taskId: trashTask.taskId, ok: true, revision: 3 }] } })()
-        : body.method === 'thunder.ui.v2.create.preflight'
+        : body.method === 'leifeng.ui.v2.create.preflight'
           ? { results: [{ ok: true, draft }] }
-          : body.method === 'thunder.ui.v2.create.commit'
+          : body.method === 'leifeng.ui.v2.create.commit'
             ? { operationId: 'e2e-op', groupId: 'group-1', results: [{ draftId: draft.draftId, ok: true, taskIds: ['group-child-1'] }] }
-        : body.method === 'thunder.ui.v2.tasks.query' && input.view === 'trash'
+        : body.method === 'leifeng.ui.v2.tasks.query' && input.view === 'trash'
           ? { items: trashView && !trashCleared ? [trashTask] : [], total: trashView && !trashCleared ? 1 : 0, nextCursor: null, snapshotRevision: 1, repositoryRevision: 1, counts: { all: trashView && !trashCleared ? 1 : 0, active: 0, completed: 0, trash: trashView && !trashCleared ? 1 : 0, private: 0, repositoryRevision: 1 } }
-        : body.method === 'thunder.ui.v2.tasks.query' && input.groupBy === 'task-group'
+        : body.method === 'leifeng.ui.v2.tasks.query' && input.groupBy === 'task-group'
           ? { items: groupedTasks, total: groupedTasks.length, nextCursor: null, snapshotRevision: 1, repositoryRevision: 1, counts: { all: groupedTasks.length, active: groupedTasks.length, completed: 0, trash: 0, private: 0, repositoryRevision: 1 } }
         : (() => {
             const pageIndex = input.cursor ? Number(String(input.cursor).replace('page:', '')) || 0 : 0

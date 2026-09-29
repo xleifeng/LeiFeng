@@ -1,4 +1,4 @@
-// daemon-client.js — 桥侧 daemon 客户端：JSON-RPC（thunder.ui.v2.*）+ .torrent 导出。
+// daemon-client.js — 桥侧 daemon 客户端：JSON-RPC（leifeng.ui.v2.*）+ .torrent 导出。
 'use strict';
 
 const http = require('http');

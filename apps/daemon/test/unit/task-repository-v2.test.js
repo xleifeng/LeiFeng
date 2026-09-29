@@ -23,6 +23,24 @@ test('legacy registry migrates atomically with backup, unknown fields and V2 sch
   assert.equal(JSON.parse(fs.readFileSync(p.file, 'utf8')).schemaVersion, 2);
 });
 
+test('kernelId：默认 thunder、显式值 round-trip、空串归 null、不落 legacy extras', () => {
+  // 旧记录无字段 → 默认 thunder（含 legacy 迁移路径）
+  const legacy = normalizeTaskRecord({ url: 'http://x/a' });
+  assert.equal(legacy.kernelId, 'thunder');
+  // 显式归属 round-trip：create → persist → reload
+  const p = paths();
+  const repo = new TaskRepository({ filePath: p.file, legacyFilePath: p.legacy });
+  repo.load();
+  const created = repo.create({ source: 'http://x/b', kernelId: 'qbit' });
+  assert.equal(created.kernelId, 'qbit');
+  const reloaded = new TaskRepository({ filePath: p.file, legacyFilePath: p.legacy });
+  reloaded.load();
+  assert.equal(reloaded.get(created.id).kernelId, 'qbit');
+  // 空串 → null（未知归属）；不落 legacy extras（known 集已登记）
+  assert.equal(normalizeTaskRecord({ url: 'http://x/c', kernelId: '' }).kernelId, null);
+  assert.equal(normalizeTaskRecord({ url: 'http://x/c', kernelId: 'qbit' }).legacy, undefined);
+});
+
 test('mutation uses revision/fileRevision and appends outbox atomically', () => {
   const p = paths(); const repo = new TaskRepository({ filePath: p.file, legacyFilePath: p.legacy }); repo.load();
   const task = repo.create({ source: 'http://x/a', savePath: p.dir, displayName: 'a', kind: 'http' });

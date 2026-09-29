@@ -1,4 +1,4 @@
-import { Context, Inject, Service } from '@tlei/cordis'
+import { Context, Inject, Service } from '@leifeng/cordis'
 import { defineProperty, Dict, isNullable } from 'cosmokit'
 import { ModuleLoader } from './internal.ts'
 import { Entry, EntryOptions } from './config/entry.ts'
@@ -12,7 +12,7 @@ export * from './config/tree.ts'
 export * from './config/utils.ts'
 export * from './internal.ts'
 
-declare module '@tlei/cordis' {
+declare module '@leifeng/cordis' {
   interface Events {
     'exit'(signal: NodeJS.Signals): Promise<void>
     'loader/config-update'(): void

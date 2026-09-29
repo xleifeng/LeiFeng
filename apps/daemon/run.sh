@@ -45,7 +45,6 @@ if [ "$CORE_ONLY" -eq 0 ] && [ -f apps/webui/package.json ]; then
 fi
 export WINEPREFIX="${WINEPREFIX:-$HOME/.wine-thunder}"
 export THUNDERD_ENGINE_MODE="${THUNDERD_ENGINE_MODE:-wine}"
-export THUNDERD_LEGACY_RPC="${THUNDERD_LEGACY_RPC:-0}"
 if [ "$CHECK_ONLY" -eq 1 ]; then
   echo "thunderd prerequisites ok: engine=wine sdk_files=$count"
   exit 0

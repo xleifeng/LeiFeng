@@ -8,6 +8,7 @@ const { selectTorrentRelativePath } = require('./torrent-path');
 const { sourceFingerprint } = require('../repositories/task-repository');
 const { mapNativeError } = require('../domain/task-errors');
 const { normalizeTorrentHash, parseFtp } = require('../domain/protocol-parser');
+const { resolveCreateKernel } = require('../domain/create-router');
 const { buildNativeBtInfo } = require('../domain/native-bt-info');
 const { normalizeComparableEnginePath } = require('../engine-path');
 const { fromFileUrl } = require('../file-url');
@@ -121,7 +122,7 @@ function hasNativePartialData(targetDir, taskName) {
 }
 
 class CreateTaskService {
-  constructor({ tasks, driver, settings = null, httpProbe = fetchContentLength, seedStore = null, ftpSecrets = null, operationLock = new OperationLock(), clock = Date, runtimeDir = null, magnetTimeoutSec = 120, taskDbPath = null, readNativeBtTasks = null } = {}) {
+  constructor({ tasks, driver, settings = null, httpProbe = fetchContentLength, seedStore = null, ftpSecrets = null, operationLock = new OperationLock(), clock = Date, runtimeDir = null, magnetTimeoutSec = 120, taskDbPath = null, readNativeBtTasks = null, defaultKernelId = null } = {}) {
     if (!tasks || !driver) throw new Error('CreateTaskService tasks and driver are required');
     this.tasks = tasks;
     this.driver = driver;
@@ -135,6 +136,9 @@ class CreateTaskService {
     this.magnetTimeoutSec = Math.min(600, Math.max(30, Number(magnetTimeoutSec) || 120));
     this.taskDbPath = taskDbPath;
     this.readNativeBtTasks = typeof readNativeBtTasks === 'function' ? readNativeBtTasks : null;
+    // P2：任务归属内核由 create 路由决定（domain/create-router）。单一内核时代
+    // repository 默认值同为 'thunder'，此参数显式接通写入路径，P3 换内核只改路由表。
+    this.defaultKernelId = defaultKernelId || resolveCreateKernel() || null;
   }
 
   _savePath(savePath) {
@@ -214,7 +218,7 @@ class CreateTaskService {
       const info = taskType === 3 ? { url: realSource } : { url: realSource, refUrl: '', useOriginResourceOnly: false, originResourceThreadCount: 5, loginFtp: kind === 'ftp' && !!ftpSecret, ftpUserName: ftpSecret ? ftpSecret.username : '', ftpPassword: ftpSecret ? ftpSecret.password : '', origin: 'thunderd' };
       const engineId = await this.driver.createTask({ taskType, savePath: targetDir, taskName, info });
       const storedSource = kind === 'ftp' ? realSource : options.sourceOverride === undefined ? realSource : options.sourceOverride;
-      const task = this.tasks.create({ source: storedSource, savePath: targetDir, displayName: taskName, totalBytes, engineId, kind: taskKindOverride || kind, sourceFingerprint: sourceFingerprintOverride || fingerprint, selectedFileIndices: normalizeIndices(selectedFileIndices), lifecycle: 'preparing', legacy: { ...(options && options.legacy ? options.legacy : {}), ...(ftpSecretRef ? { ftpSecretRef } : {}) } });
+      const task = this.tasks.create({ source: storedSource, savePath: targetDir, displayName: taskName, totalBytes, engineId, kernelId: this.defaultKernelId, kind: taskKindOverride || kind, sourceFingerprint: sourceFingerprintOverride || fingerprint, selectedFileIndices: normalizeIndices(selectedFileIndices), lifecycle: 'preparing', legacy: { ...(options && options.legacy ? options.legacy : {}), ...(ftpSecretRef ? { ftpSecretRef } : {}) } });
       persisted = true;
       try {
         if (options.startMode === 'queued') return this.tasks.mutate(task.id, { expectedRevision: task.revision, reason: 'create-queued' }, { lifecycle: 'queued' }).id;
@@ -301,6 +305,7 @@ class CreateTaskService {
             if (existingHost && !['completed', 'failed', 'recycled', 'missing'].includes(existingHost.lifecycle)) return existingHost.id;
             const adopted = this.tasks.create({
               source, seedRef, savePath: targetDir, displayName: requestedName, totalBytes, engineId: reusable.engineId,
+              kernelId: this.defaultKernelId,
               infoId: parsed.infoId,
               completedBytes: Math.min(Math.max(0, Number(reusable.totalReceiveSize) || 0), totalBytes || Number.MAX_SAFE_INTEGER),
               kind: taskKindOverride, sourceFingerprint: sourceFingerprintOverride || fingerprint,
@@ -386,7 +391,7 @@ class CreateTaskService {
             taskNameModify,
           }),
         });
-        const task = this.tasks.create({ source, seedRef, savePath: targetDir, displayName: taskName, totalBytes, engineId, kind: taskKindOverride, infoId: parsed.infoId, sourceFingerprint: sourceFingerprintOverride || fingerprint, selectedFileIndices: indices, files, lifecycle: 'preparing', legacy: { ...(options && options.legacy ? options.legacy : {}) } });
+        const task = this.tasks.create({ source, seedRef, savePath: targetDir, displayName: taskName, totalBytes, engineId, kernelId: this.defaultKernelId, kind: taskKindOverride, infoId: parsed.infoId, sourceFingerprint: sourceFingerprintOverride || fingerprint, selectedFileIndices: indices, files, lifecycle: 'preparing', legacy: { ...(options && options.legacy ? options.legacy : {}) } });
         this.seedStore?.retain?.(seedRef, `task:${task.id}`);
         try {
           if (options.startMode === 'queued') return this.tasks.mutate(task.id, { expectedRevision: task.revision, reason: 'create-queued' }, { lifecycle: 'queued' }).id;
@@ -413,7 +418,7 @@ class CreateTaskService {
       const requestedName = safeTaskName(displayName || parsed.displayName || `${parsed.infoHash || 'magnet'}.torrent`);
       const taskName = options.allowExistingTarget === true ? requestedName : resolveCollision(targetDir, requestedName);
       const engineId = await this.driver.createTask({ taskType: 5, savePath: targetDir, taskName, info: { url: source, torrentFilePath: targetDir } });
-      const task = this.tasks.create({ source, savePath: targetDir, displayName: taskName, totalBytes: 0, engineId, kind: 'magnet', infoHash: parsed.infoHash, sourceFingerprint: fingerprint, selectedFileIndices: normalizeIndices(selectedFileIndices), lifecycle: 'metadata', legacy: { metadataPhase: 'fetching' } });
+      const task = this.tasks.create({ source, savePath: targetDir, displayName: taskName, totalBytes: 0, engineId, kernelId: this.defaultKernelId, kind: 'magnet', infoHash: parsed.infoHash, sourceFingerprint: fingerprint, selectedFileIndices: normalizeIndices(selectedFileIndices), lifecycle: 'metadata', legacy: { metadataPhase: 'fetching' } });
       await this.driver.startTasks([engineId]).catch(() => {});
       this._pollMagnetMetadata(task.id, { source, targetDir, taskName, engineId, selectedFileIndices, options }).catch((cause) => {
         try { this.tasks.mutate(task.id, { reason: 'magnet-metadata-failed' }, { lifecycle: 'failed', error: mapNativeError(cause.message, { code: 'METADATA_FAILED', category: 'source', retryable: true, actions: ['retry', 'change-source', 'diagnose'] }) }); } catch {}

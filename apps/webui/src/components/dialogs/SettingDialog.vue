@@ -1,27 +1,50 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { X } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import type { DownloadPolicy } from '../../api/contracts/v2/policies'
 import { enableFullSpeed, restoreLimits } from '../../api/native-download/policies'
 import { useDownloadPolicyFormStore } from '../../stores/download-policy-form'
 import { useOverlayStore } from '../../stores/overlay'
+import { usePluginManagerStore } from '../../stores/plugin-manager'
+import { useUiCapabilitiesStore } from '../../stores/ui-capabilities'
+import { settingSectionContributions } from '../../app/plugins'
 
-type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'integration'
+type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'integration' | 'plugin-manager'
 
 const form = useDownloadPolicyFormStore()
 const overlay = useOverlayStore()
 const router = useRouter()
-const activeSection = ref<Section>('basic')
+const capabilities = useUiCapabilitiesStore()
+const pluginManager = usePluginManagerStore()
+const activeSection = ref<Section | string>('basic')
 const notice = ref('')
 
-const navigation: { id: Section; label: string }[] = [
+// 核心分区 + 插件注册表贡献合并（运行期响应式）；capability 缺省项恒显示（views 缺失 = 不门控）
+const navigation: { id: Section; label: string; capability?: 'remote' }[] = [
   { id: 'basic', label: '基本设置' },
   { id: 'download', label: '下载设置' },
   { id: 'tasks', label: '任务管理' },
   { id: 'automation', label: '计划任务' },
   { id: 'integration', label: '系统集成' },
+  { id: 'plugin-manager', label: '插件管理' },
 ]
+const visibleNavigation = computed(() => [...navigation, ...settingSectionContributions.value].filter((item) => !item.capability || capabilities.enabled(item.capability)))
+
+// activeSection 命中插件贡献分区时（id 非核心枚举），内容区渲染其 component
+const activePluginSection = computed(() => settingSectionContributions.value.find((section) => section.id === activeSection.value))
+
+watch(activeSection, (section) => {
+  // 插件管理分区的数据面独立于下载策略 form：进入即拉取（幂等，失败可重试）
+  if (section === 'plugin-manager' && !pluginManager.plugins.length) void pluginManager.load()
+})
+
+async function togglePlugin(event: Event) {
+  const input = event.target as HTMLInputElement
+  const ok = await pluginManager.toggle(input.dataset.pluginId ?? '', input.checked)
+  // 状态未变时 Vue 不 patch :checked，失败路径须手动回滚 DOM
+  if (!ok) input.checked = !input.checked
+}
 
 const limited = computed(() => form.draft?.globalDownloadLimit !== null)
 
@@ -82,13 +105,44 @@ async function restore() {
     <button class="settings-window-close" aria-label="关闭设置" @click="overlay.close"><X :size="16" :stroke-width="1.6" /></button>
 
     <aside class="settings-window-nav" aria-label="设置分类">
-      <button v-for="item in navigation" :key="item.id" :class="{ active: activeSection === item.id }" @click="activeSection = item.id">{{ item.label }}</button>
+      <button v-for="item in visibleNavigation" :key="item.id" :class="{ active: activeSection === item.id }" @click="activeSection = item.id">{{ item.label }}</button>
       <span class="settings-window-nav-spacer" />
       <button class="settings-about-entry" @click="openAbout">关于迅雷</button>
     </aside>
 
     <main class="settings-window-main">
-      <div v-if="form.loading" class="settings-window-state">正在加载下载策略…</div>
+      <!-- 插件管理分区独立于下载策略 form（数据面不同，form 加载失败不影响本分区） -->
+      <section v-if="activeSection === 'plugin-manager'" class="settings-section plugin-manager-section">
+        <h1>插件管理</h1>
+        <h2>daemon 装配插件</h2>
+        <p v-if="pluginManager.notice" class="plugin-manager-message">{{ pluginManager.notice }}</p>
+        <p v-else-if="pluginManager.error" class="plugin-manager-message is-error">{{ pluginManager.error }} <button class="settings-text-button" @click="pluginManager.load">重试</button></p>
+        <div v-if="pluginManager.loading" class="settings-window-state">正在加载插件列表…</div>
+        <template v-else-if="pluginManager.plugins.length">
+          <label v-for="plugin in pluginManager.plugins" :key="plugin.id" class="settings-toggle-row plugin-manager-row" :class="{ 'is-locked': plugin.id === 'runtime-config' }">
+            <input
+              type="checkbox"
+              :checked="plugin.enabled"
+              :disabled="plugin.id === 'runtime-config' || pluginManager.pendingId !== ''"
+              :data-plugin-id="plugin.id"
+              :title="plugin.id === 'runtime-config' ? '基础插件，不可禁用' : undefined"
+              @change="togglePlugin"
+            />
+            <span class="plugin-manager-label">
+              <span class="plugin-manager-id">{{ plugin.id }}</span>
+              <span class="plugin-manager-provides">提供 {{ plugin.provides.join(' / ') || '—' }}</span>
+            </span>
+          </label>
+        </template>
+      </section>
+
+      <section v-else-if="activePluginSection" :key="activePluginSection.id" class="settings-section settings-plugin-section">
+        <h1>{{ activePluginSection.label }}</h1>
+        <component :is="activePluginSection.component" v-if="activePluginSection.component" />
+        <p v-else class="plugin-manager-message">该插件分区未提供内容组件</p>
+      </section>
+
+      <div v-else-if="form.loading" class="settings-window-state">正在加载下载策略…</div>
       <div v-else-if="form.error && !form.draft" class="settings-window-state is-error">
         <span>{{ form.error }}</span><button @click="form.load">重试</button>
       </div>
@@ -157,7 +211,7 @@ async function restore() {
           <div class="settings-sub-action"><span>查看账号、Peer ID 和任务级加速状态</span><button class="settings-inline-button" @click="openVip">查看加速状态</button></div>
         </section>
 
-        <section v-else class="settings-section">
+        <section v-else-if="activeSection === 'integration'" class="settings-section">
           <h1>系统集成</h1>
           <h2>协议接管与远程下载</h2>
           <div class="settings-sub-action"><span>管理浏览器接管、远程节点与配对凭据</span><button class="settings-inline-button" @click="openPage('/settings/integration')">打开系统集成</button></div>

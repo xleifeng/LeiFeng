@@ -1,4 +1,4 @@
-# tlei profile launcher
+# leifeng profile launcher
 
 `src/index.mjs` 导出 `composeProfile`、`dumpConfig`、`bootProfile`、`runCli`。三个固定 profile 为 `thunderd`、`thunderd-core` 和 `bridge-host`。
 
@@ -8,7 +8,7 @@
 const registry = {
   'runtime-config': {
     plugin: runtimeConfig,
-    provides: ['tleiConfig'],
+    provides: ['leifengConfig'],
     requires: [],
     defaults: {},
     configKeys: ['env'],

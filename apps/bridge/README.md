@@ -1,11 +1,11 @@
-# @tlei/webseed-bridge
+# @leifeng/webseed-bridge
 
-BEP-19 web seed 桥：把迅雷（tlei daemon）P2SP 落盘数据经 sha1 逐 piece 门控后，以 HTTP web seed 形态供给本机 qBittorrent。实测混合加速 ≈ 60× 纯 qBittorrent（132 KiB/s → 7.7 MiB/s，归因迅雷 P2P 网络）。
+BEP-19 web seed 桥：把迅雷（leifeng daemon）P2SP 落盘数据经 sha1 逐 piece 门控后，以 HTTP web seed 形态供给本机 qBittorrent。实测混合加速 ≈ 60× 纯 qBittorrent（132 KiB/s → 7.7 MiB/s，归因迅雷 P2P 网络）。
 
 ## 架构
 
 ```
-磁力 ──→ tlei daemon（P2SP 下载，顺序调度）
+磁力 ──→ leifeng daemon（P2SP 下载，顺序调度）
               │ 落盘（<infohash>.torrent/ 目录，CP1252 mojibake 名，.bt.xltd 边车）
               ▼
         桥（本包）── sha1 逐 piece 按需验证 ──→ HTTP 206/503（BEP-19）
@@ -20,7 +20,7 @@ BEP-19 web seed 桥：把迅雷（tlei daemon）P2SP 落盘数据经 sha1 逐 pi
 `src/main.js` 是 `bridge-host` Cordis profile 的兼容入口；桥 daemon client、qbit Recipient、HTTP 供种与编排均由同一插件树装配。可加 `--dump-config` 查看脱敏后的装配配置，或用 `--config <json>` 传入 profile 插件配置。
 
 ```bash
-# 前置：tlei daemon 在跑（默认 127.0.0.1:16800）、qBittorrent WebUI 在跑（默认 8085，
+# 前置：leifeng daemon 在跑（默认 127.0.0.1:16800）、qBittorrent WebUI 在跑（默认 8085，
 # 可通过 QBIT_USERNAME/QBIT_PASSWORD 配置 WebUI 登录）、迅雷已登录（三项验收自动执行）
 
 # P2 混合加速（磁力 → 双路下载）
@@ -53,7 +53,7 @@ node src/main.js serve --torrent <x.torrent> --data <rootDir> [--out injected.to
 | 引擎 208（同 infohash 会话未释放） | 删除失败任务 → 安全重建（≤2 次），忙则 qbit 独立下载 |
 | 引擎崩溃/重启（START_FAILED 等） | 指数退避（5/15/30/60s）`start` 重试 ≤6 次，不删不重建（B3 长跑实证：数据完好，start 一次救回） |
 | 桥重启 | 接管同 hash 存量任务（含引擎失败任务先救活），绝不重复建行 |
-| tlei 停滞 | 三信号（验证推进/磁盘字节/host 速度）全灭 5 分钟才止损暂停，qbit 独立继续 |
+| leifeng 停滞 | 三信号（验证推进/磁盘字节/host 速度）全灭 5 分钟才止损暂停，qbit 独立继续 |
 
 ## 测试
 

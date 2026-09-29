@@ -273,42 +273,42 @@ test('VIP enable/disable 为 transport 薄转发且业务返回不触发重启',
 // ---- createTask 签名 + parseTaskInfo + resolveThunderUrl + withWinePaths ----
 test('createTask BT：savePath/seedFile 转 Wine + 传 info', async () => {
   const { driver, fx } = await setup();
-  const id = await driver.createTask({ taskType: 2, savePath: '/srv/tlei-test/x', taskName: 't.iso',
-    info: { infoId: 'ABC', seedFile: '/srv/tlei-test/x.torrent', fileRealIndexLists: [0], autoRenameWhenRepeat: false } });
+  const id = await driver.createTask({ taskType: 2, savePath: '/srv/leifeng-test/x', taskName: 't.iso',
+    info: { infoId: 'ABC', seedFile: '/srv/leifeng-test/x.torrent', fileRealIndexLists: [0], autoRenameWhenRepeat: false } });
   assert.ok(id > 0);
   const call = fx.state.createCalls[0];
   assert.strictEqual(call.taskType, 2);
-  assert.strictEqual(call.taskInfo.taskBaseInfo.savePath, 'Z:\\srv\\tlei-test\\x');
-  assert.strictEqual(call.info.seedFile, 'Z:\\srv\\tlei-test\\x.torrent');       // 转 Wine
+  assert.strictEqual(call.taskInfo.taskBaseInfo.savePath, 'Z:\\srv\\leifeng-test\\x');
+  assert.strictEqual(call.info.seedFile, 'Z:\\srv\\leifeng-test\\x.torrent');       // 转 Wine
   assert.strictEqual(call.taskInfo.taskType, 2);                            // 冗余消除
   fx.server.close();
 });
 
 test('createTask 磁力：torrentFilePath 转 Wine', async () => {
   const { driver, fx } = await setup();
-  await driver.createTask({ taskType: 5, savePath: '/srv/tlei-test/s', taskName: 'H.torrent',
-    info: { url: 'magnet:?xt=urn:btih:H', torrentFilePath: '/srv/tlei-test/s' } });
+  await driver.createTask({ taskType: 5, savePath: '/srv/leifeng-test/s', taskName: 'H.torrent',
+    info: { url: 'magnet:?xt=urn:btih:H', torrentFilePath: '/srv/leifeng-test/s' } });
   const call = fx.state.createCalls[0];
-  assert.strictEqual(call.info.torrentFilePath, 'Z:\\srv\\tlei-test\\s');
+  assert.strictEqual(call.info.torrentFilePath, 'Z:\\srv\\leifeng-test\\s');
   fx.server.close();
 });
 
 test('createTask HTTP：savePath 转 Wine + p2spInfo 透传', async () => {
   const { driver, fx } = await setup();
-  await driver.createTask({ taskType: 1, savePath: '/srv/tlei-test/d', taskName: 'f.bin',
+  await driver.createTask({ taskType: 1, savePath: '/srv/leifeng-test/d', taskName: 'f.bin',
     info: { url: 'http://x/f.bin', refUrl: '', useOriginResourceOnly: false, originResourceThreadCount: 5, loginFtp: false, ftpUserName: '', ftpPassword: '', origin: 'thunderd' } });
   const call = fx.state.createCalls[0];
-  assert.strictEqual(call.taskInfo.taskBaseInfo.savePath, 'Z:\\srv\\tlei-test\\d');
+  assert.strictEqual(call.taskInfo.taskBaseInfo.savePath, 'Z:\\srv\\leifeng-test\\d');
   assert.strictEqual(call.info.url, 'http://x/f.bin');   // p2spInfo 不经 withWinePaths（无路径字段）
   fx.server.close();
 });
 
 test('parseTaskInfo torrent：data Linux 路径 → engine 收 Wine', async () => {
   const { driver, fx } = await setup();
-  const r = await driver.parseTaskInfo({ kind: 'torrent', data: '/srv/tlei-test/x.torrent' });
+  const r = await driver.parseTaskInfo({ kind: 'torrent', data: '/srv/leifeng-test/x.torrent' });
   assert.ok(r.infoId);
   const call = fx.state.parseCalls[0];
-  assert.strictEqual(call.data, 'Z:\\srv\\tlei-test\\x.torrent');   // driver 转 Wine
+  assert.strictEqual(call.data, 'Z:\\srv\\leifeng-test\\x.torrent');   // driver 转 Wine
   fx.server.close();
 });
 

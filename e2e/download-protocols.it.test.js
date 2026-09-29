@@ -1,12 +1,13 @@
 'use strict';
 // 多协议集成冒烟（真 daemon + 真 Wine 引擎）。运行: node --test e2e/download-protocols.it.test.js
 //
-// 策略（与daemon.it.test.js 同）：
+// 策略（与 daemon.it.test.js 同）：
 //   - HTTP 冒烟可跑（复用fixture-server），验 daemon 协议扩展后 仍能下 HTTP。
 //   - BT/ed2k/磁力标 skip：Wine 时序 flakiness + 真种子 6.5GB 长跑 / Kad 暖机慢 / metadata 拉取依赖 DHT，
-//     全量跑会卡死或超时；逻辑由 unit 覆盖（methods-download-protocols.test.js / poller-magnet.test.js 等），
+//     全量跑会卡死或超时；逻辑由 unit 覆盖（create-task-service.test.js / poller-magnet.test.js 等），
 //     这里的测试体文档化"手动验收时应确认什么"，去掉 skip 手动跑即可。
 //   - savePath 默认使用仓库所在文件系统而非 tmpfs；BT/磁力可能预分配大尺寸稀疏文件，tmpfs 空间不足会返回 errorCode=205。
+//   - v1/aria2 兼容面已删除（2026-09-28），全部走 leifeng.ui.v2.*。
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -43,22 +44,34 @@ async function waitEngineHealthy(timeoutMs = 90000) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     try {
-      const info = await rpc(PORT, 'thunder.getEngineInfo', []);
-      if (info.transportReady && info.sdkReady) return info;
+      const boot = await rpc(PORT, 'leifeng.ui.v2.bootstrap', [{}]);
+      if (boot.engine.transportReady && boot.engine.sdkReady) return boot.engine;
     } catch {}
     if (Date.now() > deadline) throw new Error('engine never became healthy');
     await sleep(2000);
   }
 }
 
-async function waitStatus(gid, want, timeoutMs = 60000) {
+async function waitTask(taskId, want, timeoutMs = 60000) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const s = await rpc(PORT, 'aria2.tellStatus', [gid]);
-    if (want.includes(s.status)) return s;
-    if (Date.now() > deadline) throw new Error(`task ${gid} stuck at ${s.status}, want ${want}`);
+    const task = await rpc(PORT, 'leifeng.ui.v2.tasks.get', [{ taskId }]);
+    if (want.includes(task.lifecycle)) return task;
+    if (Date.now() > deadline) throw new Error(`task ${taskId} stuck at ${task.lifecycle}, want ${want.join('/')}`);
     await sleep(1000);
   }
+}
+
+// v2 任务创建：preflight → draft → commit，返回 taskId
+async function createTask(url, options = {}) {
+  const preflight = await rpc(PORT, 'leifeng.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: url }], savePath: downloadDir, ...options }]);
+  const result = preflight.results[0];
+  if (!result.ok) throw new Error(`preflight failed: ${result.error && result.error.message}`);
+  const draft = result.draft;
+  const committed = await rpc(PORT, 'leifeng.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: `it-create-${crypto.randomUUID()}` }]);
+  const item = committed.results[0];
+  if (!item.ok) throw new Error(`create.commit failed: ${item.error && item.error.message}`);
+  return item.taskIds[0];
 }
 
 test.before(async () => {
@@ -66,11 +79,10 @@ test.before(async () => {
   // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0；
   // 前缀放家目录（/tmp 是配额 tmpfs，禁用）
   const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
-    || path.join(process.env.HOME, 'tmp', `tlei-it-wine-dlproto-${process.pid}`);
+    || path.join(process.env.HOME, 'tmp', `leifeng-it-wine-dlproto-${process.pid}`);
   daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], {
     env: { ...process.env, THUNDERD_PORT: String(PORT), THUNDERD_RUNTIME_DIR: runtime,
       THUNDERD_DOWNLOAD_DIR: downloadDir,
-      THUNDERD_LEGACY_RPC: '1',
       WINEPREFIX: winePrefix },
     stdio: ['ignore', 'inherit', 'inherit'],
   });
@@ -81,8 +93,8 @@ test.after(() => {
   try { daemon && daemon.kill('SIGTERM'); } catch {}
   // 清理自建隔离 WINEPREFIX
   try {
-    const prefix = path.join(process.env.HOME, 'tmp', `tlei-it-wine-dlproto-${process.pid}`);
-    if (prefix.startsWith(path.join(process.env.HOME, 'tmp', 'tlei-it-wine-'))) fs.rmSync(prefix, { recursive: true, force: true });
+    const prefix = path.join(process.env.HOME, 'tmp', `leifeng-it-wine-dlproto-${process.pid}`);
+    if (prefix.startsWith(path.join(process.env.HOME, 'tmp', 'leifeng-it-wine-'))) fs.rmSync(prefix, { recursive: true, force: true });
   } catch {}
   // 清理本轮自建的 SAVE 隔离目录（外部 THUNDERD_IT_SAVE 指定的证据目录不动）
   try {
@@ -93,58 +105,59 @@ test.after(() => {
 });
 
 // ---- HTTP 冒烟（可跑，验 daemon 协议扩展后 仍能下 HTTP）----
-test('http-download: addUri → complete → sha256（协议扩展后 回归）', { timeout: 90000 }, async () => {
+test('http-download: create → complete → sha256（协议扩展后 回归）', { timeout: 90000 }, async () => {
   const fx = await startFixture({ bytes: 2 * 1024 * 1024 });
-  const gid = await rpc(PORT, 'aria2.addUri', [[fx.url], {}]);
-  const s = await waitStatus(gid, ['complete'], 60000);
-  assert.strictEqual(s.totalLength, String(fx.size));
-  assert.strictEqual(s.completedLength, String(fx.size));
+  const taskId = await createTask(fx.url);
+  const task = await waitTask(taskId, ['completed'], 60000);
+  assert.strictEqual(task.totalBytes, fx.size);
+  assert.strictEqual(task.completedBytes, fx.size);
   const got = crypto.createHash('sha256').update(fs.readFileSync(path.join(downloadDir, 'fixture.bin'))).digest('hex');
   assert.strictEqual(got, fx.sha);
   fx.server.close();
 });
 
 // ---- BT 冒烟（skip：Wine 时序 flakiness + 6.5GB 长跑，手动验收）----
-// 去掉 skip 手动跑：addTorrent ubuntu 真种子 → tellStatus active/complete + 文件落盘 savePath/taskName/
-test('bt-download: addTorrent ubuntu → active + 文件落盘', { skip: 'Wine 时序 flakiness + 6.5GB 长跑，手动验收（需隔离手工 BT 验收）', timeout: 600000 }, async () => {
+// 去掉 skip 手动跑：preflight 真种子 → lifecycle downloading/completed + 文件落盘 savePath/taskName/
+test('bt-download: preflight ubuntu → downloading + 文件落盘', { skip: 'Wine 时序 flakiness + 6.5GB 长跑，手动验收（需隔离手工 BT 验收）', timeout: 600000 }, async () => {
   const torrent = process.env.THUNDERD_IT_TORRENT || '';
   assert.ok(torrent && fs.existsSync(torrent), 'set THUNDERD_IT_TORRENT to a local torrent fixture');
-  const gid = await rpc(PORT, 'aria2.addTorrent', [torrent, { dir: downloadDir }]);
-  const s = await waitStatus(gid, ['active', 'complete'], 300000);
-  assert.ok(['active', 'complete'].includes(s.status), `bt task reached active/complete: ${s.status}`);
+  // v2 种子输入：link 形态传本机路径（parser 识别 file 路径 → torrent draft）
+  const taskId = await createTask(torrent);
+  const task = await waitTask(taskId, ['downloading', 'completed'], 300000);
+  assert.ok(['downloading', 'completed'].includes(task.lifecycle), `bt task reached downloading/completed: ${task.lifecycle}`);
   // 文件落盘到 downloadDir/taskName/（种子内文件名，poller 回读 TaskBase.Name 对齐）
-  assert.ok(s.files && s.files.length > 0, 'bt files list non-empty');
-  assert.ok(fs.existsSync(s.files[0].path), `bt file on disk: ${s.files[0].path}`);
+  assert.ok(task.files && task.files.length > 0, 'bt files list non-empty');
+  assert.ok(fs.existsSync(task.files[0].path), `bt file on disk: ${task.files[0].path}`);
   // 完整 SHA-256 校验需下完 6.5GB，手动验
 });
 
 // ---- ed2k 冒烟（skip：Kad/eD2k 暖机慢 + 网络依赖，手动验收）----
-// 去掉 skip 手动跑：addUri 真实 ed2k → tellStatus active（进队列即算冒烟通过，不要求下完）
-test('ed2k-download: addUri ed2k → active（进队列即通过）', { skip: 'Kad/eD2k 暖机慢且依赖真实网络，需隔离手工验收', timeout: 300000 }, async () => {
+// 去掉 skip 手动跑：preflight 真实 ed2k → lifecycle queued/downloading（进队列即算冒烟通过，不要求下完）
+test('ed2k-download: create ed2k → queued（进队列即通过）', { skip: 'Kad/eD2k 暖机慢且依赖真实网络，需隔离手工验收', timeout: 300000 }, async () => {
   const ed2k = 'ed2k://|file|eMule0.50a-Installer.exe|3389035|3D366ED505B977FC61C9A6EE01E96329|h=EKE4PSKRQ65MWEPFTRDSAHW5VMDIMFAJ|/';
-  const gid = await rpc(PORT, 'aria2.addUri', [[ed2k], { dir: downloadDir }]);
-  const s = await rpc(PORT, 'aria2.tellStatus', [gid]);
-  assert.ok(['waiting', 'active'].includes(s.status), `ed2k entered queue (waiting/active): ${s.status}`);
+  const taskId = await createTask(ed2k);
+  const task = await rpc(PORT, 'leifeng.ui.v2.tasks.get', [{ taskId }]);
+  assert.ok(['queued', 'downloading'].includes(task.lifecycle), `ed2k entered queue (queued/downloading): ${task.lifecycle}`);
   // 进队列即算冒烟通过；ed2k 暖机慢（Status=5 后可能长时间 0 字节，非 error）
 });
 
 // ---- 磁力冒烟（skip：metadata 拉取依赖 DHT/trackers + Wine 时序，手动验收）----
-// 去掉 skip 手动跑：addMagnetAddress ubuntu 磁力 → metadataPhase=download + 文件增长
-test('magnet-download: addMagnetAddress → metadataPhase=download + 文件增长', { skip: 'metadata 拉取依赖 DHT、tracker 和 Wine 时序，需隔离手工验收', timeout: 600000 }, async () => {
+// 去掉 skip 手动跑：preflight ubuntu 磁力 → draft metadata 阶段 → commit 后文件增长
+test('magnet-download: create magnet → metadata → 文件增长', { skip: 'metadata 拉取依赖 DHT、tracker 和 Wine 时序，需隔离手工验收', timeout: 600000 }, async () => {
   const magnet = 'magnet:?xt=urn:btih:4H6BICTDSE2X7IOPBDO3OATU7HAF5OEL&dn=ubuntu-26.04-live-server-amd64.iso&xl=2918598656&tr=https%3A%2F%2Ftorrent.ubuntu.com%2Fannounce';
-  const gid = await rpc(PORT, 'aria2.addMagnetAddress', [magnet, { dir: downloadDir }]);
-  // 两步走：立即返回 gid，metadataPhase=fetching（TaskDb 无行）；后台拉 metadata → 转 BT（metadataPhase=download）
-  const s0 = await rpc(PORT, 'aria2.tellStatus', [gid]);
-  assert.ok(['fetching', 'download'].includes(s0.metadataPhase), `magnet metadata phase: ${s0.metadataPhase}`);
-  // 等 metadata 拉到转 BT（metadataPhase=download），文件开始增长即算通过
+  const taskId = await createTask(magnet);
+  // 两步走：magnet draft 在 metadata 态（等待 DHT 拉种子）；拉到后转 BT（lifecycle metadata→downloading）
+  const task = await rpc(PORT, 'leifeng.ui.v2.tasks.get', [{ taskId }]);
+  assert.ok(['metadata', 'downloading'].includes(task.lifecycle), `magnet lifecycle: ${task.lifecycle}`);
+  // 等 metadata 拉到转 BT，文件开始增长即算通过
   const deadline = Date.now() + 300000;
   for (;;) {
-    const s = await rpc(PORT, 'aria2.tellStatus', [gid]);
-    if (s.metadataPhase === 'download' && s.files && s.files.length > 0) {
+    const s = await rpc(PORT, 'leifeng.ui.v2.tasks.get', [{ taskId }]);
+    if (s.lifecycle === 'downloading' && s.files && s.files.length > 0) {
       const sz = fsize(s.files[0].path);
       if (sz > 0) return;
     }
-    if (Date.now() > deadline) throw new Error(`magnet never reached metadataPhase=download with file growth (last phase=${s.metadataPhase})`);
+    if (Date.now() > deadline) throw new Error(`magnet never reached downloading with file growth (last lifecycle=${s.lifecycle})`);
     await sleep(2000);
   }
 });

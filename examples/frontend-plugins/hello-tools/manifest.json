@@ -1,0 +1,10 @@
+{
+  "id": "hello-tools",
+  "capabilities": [],
+  "navItems": [
+    { "to": "/hello", "label": "插件页" }
+  ],
+  "settingSections": [
+    { "id": "hello", "label": "插件设置" }
+  ]
+}

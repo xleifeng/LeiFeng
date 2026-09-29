@@ -1,7 +1,7 @@
 {
-  "name": "@tlei/webseed-bridge",
+  "name": "@leifeng/webseed-bridge",
   "version": "0.2.0",
-  "description": "BEP-19 web seed 桥：把 tlei 落盘数据经 sha1 逐 piece 校验后以 HTTP web seed 形态供给本机 qBittorrent",
+  "description": "BEP-19 web seed 桥：把 leifeng 落盘数据经 sha1 逐 piece 校验后以 HTTP web seed 形态供给本机 qBittorrent",
   "private": true,
   "main": "src/main.js",
   "scripts": {

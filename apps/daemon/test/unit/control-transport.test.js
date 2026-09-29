@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { once } = require('node:events');
-const { DaemonClient, FrameDecoder, encodeFrame } = require('@tlei/daemon-client');
+const { DaemonClient, FrameDecoder, encodeFrame } = require('@leifeng/daemon-client');
 const { DaemonControlServer } = require('../../host/src/control/server');
 
 test('control framing survives fragmented and adjacent messages', () => {

@@ -41,7 +41,7 @@ trap 'cleanup "$KEEP_FLAG"' EXIT
 
 host_task_field() {  # host_task_field <taskId> <py-expr over i> — 取单任务字段
   local tid="$1" expr="$2"
-  td_rpc 'thunder.ui.v2.tasks.query' '[{"limit":100}]' > /tmp/b2-reg-ht.json 2>/dev/null
+  td_rpc 'leifeng.ui.v2.tasks.query' '[{"limit":100}]' > /tmp/b2-reg-ht.json 2>/dev/null
   TID="$tid" EXPR="$expr" python3 - <<'PY'
 import json,os,sys
 try: d=json.load(open("/tmp/b2-reg-ht.json"))
@@ -56,8 +56,8 @@ PY
 host_tasks_by_hash() {  # host 面同 infohash 任务行数（view=all ∪ trash，覆盖回收站）
   # 列表 DTO 不含 sourceFingerprint/savePath，用 displayName 前缀（磁力默认名 = <hash>.torrent）
   local n1 n2
-  td_rpc 'thunder.ui.v2.tasks.query' '[{"limit":100}]' > /tmp/b2-reg-hash1.json 2>/dev/null
-  td_rpc 'thunder.ui.v2.tasks.query' '[{"limit":100,"view":"trash"}]' > /tmp/b2-reg-hash2.json 2>/dev/null
+  td_rpc 'leifeng.ui.v2.tasks.query' '[{"limit":100}]' > /tmp/b2-reg-hash1.json 2>/dev/null
+  td_rpc 'leifeng.ui.v2.tasks.query' '[{"limit":100,"view":"trash"}]' > /tmp/b2-reg-hash2.json 2>/dev/null
   n1=$(H="$HASH" python3 - /tmp/b2-reg-hash1.json <<'PY'
 import json,os,sys
 try: d=json.load(open(sys.argv[1]))
@@ -102,7 +102,7 @@ create_bt() {  # 草稿流建任务（与 orchestrator 同路径）；成功回�
   local label="$1" save_dir="$2" dup_res="$3" magnet_src="${4:-$MAGNET}"
   local preflight draft_id state patch commit task_id
   REG_TASK_ID=""; REG_COMMIT_ERR=""
-  preflight=$(td_rpc 'thunder.ui.v2.create.preflight' "{\"inputs\":[\"$magnet_src\"],\"savePath\":\"$save_dir\"}") || { log_err "[$label] preflight 失败"; return 1; }
+  preflight=$(td_rpc 'leifeng.ui.v2.create.preflight' "{\"inputs\":[\"$magnet_src\"],\"savePath\":\"$save_dir\"}") || { log_err "[$label] preflight 失败"; return 1; }
   printf '%s' "$preflight" > "/tmp/b2-reg-pre-$label.json"
   draft_id=$(python3 -c '
 import json,sys
@@ -112,7 +112,7 @@ sys.stdout.write(((r.get("draft") or {}).get("draftId")) or "")
   [ -n "$draft_id" ] || { log_err "[$label] 未取得 draftId"; REG_COMMIT_ERR="no-draft-id"; return 1; }
   local deadline=$(( $(date +%s) + 150 ))
   while :; do
-    td_rpc 'thunder.ui.v2.create.getDraft' "{\"draftId\":\"$draft_id\"}" > "/tmp/b2-reg-draft-$label.json" 2>/dev/null
+    td_rpc 'leifeng.ui.v2.create.getDraft' "{\"draftId\":\"$draft_id\"}" > "/tmp/b2-reg-draft-$label.json" 2>/dev/null
     state=$(python3 - "/tmp/b2-reg-draft-$label.json" <<'PY' 2>/dev/null || echo ''
 import json,sys
 print(json.load(open(sys.argv[1])).get("state") or "")
@@ -126,9 +126,9 @@ PY
   # dup_res: force（redownload，模拟修复前触发双建）/ none（裸 commit，走 daemon 自判）
   if [ "$dup_res" = "force" ]; then
     patch="{\"draftId\":\"$draft_id\",\"duplicateResolution\":\"redownload\"}"
-    td_rpc 'thunder.ui.v2.create.updateDraft' "$patch" >/dev/null || log_err "[$label] updateDraft 失败"
+    td_rpc 'leifeng.ui.v2.create.updateDraft' "$patch" >/dev/null || log_err "[$label] updateDraft 失败"
   fi
-  commit=$(td_rpc 'thunder.ui.v2.create.commit' "{\"draftIds\":[\"$draft_id\"]}")
+  commit=$(td_rpc 'leifeng.ui.v2.create.commit' "{\"draftIds\":[\"$draft_id\"]}")
   REG_COMMIT_ERR=""
   task_id=$(printf '%s' "$commit" | python3 -c '
 import json,sys
@@ -148,9 +148,9 @@ except Exception:
 
 remove_task() {
   local id="$1"
-  td_rpc 'thunder.ui.v2.tasks.command' "{\"taskIds\":[\"$id\"],\"command\":\"recycle\"}" >/dev/null 2>&1
+  td_rpc 'leifeng.ui.v2.tasks.command' "{\"taskIds\":[\"$id\"],\"command\":\"recycle\"}" >/dev/null 2>&1
   sleep 1
-  td_rpc 'thunder.ui.v2.tasks.command' "{\"taskIds\":[\"$id\"],\"command\":\"delete-permanently\"}" >/dev/null 2>&1
+  td_rpc 'leifeng.ui.v2.tasks.command' "{\"taskIds\":[\"$id\"],\"command\":\"delete-permanently\"}" >/dev/null 2>&1
 }
 
 record() {  # record <Rn> <pass|fail> <描述>
@@ -167,7 +167,7 @@ if ! pgrep -fx "node daemon/host/src/stack.js" >/dev/null 2>&1; then
 fi
 deadline=$(( $(date +%s) + 60 ))
 while :; do
-  ok=$(td_rpc_raw 'thunder.ui.v2.create.preflight' "{\"inputs\":[\"$MAGNET\"],\"savePath\":\"$SAVE_BASE/r1\"}" 2>/dev/null | python3 -c '
+  ok=$(td_rpc_raw 'leifeng.ui.v2.create.preflight' "{\"inputs\":[\"$MAGNET\"],\"savePath\":\"$SAVE_BASE/r1\"}" 2>/dev/null | python3 -c '
 import json,sys
 try:
   d=json.load(sys.stdin); r=(d.get("result",{}).get("results") or [{}])[0]
@@ -273,7 +273,7 @@ DPID=$(pgrep -fx "node daemon/host/src/stack.js" | head -1)
 ( setsid bash daemon/run.sh > /tmp/b2-reg-thunderd2.log 2>&1 < /dev/null & )
 deadline=$(( $(date +%s) + 60 ))
 while :; do
-  ok=$(td_rpc_raw 'thunder.ui.v2.create.preflight' "{\"inputs\":[\"$R4_MAGNET\"],\"savePath\":\"$SAVE_BASE/r4\"}" 2>/dev/null | python3 -c '
+  ok=$(td_rpc_raw 'leifeng.ui.v2.create.preflight' "{\"inputs\":[\"$R4_MAGNET\"],\"savePath\":\"$SAVE_BASE/r4\"}" 2>/dev/null | python3 -c '
 import json,sys
 try:
   d=json.load(sys.stdin); r=(d.get("result",{}).get("results") or [{}])[0]

@@ -23,7 +23,7 @@ const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-bt-runtime-')
 const downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'thunderd-v2-bt-download-'));
 // 独立 WINEPREFIX：迅雷命名互斥体单实例检测会让共享前缀的第二个引擎静默 exit 0
 const winePrefix = process.env.THUNDERD_IT_WINEPREFIX
-  || path.join(process.env.HOME, 'tmp', `tlei-it-wine-${path.basename(runtime)}`);
+  || path.join(process.env.HOME, 'tmp', `leifeng-it-wine-${path.basename(runtime)}`);
 let daemon; let tracker; let seeder;
 
 // 兜底回收：测试超时被 runner 强杀时 finally 不执行，daemon/tracker/seeder 全泄漏
@@ -135,7 +135,7 @@ function uploadTorrent(torrent) {
   });
 }
 
-async function waitHealthy(port = rpcPort, timeoutMs = 120000) { const deadline = Date.now() + timeoutMs; for (;;) { try { const snapshot = await rpc('thunder.ui.v2.bootstrap', [], port); if (snapshot.engine && snapshot.engine.transportReady && snapshot.engine.sdkReady) return; } catch {} if (Date.now() > deadline) throw new Error('engine did not become healthy'); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
+async function waitHealthy(port = rpcPort, timeoutMs = 120000) { const deadline = Date.now() + timeoutMs; for (;;) { try { const snapshot = await rpc('leifeng.ui.v2.bootstrap', [], port); if (snapshot.engine && snapshot.engine.transportReady && snapshot.engine.sdkReady) return; } catch {} if (Date.now() > deadline) throw new Error('engine did not become healthy'); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
 
 test('real V2 BT upload → selected draft commit → byte-complete query', { skip: !enabled, timeout: 180000 }, async () => {
   const fixture = makeTorrent(); const infoHash = crypto.createHash('sha1').update(fixture.infoBytes).digest();
@@ -147,10 +147,10 @@ test('real V2 BT upload → selected draft commit → byte-complete query', { sk
     await waitHealthy();
     const draft = await uploadTorrent(torrent);
     assert.equal(draft.kind, 'bt'); assert.equal(draft.files.length, 1); assert.equal(draft.selectedFileIndices.length, 1);
-    const committed = await rpc('thunder.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'bt-create-it-1' }]);
+    const committed = await rpc('leifeng.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'bt-create-it-1' }]);
     assert.equal(committed.results[0].ok, true);
     const taskId = committed.results[0].taskIds[0]; const deadline = Date.now() + 90000; let item;
-    for (;;) { const result = await rpc('thunder.ui.v2.tasks.query', [{ view: 'all', limit: 20 }]); item = result.items.find((candidate) => candidate.taskId === taskId); if (item && item.lifecycle === 'completed') break; if (Date.now() > deadline) throw new Error(`BT task did not complete: ${item && item.lifecycle}`); await new Promise((resolve) => setTimeout(resolve, 1000)); }
+    for (;;) { const result = await rpc('leifeng.ui.v2.tasks.query', [{ view: 'all', limit: 20 }]); item = result.items.find((candidate) => candidate.taskId === taskId); if (item && item.lifecycle === 'completed') break; if (Date.now() > deadline) throw new Error(`BT task did not complete: ${item && item.lifecycle}`); await new Promise((resolve) => setTimeout(resolve, 1000)); }
     // 单文件种子引擎直接落 savePath/<文件名>，不套 taskName 目录（.p0/a1-hybrid 基线：
     // 多文件种子才是 taskName目录/内部文件 形态；2026-09-26 实测单文件即直接落盘）
     const target = path.join(downloadDir, 'bt-local-fixture.bin'); assert.equal(fs.statSync(target).size, fixture.payload.length); assert.deepEqual(fs.readFileSync(target), fixture.payload);
@@ -167,13 +167,13 @@ test('real V2 magnet metadata → BT commit → byte-complete query', { skip: !e
   daemon = spawn('bash', [path.join(repoRoot, 'apps', 'daemon', 'run.sh')], { env: { ...process.env, THUNDERD_PORT: String(port), THUNDERD_RPC_SECRET: 'bt-create-it', THUNDERD_RUNTIME_DIR: `${runtime}-magnet`, THUNDERD_DOWNLOAD_DIR: `${downloadDir}-magnet`, WINEPREFIX: `${winePrefix}-magnet` }, stdio: ['ignore', 'inherit', 'inherit'] });
   try {
     await waitHealthy(port);
-    const preflight = await rpc('thunder.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: magnet }], savePath: `${downloadDir}-magnet` }], port);
+    const preflight = await rpc('leifeng.ui.v2.create.preflight', [{ inputs: [{ kind: 'link', value: magnet }], savePath: `${downloadDir}-magnet` }], port);
     assert.equal(preflight.results[0].ok, true); let draft = preflight.results[0].draft; assert.equal(draft.kind, 'magnet');
     const metadataDeadline = Date.now() + 90000;
-    while (draft.metadata.state !== 'ready') { if (Date.now() > metadataDeadline) throw new Error(`magnet metadata did not become ready: ${draft.metadata.state}`); await new Promise((resolve) => setTimeout(resolve, 1000)); draft = await rpc('thunder.ui.v2.create.getDraft', [{ draftId: draft.draftId }], port); }
-    assert.equal(draft.files.length, 1); const committed = await rpc('thunder.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'magnet-create-it-1' }], port); assert.equal(committed.results[0].ok, true);
+    while (draft.metadata.state !== 'ready') { if (Date.now() > metadataDeadline) throw new Error(`magnet metadata did not become ready: ${draft.metadata.state}`); await new Promise((resolve) => setTimeout(resolve, 1000)); draft = await rpc('leifeng.ui.v2.create.getDraft', [{ draftId: draft.draftId }], port); }
+    assert.equal(draft.files.length, 1); const committed = await rpc('leifeng.ui.v2.create.commit', [{ draftIds: [draft.draftId], expectedRevisions: { [draft.draftId]: draft.revision }, idempotencyKey: 'magnet-create-it-1' }], port); assert.equal(committed.results[0].ok, true);
     const taskId = committed.results[0].taskIds[0]; const deadline = Date.now() + 90000; let item;
-    for (;;) { const result = await rpc('thunder.ui.v2.tasks.query', [{ view: 'all', limit: 20 }], port); item = result.items.find((candidate) => candidate.taskId === taskId); if (item && item.lifecycle === 'completed') break; if (Date.now() > deadline) throw new Error(`magnet BT task did not complete: ${item && item.lifecycle}`); await new Promise((resolve) => setTimeout(resolve, 1000)); }
+    for (;;) { const result = await rpc('leifeng.ui.v2.tasks.query', [{ view: 'all', limit: 20 }], port); item = result.items.find((candidate) => candidate.taskId === taskId); if (item && item.lifecycle === 'completed') break; if (Date.now() > deadline) throw new Error(`magnet BT task did not complete: ${item && item.lifecycle}`); await new Promise((resolve) => setTimeout(resolve, 1000)); }
     // 同上：单文件种子直接落 savePath/<文件名>
     const target = path.join(`${downloadDir}-magnet`, 'bt-local-fixture.bin'); assert.equal(fs.statSync(target).size, fixture.payload.length); assert.deepEqual(fs.readFileSync(target), fixture.payload);
   } finally {

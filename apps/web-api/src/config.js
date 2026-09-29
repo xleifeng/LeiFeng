@@ -2,7 +2,7 @@
 
 const os = require('node:os');
 const path = require('node:path');
-const { controlSocketPath } = require('@tlei/daemon-client');
+const { controlSocketPath } = require('@leifeng/daemon-client');
 
 function positiveInt(value, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) {
   const number = Number(value);
@@ -43,6 +43,7 @@ function loadWebApiConfig({ env = process.env, repoRoot = path.resolve(__dirname
     maxTorrentUploadBytes: positiveInt(env.THUNDERD_MAX_TORRENT_UPLOAD_BYTES, 20 * 1024 * 1024, { min: 1024, max: 100 * 1024 * 1024 }),
     maxCaptureBodyBytes: positiveInt(env.THUNDERD_MAX_CAPTURE_BODY_BYTES, 1024 * 1024, { min: 1024, max: 4 * 1024 * 1024 }),
     webUiDir: path.resolve(env.THUNDERD_WEBUI_DIR || path.join(repoRoot, 'apps', 'webui', 'dist')),
+    frontendPluginsDir: path.resolve(env.THUNDERD_FRONTEND_PLUGINS_DIR || path.join(repoRoot, 'plugins-frontend')),
     captureRemote: env.THUNDERD_CAPTURE_REMOTE === '1',
     remoteListen, remoteCertDir, remoteNodeId,
     remoteKeyPath: remoteCertDir ? path.join(remoteCertDir, `${remoteNodeId}.server.key.pem`) : '',
