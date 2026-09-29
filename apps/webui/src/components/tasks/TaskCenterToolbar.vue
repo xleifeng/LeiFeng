@@ -11,7 +11,7 @@ const emit = defineEmits<{ 'update:sort': [value: string]; 'update:group-by': [v
     <div v-if="view === 'trash'" class="trash-file-tabs" aria-label="回收站分类">
       <button class="trash-file-tab active" type="button">下载 · <span>{{ total }}</span></button>
     </div>
-    <button v-else class="vip-download-prompt" type="button" @click="emit('vip')"><span>会员下载加速</span>、查看实时状态<ChevronRight :size="13" :stroke-width="1.8" /></button>
+    <button v-else class="vip-download-prompt" type="button" @click="emit('vip')"><span>会员下载加速</span> · 查看实时状态<ChevronRight :size="13" :stroke-width="1.8" /></button>
     <div class="toolbar-actions">
       <button v-if="selectedCount && view === 'downloading' && canStart" class="toolbar-button" :disabled="busy" @click="emit('command', 'start')"><Play :size="15" />开始</button>
       <button v-if="selectedCount && view === 'downloading' && canPause" class="toolbar-button" :disabled="busy" @click="emit('command', 'pause')"><Pause :size="15" />暂停</button>

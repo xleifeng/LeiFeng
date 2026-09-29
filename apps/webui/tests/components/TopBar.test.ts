@@ -1,17 +1,15 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import TopBar from '../../src/components/layout/TopBar.vue'
 
-describe('TopBar new task menu', () => {
-  it('reveals link and BT task choices on hover', async () => {
-    vi.useFakeTimers()
+describe('TopBar', () => {
+  it('emits search updates and account/theme intents', async () => {
     const wrapper = mount(TopBar, { props: { search: '', accountLabel: '登录' } })
-    await wrapper.get('.new-task-menu').trigger('mouseenter')
-    expect(wrapper.get('[role="menu"]').text()).toContain('链接任务')
-    expect(wrapper.get('[role="menu"]').text()).toContain('BT 文件任务')
-    await wrapper.findAll('[role="menuitem"]')[0].trigger('click')
-    expect(wrapper.emitted('new-link-task')).toHaveLength(1)
-    wrapper.unmount()
-    vi.useRealTimers()
+    await wrapper.get('input[aria-label="搜索任务"]').setValue('ubuntu')
+    expect(wrapper.emitted('update:search')?.[0]).toEqual(['ubuntu'])
+    await wrapper.get('button[aria-label="账户"]').trigger('click')
+    expect(wrapper.emitted('account')).toHaveLength(1)
+    await wrapper.get('button[aria-label="切换主题"]').trigger('click')
+    expect(wrapper.emitted('theme')).toHaveLength(1)
   })
 })

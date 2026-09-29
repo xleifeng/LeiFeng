@@ -46,21 +46,22 @@ const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 })
 await stubRoutes(page)
 
+const settle = async () => { await page.mouse.move(4, 4); await page.evaluate(() => document.activeElement?.blur?.()); await page.waitForTimeout(200) }
 await page.goto('http://127.0.0.1:5199/#/download')
 await page.waitForSelector('[data-testid="task-row"]')
-await page.waitForTimeout(400)
+await settle()
 await page.screenshot({ path: `${outDir}/01-task-center-light.png` })
 
 // 暗色
 await page.evaluate(() => { document.documentElement.dataset.theme = 'dark' })
-await page.waitForTimeout(250)
+await settle()
 await page.screenshot({ path: `${outDir}/02-task-center-dark.png` })
 await page.evaluate(() => { document.documentElement.dataset.theme = 'light' })
 
 // 创建任务弹窗
 await page.getByRole('button', { name: '新建任务' }).click()
 await page.waitForSelector('[data-testid="create-task-dialog"]')
-await page.waitForTimeout(250)
+await settle()
 await page.screenshot({ path: `${outDir}/03-create-task.png` })
 await page.keyboard.press('Escape')
 await page.getByLabel('关闭').first().click().catch(() => {})
@@ -68,14 +69,14 @@ await page.getByLabel('关闭').first().click().catch(() => {})
 // 设置弹窗
 await page.getByRole('button', { name: '设置', exact: true }).click()
 await page.waitForSelector('[data-testid="settings-dialog"]')
-await page.waitForTimeout(300)
+await settle()
 await page.screenshot({ path: `${outDir}/04-settings.png` })
 
 // 回收站（空态）
 await page.keyboard.press('Escape').catch(() => {})
 await page.getByLabel('关闭设置').click().catch(() => {})
 await page.goto('http://127.0.0.1:5199/#/trash')
-await page.waitForTimeout(400)
+await settle()
 await page.screenshot({ path: `${outDir}/05-trash-empty.png` })
 
 await browser.close()

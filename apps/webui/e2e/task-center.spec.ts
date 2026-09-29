@@ -71,8 +71,9 @@ test('trash toolbar opens confirmation and clears through the dedicated RPC', as
 test('mobile keeps task center usable without desktop drag selection', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'mobile viewport only')
   await page.goto('/#/download/downloading')
-  await page.getByLabel('打开导航').click()
   await expect(page.getByLabel('主导航')).toBeVisible()
+  await page.getByTestId('nav-download').click()
+  await expect(page.getByText('fixture.bin')).toBeVisible()
 })
 
 test('1000 tasks remain virtualized while scrolling without console errors', async ({ page }, testInfo) => {

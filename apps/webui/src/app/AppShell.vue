@@ -2,6 +2,7 @@
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
+import { Plus } from '@lucide/vue'
 import { getBootstrapV2 } from '../api/native-download/bootstrap'
 import { getTaskCounts } from '../api/native-download/tasks'
 import { useShellStore } from '../stores/shell'
@@ -10,7 +11,7 @@ import { useCommandCenterStore } from '../stores/command-center'
 import { useCreateTaskStore } from '../stores/create-task'
 import { useUiCapabilitiesStore } from '../stores/ui-capabilities'
 import { isDownloadInput } from '../domain/download-input'
-import SideNav from '../components/layout/SideNav.vue'
+import NavRail from '../components/layout/NavRail.vue'
 import TopBar from '../components/layout/TopBar.vue'
 
 const shell = useShellStore()
@@ -44,8 +45,7 @@ const accountLabel = computed(() => {
 const routeTitle = computed(() => String(route.meta.title || 'Leifeng'))
 const taskSurface = computed(() => route.path === '/download' || route.path.startsWith('/download/') || route.path === '/trash')
 function openAccount() { overlay.open({ type: 'account' }) }
-function openNewLinkTask() { createTask.openForLinks(); overlay.open({ type: 'new-task' }) }
-function openNewBtTask(file: File) { createTask.openForLinks(); overlay.open({ type: 'new-task' }); createTask.uploadTorrentFile(file) }
+function openNewTask() { createTask.openForLinks(); overlay.open({ type: 'new-task' }) }
 function openSettings() { overlay.open({ type: 'settings' }) }
 function retry() { bootstrapQuery.refetch(); countsQuery.refetch() }
 function handlePaste(value: string) { if (isDownloadInput(value)) { shell.search = ''; createTask.openForLinks(value); overlay.open({ type: 'new-task' }) } }
@@ -54,11 +54,12 @@ function handleTheme() { shell.theme = shell.theme === 'light' ? 'dark' : 'light
 
 <template>
   <div class="app-shell" data-testid="app-shell">
-    <SideNav :open="shell.navOpen" :counts="countsQuery.data.value || null" :version="bootstrapQuery.data.value?.daemonVersion" @close="shell.navOpen = false" @settings="openSettings" />
+    <NavRail :open="shell.navOpen" :counts="countsQuery.data.value || null" :version="bootstrapQuery.data.value?.daemonVersion" @close="shell.navOpen = false" @settings="openSettings" />
     <div class="app-main">
-      <TopBar :search="shell.search" :account-label="accountLabel" :account-vip="bootstrapQuery.data.value?.account.isVip" :offline="offline" :theme="shell.theme" @update:search="shell.search = $event" @new-link-task="openNewLinkTask" @new-bt-task="openNewBtTask" @account="openAccount" @retry="retry" @paste="handlePaste" @menu="shell.navOpen = true" @theme="handleTheme" />
+      <TopBar :search="shell.search" :account-label="accountLabel" :account-vip="bootstrapQuery.data.value?.account.isVip" :offline="offline" :theme="shell.theme" @update:search="shell.search = $event" @account="openAccount" @retry="retry" @paste="handlePaste" @theme="handleTheme" />
       <div v-if="!taskSurface" class="page-head"><h1>{{ routeTitle }}</h1><span v-if="bootstrapQuery.data.value?.engine.sdkReady" class="engine-dot"><i />引擎已连接</span></div>
       <main class="app-content" :class="{ 'is-task-surface': taskSurface }"><RouterView /></main>
     </div>
+    <button class="fab-new-task" data-testid="new-task-button" aria-label="新建任务" @click="openNewTask"><Plus :size="22" :stroke-width="2.2" />新建任务</button>
   </div>
 </template>

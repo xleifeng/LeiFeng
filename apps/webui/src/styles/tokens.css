@@ -1,76 +1,103 @@
-/* Leifeng Modern 设计令牌（v2 重设计，2026-09-29）
- * 与旧迅雷复刻令牌（--xl-*）彻底切割：石板灰阶 + teal 单一强调色。
- * 暗色主题经 :root[data-theme='dark'] 切换（shell store 写入）。
+/* Leifeng Modern × Material 3 设计令牌（2026-09-29 第二轮重设计）
+ * M3 色彩角色制：primary / surface-container 五级分层（色块分区替代边框）。
+ * 命名 --md-*，与第一轮 --lf-* 切割。暗色经 data-theme='dark'。
  */
 :root {
-  /* ---- 色板：中性 ---- */
-  --lf-bg: #f4f5f7;              /* 内容区底 */
-  --lf-surface: #ffffff;         /* 卡片 / 弹窗 / 列表行 */
-  --lf-surface-sunken: #eceef1;  /* 凹陷底（输入、进度条槽） */
-  --lf-sidebar: #fafbfc;         /* 侧栏 */
-  --lf-border: #e4e7eb;
-  --lf-border-strong: #d3d8de;
-  --lf-text-1: #1d232c;
-  --lf-text-2: #5c6672;
-  --lf-text-3: #98a1ac;
+  /* ---- primary（Google 蓝系） ---- */
+  --md-primary: #0b57d0;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #d3e3fd;
+  --md-on-primary-container: #041e49;
+  --md-primary-hover: #0842a0;
 
-  /* ---- 色板：语义 ---- */
-  --lf-accent: #0d9488;          /* teal-600 */
-  --lf-accent-hover: #0f766e;    /* teal-700 */
-  --lf-accent-strong: #115e59;   /* teal-800，深色文字用 */
-  --lf-accent-soft: rgb(13 148 136 / 10%);
-  --lf-accent-soft-2: rgb(13 148 136 / 18%);
-  --lf-danger: #e11d48;
-  --lf-danger-hover: #be123c;
-  --lf-danger-soft: rgb(225 29 72 / 8%);
-  --lf-warning: #d97706;
-  --lf-warning-soft: rgb(217 119 6 / 10%);
-  --lf-success: #16a34a;
+  /* ---- secondary / tertiary 容器 ---- */
+  --md-secondary-container: #c2e7ff;
+  --md-on-secondary-container: #001d35;
 
-  /* ---- 形状 ---- */
-  --lf-radius-lg: 14px;          /* 面板 / 卡片 */
-  --lf-radius-md: 10px;          /* 控件 / 弹窗内部块 */
-  --lf-radius-sm: 8px;           /* 小元素 */
-  --lf-radius-full: 999px;       /* 胶囊（按钮 / chip / 搜索） */
+  /* ---- surface 五级分层（M3 核心：用色块不用边框） ---- */
+  --md-surface: #ffffff;
+  --md-surface-dim: #d8dce2;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f0f4f9;
+  --md-surface-container: #e9eef6;
+  --md-surface-container-high: #dde3ea;
+  --md-surface-container-highest: #ccd3dc;
 
-  /* ---- 阴影（柔和分层，替代硬边框分区） ---- */
-  --lf-shadow-card: 0 1px 2px rgb(16 24 40 / 4%), 0 1px 3px rgb(16 24 40 / 6%);
-  --lf-shadow-pop: 0 4px 16px rgb(16 24 40 / 10%), 0 2px 6px rgb(16 24 40 / 6%);
-  --lf-shadow-modal: 0 24px 64px rgb(16 24 40 / 20%), 0 4px 16px rgb(16 24 40 / 8%);
+  /* ---- 文字/描边 ---- */
+  --md-on-surface: #1f1f1f;
+  --md-on-surface-variant: #444746;
+  --md-outline: #747775;
+  --md-outline-variant: #c4c7c5;
+
+  /* ---- 语义 ---- */
+  --md-error: #b3261e;
+  --md-error-container: #f9dedc;
+  --md-on-error-container: #410e0b;
+  --md-warning: #b06000;
+  --md-warning-container: #ffddb8;
+  --md-success: #146c2e;
+  --md-success-container: #c4eed0;
+
+  /* ---- 形状（M3 shape scale） ---- */
+  --md-shape-sm: 8px;
+  --md-shape-md: 12px;
+  --md-shape-lg: 16px;
+  --md-shape-xl: 28px;      /* dialog */
+  --md-shape-full: 999px;   /* stadium / pill */
+
+  /* ---- 高度（M3 elevation 用柔和扩散阴影模拟） ---- */
+  --md-elev-1: 0 1px 2px rgb(0 0 0 / 10%), 0 1px 3px 1px rgb(0 0 0 / 6%);
+  --md-elev-2: 0 1px 3px rgb(0 0 0 / 12%), 0 4px 8px 3px rgb(0 0 0 / 6%);
+  --md-elev-3: 0 4px 8px 3px rgb(0 0 0 / 10%), 0 1px 3px rgb(0 0 0 / 14%);
+
+  /* ---- 动效（M3 emphasized） ---- */
+  --md-motion: cubic-bezier(.2, 0, 0, 1);
+  --md-motion-fast: 150ms var(--md-motion);
+  --md-motion-med: 280ms var(--md-motion);
 
   /* ---- 焦点 ---- */
-  --lf-focus-ring: 0 0 0 3px rgb(13 148 136 / 25%);
+  --md-focus-ring: 0 0 0 3px rgb(11 87 208 / 28%);
 
   /* ---- 布局 ---- */
-  --lf-sidebar-w: 232px;
-  --lf-topbar-h: 56px;
-  --lf-row-h: 68px;
-  --lf-row-h-compact: 52px;
+  --md-rail-w: 84px;
+  --md-row-h: 72px;
+  --md-row-h-compact: 56px;
 }
 
 :root[data-theme='dark'] {
-  --lf-bg: #101214;
-  --lf-surface: #1a1d21;
-  --lf-surface-sunken: #26292e;
-  --lf-sidebar: #15171a;
-  --lf-border: #2b2f35;
-  --lf-border-strong: #3a3f47;
-  --lf-text-1: #ecedef;
-  --lf-text-2: #b4bbc4;
-  --lf-text-3: #828b96;
-  --lf-accent: #14b8a6;          /* teal-500：暗色下提一档亮度 */
-  --lf-accent-hover: #2dd4bf;
-  --lf-accent-strong: #5eead4;
-  --lf-accent-soft: rgb(20 184 166 / 14%);
-  --lf-accent-soft-2: rgb(20 184 166 / 22%);
-  --lf-danger: #fb7185;
-  --lf-danger-hover: #fda4af;
-  --lf-danger-soft: rgb(251 113 133 / 12%);
-  --lf-warning: #fbbf24;
-  --lf-warning-soft: rgb(251 191 36 / 12%);
-  --lf-success: #4ade80;
-  --lf-shadow-card: 0 1px 2px rgb(0 0 0 / 30%);
-  --lf-shadow-pop: 0 4px 16px rgb(0 0 0 / 40%), 0 2px 6px rgb(0 0 0 / 30%);
-  --lf-shadow-modal: 0 24px 64px rgb(0 0 0 / 55%), 0 4px 16px rgb(0 0 0 / 40%);
-  --lf-focus-ring: 0 0 0 3px rgb(20 184 166 / 35%);
+  --md-primary: #a8c7fa;
+  --md-on-primary: #062e6f;
+  --md-primary-container: #004a8b;
+  --md-on-primary-container: #d3e3fd;
+  --md-primary-hover: #c2d8fb;
+
+  --md-secondary-container: #3d5a73;
+  --md-on-secondary-container: #d8ecfd;
+
+  --md-surface: #131314;
+  --md-surface-dim: #0e0e0f;
+  --md-surface-container-lowest: #0e0e0f;
+  --md-surface-container-low: #1b1b1c;
+  --md-surface-container: #1e1f20;
+  --md-surface-container-high: #28292a;
+  --md-surface-container-highest: #333436;
+
+  --md-on-surface: #e3e3e3;
+  --md-on-surface-variant: #c4c7c5;
+  --md-outline: #8e918f;
+  --md-outline-variant: #444746;
+
+  --md-error: #f2b8b5;
+  --md-error-container: #8c1d18;
+  --md-on-error-container: #f9dedc;
+  --md-warning: #f5bb6b;
+  --md-warning-container: #5c4100;
+  --md-success: #8fdca4;
+  --md-success-container: #0f5223;
+
+  --md-elev-1: 0 1px 2px rgb(0 0 0 / 40%), 0 1px 3px 1px rgb(0 0 0 / 24%);
+  --md-elev-2: 0 1px 3px rgb(0 0 0 / 44%), 0 4px 8px 3px rgb(0 0 0 / 26%);
+  --md-elev-3: 0 4px 8px 3px rgb(0 0 0 / 42%), 0 1px 3px rgb(0 0 0 / 48%);
+
+  --md-focus-ring: 0 0 0 3px rgb(168 199 250 / 35%);
 }
