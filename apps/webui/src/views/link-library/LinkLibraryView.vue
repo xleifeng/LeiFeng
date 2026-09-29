@@ -7,6 +7,7 @@ import type { LinkItem } from '../../api/contracts/v2/links'
 import { queryLinks, removeLinks, saveLink, setLinkFavorite } from '../../api/native-download/links'
 import { formatBytes, formatDateTime } from '../../domain/format'
 import { downloadInputKind } from '../../domain/download-input'
+import PageShell from '../../components/common/PageShell.vue'
 
 const router = useRouter()
 const queryClient = useQueryClient()
@@ -23,9 +24,9 @@ function details(item: LinkItem) { void router.push({ name: 'link-details', para
 </script>
 
 <template>
-  <section class="data-page link-library-page">
-    <header class="data-page-header"><div><h1>链接库</h1><p>本地保存下载来源，便于再次下载</p></div><label class="favorite-filter"><input v-model="favoriteOnly" type="checkbox" /><Star :size="15" />只看收藏</label></header>
-    <div class="link-save-bar"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><button class="primary-button" @click="save">保存链接</button></div>
+  <PageShell title="链接库" subtitle="本地保存下载来源，便于再次下载" class="link-library-page">
+    <template #actions><label class="favorite-filter"><input v-model="favoriteOnly" type="checkbox" /><Star :size="15" />只看收藏</label></template>
+    <template #subhead><div class="link-save-bar" style="margin-bottom: 0; width: 100%"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><button class="primary-button" @click="save">保存链接</button></div></template>
     <label class="search-box standalone"><Search :size="16" /><input v-model="search" placeholder="搜索链接库" /></label>
     <p v-if="error" class="settings-error">{{ error }}</p>
     <div v-if="query.isPending.value" class="data-loading">正在读取链接库…</div>
@@ -37,5 +38,5 @@ function details(item: LinkItem) { void router.push({ name: 'link-details', para
         <div class="data-row-actions"><button :aria-label="item.favorite ? '取消收藏' : '收藏'" @click="favorite(item)"><Star :size="16" :fill="item.favorite ? 'currentColor' : 'none'" /></button><button aria-label="删除链接" @click="remove(item)"><Trash2 :size="16" /></button></div>
       </article>
     </div>
-  </section>
+  </PageShell>
 </template>

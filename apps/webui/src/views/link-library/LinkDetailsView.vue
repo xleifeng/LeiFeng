@@ -5,6 +5,7 @@ import { ArrowLeft, Download } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createDraftFromLink, getLink, setLinkTags } from '../../api/native-download/links'
 import { formatBytes, formatDateTime } from '../../domain/format'
+import PageShell from '../../components/common/PageShell.vue'
 import { useCreateTaskStore } from '../../stores/create-task'
 import { useOverlayStore } from '../../stores/overlay'
 
@@ -44,8 +45,8 @@ async function redownload() {
 </script>
 
 <template>
-  <section class="data-page link-detail-page">
-    <button class="page-quiet-action link-detail-back" @click="router.back"><ArrowLeft :size="16" />返回链接库</button>
+  <PageShell title="链接详情" class="link-detail-page">
+    <template #subhead><button class="page-quiet-action link-detail-back" style="margin: 0" @click="router.back"><ArrowLeft :size="16" />返回链接库</button></template>
     <div v-if="query.isPending.value" class="data-loading">正在读取链接详情…</div>
     <div v-else-if="query.isError.value" class="settings-error">链接详情不可用：{{ query.error.value?.message }}</div>
     <article v-else-if="query.data.value" class="link-detail-card">
@@ -55,5 +56,5 @@ async function redownload() {
       <section v-if="query.data.value.files?.length" class="link-detail-section"><h2>种子文件（{{ query.data.value.files.length }}）</h2><div class="link-file-list"><div v-for="file in query.data.value.files" :key="file.index" class="link-file-row"><span>{{ file.path }}</span><small>{{ formatBytes(file.size) }}</small></div></div></section>
       <p v-if="error" class="settings-error">{{ error }}</p><p v-if="notice" class="settings-notice">{{ notice }}</p>
     </article>
-  </section>
+  </PageShell>
 </template>

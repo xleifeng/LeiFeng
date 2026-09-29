@@ -7,6 +7,7 @@ import { clearHistory, createDraftFromHistory, queryHistory, removeHistory } fro
 import { formatBytes, formatDateTime } from '../../domain/format'
 import { useCreateTaskStore } from '../../stores/create-task'
 import { useOverlayStore } from '../../stores/overlay'
+import PageShell from '../../components/common/PageShell.vue'
 
 const search = ref('')
 const result = ref('')
@@ -23,9 +24,11 @@ async function redownload(item: HistoryItem) { try { const draft = await createD
 </script>
 
 <template>
-  <section class="data-page history-page">
-    <header class="data-page-header"><div><h1>下载记录</h1><p>记录与本地文件相互独立</p></div><button class="page-quiet-action" :disabled="!query.data.value?.items.length" @click="clear"><Trash2 :size="16" />清空记录</button></header>
+  <PageShell title="下载记录" subtitle="记录与本地文件相互独立" class="history-page">
+    <template #actions><button class="page-quiet-action" :disabled="!query.data.value?.items.length" @click="clear"><Trash2 :size="16" />清空记录</button></template>
+    <template #subhead>
     <div class="filter-bar"><label class="search-box"><Clock3 :size="16" /><input v-model="search" placeholder="搜索历史" /></label><select v-model="result" aria-label="下载结果"><option value="">全部结果</option><option value="completed">已完成</option><option value="failed">失败</option><option value="removed">已删除</option></select></div>
+    </template>
     <p v-if="error" class="settings-error">{{ error }}</p>
     <div v-if="query.isPending.value" class="data-loading">正在读取下载记录…</div>
     <div v-else-if="!query.data.value?.items.length" class="data-empty"><span class="data-empty-icon"><Clock3 :size="30" :stroke-width="1.6" /></span><h2>暂无下载记录</h2><p>完成、失败或删除任务后，可在这里重新创建下载。</p></div>
@@ -36,5 +39,5 @@ async function redownload(item: HistoryItem) { try { const draft = await createD
         <div class="data-row-actions"><button v-if="!item.locked" @click="redownload(item)">重新下载</button><button @click="remove(item.id)">移除</button></div>
       </article>
     </div>
-  </section>
+  </PageShell>
 </template>

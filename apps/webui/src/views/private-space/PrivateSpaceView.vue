@@ -55,19 +55,17 @@ async function moveOut(task: PrivateTask) {
     error.value = cause instanceof Error ? cause.message : '移出失败'
   }
 }
+import PageShell from '../../components/common/PageShell.vue'
 </script>
 
 <template>
-  <section class="data-page private-space-page">
-    <header class="data-page-header">
-      <div><h1>私人空间</h1><p>锁定后隐藏任务名称、来源和保存路径</p></div>
-      <div class="settings-page-actions">
-        <button v-if="store.unlocked" class="secondary-button" @click="showPassword = true">修改密码</button>
-        <button v-if="store.unlocked" class="primary-button" @click="lock">锁定</button>
-        <button v-else-if="store.status?.configured" class="primary-button" @click="showUnlock = true">解锁</button>
-        <button v-else class="primary-button" @click="showSetup = true">启用私人空间</button>
-      </div>
-    </header>
+  <PageShell title="私人空间" subtitle="锁定后隐藏任务名称、来源和保存路径" class="private-space-page">
+    <template #actions>
+      <button v-if="store.unlocked" class="secondary-button" @click="showPassword = true">修改密码</button>
+      <button v-if="store.unlocked" class="primary-button" @click="lock">锁定</button>
+      <button v-else-if="store.status?.configured" class="primary-button" @click="showUnlock = true">解锁</button>
+      <button v-else class="primary-button" @click="showSetup = true">启用私人空间</button>
+    </template>
 
     <div class="private-status-strip">
       <ShieldCheck v-if="store.status?.metadataEncrypted" :size="22" />
@@ -101,5 +99,5 @@ async function moveOut(task: PrivateTask) {
     <div v-if="showUnlock" class="modal-layer" @mousedown.self="showUnlock = false"><section class="modal-card"><PrivateUnlockDialog @unlocked="unlockDone" @close="showUnlock = false" /></section></div>
     <div v-if="showSetup" class="modal-layer" @mousedown.self="showSetup = false"><section class="modal-card"><PrivateSetupDialog @setup="setupDone" @close="showSetup = false" /></section></div>
     <div v-if="showPassword" class="modal-layer" @mousedown.self="showPassword = false"><section class="modal-card"><PrivateChangePasswordDialog @changed="showPassword = false; notice = '私人空间密码已更新'" @close="showPassword = false" /></section></div>
-  </section>
+  </PageShell>
 </template>

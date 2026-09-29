@@ -1,12 +1,9 @@
 /* Leifeng Modern × Material 3 — 任务中心（下载/回收站/详情/创建任务/操作弹窗） */
 
-.task-center-page { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--md-surface); }
+.task-center-page { height: 100%; min-height: 0; }
 
-/* ---- 页头：统一大标题（与其他页面一致）+ 次级行放分段按钮 ---- */
-.task-page-header { display: flex; flex: 0 0 auto; align-items: center; gap: 16px; padding: 20px 32px 0; }
-.task-page-header h1 { margin: 0; font-size: 22px; font-weight: 500; line-height: 28px; }
-.task-page-subhead { display: flex; flex: 0 0 auto; align-items: center; padding: 14px 32px 16px; }
-.page-header-action { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-left: auto; border-radius: var(--md-shape-full); color: var(--md-on-surface-variant); }
+/* ---- 页头操作钮（PageShell actions 槽内） ---- */
+.page-header-action { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--md-shape-full); color: var(--md-on-surface-variant); }
 .page-header-action:hover { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
 
 .view-segment { display: inline-flex; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-full); overflow: hidden; }
@@ -29,7 +26,7 @@
 .task-header-actions button:hover { color: var(--md-on-surface); background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
 
 /* ---- 工具条 ---- */
-.task-page-body { display: flex; flex: 1; min-height: 0; flex-direction: column; position: relative; padding: 0 32px 24px; }
+
 .task-toolbar { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 4px 12px; }
 .toolbar-actions { display: flex; align-items: center; gap: 4px; }
 .toolbar-button {
@@ -284,8 +281,6 @@
 
 /* ---- 窄屏 ---- */
 @media (max-width: 760px) {
-  .task-page-header { padding: 14px 16px 0; }
-  .task-page-subhead { padding: 10px 16px 12px; }
   .task-page-body { padding: 0 12px 12px; }
   .task-toolbar { align-items: flex-start; flex-direction: column; }
   .toolbar-actions { width: 100%; overflow-x: auto; }

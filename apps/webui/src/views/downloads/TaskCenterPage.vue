@@ -18,6 +18,7 @@ import TaskVirtualList, { type TaskListRow } from '../../components/tasks/TaskVi
 import TaskListSkeleton from '../../components/tasks/TaskListSkeleton.vue'
 import TaskEmptyState from '../../components/tasks/TaskEmptyState.vue'
 import TaskContextMenu from '../../components/tasks/TaskContextMenu.vue'
+import PageShell from '../../components/common/PageShell.vue'
 
 const props = withDefaults(defineProps<{ view?: 'downloading' | 'completed' | 'trash' }>(), { view: undefined })
 const route = useRoute()
@@ -137,27 +138,22 @@ useDownloadShortcuts({ selected: selectedTasks, visibleIds, focused: focusedTask
 </script>
 
 <template>
-  <section class="task-center-page" :class="`is-${currentView}`">
-    <header class="task-page-header">
-      <h1>{{ currentView === 'trash' ? '回收站' : '下载' }}</h1>
-      <div class="task-header-actions">
-        <button v-if="currentView !== 'trash'" type="button" aria-label="刷新任务" @click="taskQuery.refresh"><RotateCw :size="16" :stroke-width="1.9" /></button>
-        <button type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="19" :stroke-width="2" /></button>
-      </div>
-    </header>
-    <div v-if="currentView !== 'trash'" class="task-page-subhead" aria-label="下载分类">
-      <div class="view-segment" role="tablist">
+  <PageShell :title="currentView === 'trash' ? '回收站' : '下载'" fill class="task-center-page" :class="`is-${currentView}`">
+    <template #actions>
+      <button v-if="currentView !== 'trash'" class="page-header-action" type="button" aria-label="刷新任务" @click="taskQuery.refresh"><RotateCw :size="16" :stroke-width="1.9" /></button>
+      <button class="page-header-action" type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="19" :stroke-width="2" /></button>
+    </template>
+    <template v-if="currentView !== 'trash'" #subhead>
+      <div class="view-segment" role="tablist" aria-label="下载分类">
         <button type="button" role="tab" :class="{ active: currentView === 'downloading' }" data-testid="tab-downloading" @click="selectDownloadTab('downloading')">下载中 <span>{{ downloadingCount }}</span></button>
         <button type="button" role="tab" :class="{ active: currentView === 'completed' }" data-testid="tab-completed" @click="selectDownloadTab('completed')">已完成 <span>{{ completedCount }}</span></button>
       </div>
-    </div>
-    <div class="task-page-body">
+    </template>
       <TaskCenterToolbar :view="currentView" :selected-count="selection.count" :total="taskQuery.data.value?.pages[0]?.total || 0" :sort="sort" :group-by="groupBy" :busy="commandCenter.pendingCount > 0" :can-start="selectedCapabilities.start" :can-pause="selectedCapabilities.pause" :can-recycle="selectedCapabilities.recycle" :can-delete-permanently="selectedCapabilities.deletePermanently" @update:sort="updateSort" @update:group-by="updateGroupBy" @select-all="selectAll" @command="command" @empty-trash="emptyTrash" @refresh="taskQuery.refresh" @more="openDownloadSettings" @vip="openVipOverview" />
       <TaskSelectionToolbar :count="selection.count" :total="visibleIds.length" @clear="selection.clear" @select-all="selectAll" />
       <TaskListSkeleton v-if="taskQuery.isPending.value && !taskQuery.items.value.length" />
       <TaskEmptyState v-else-if="!taskQuery.items.value.length" :kind="emptyKind" @create="newTask" />
       <TaskVirtualList v-else :rows="rows" :selected-ids="selection.selectedTaskIds" :focused-id="selection.focusedTaskId" :pending-ids="new Set(Object.keys(commandCenter.pendingByTaskId))" :density="shell.density" :has-next-page="taskQuery.hasNextPage.value" :loading-more="taskQuery.isFetchingNextPage.value" @select="select" @open="openTask" @command="(payload) => command(payload.command, [taskQuery.items.value.find((task) => task.taskId === payload.taskId)!])" @contextmenu="openContext" @load-more="taskQuery.loadMore" />
-    </div>
     <TaskContextMenu v-if="context" :task="context.task" :x="context.x" :y="context.y" @command="(commandName) => command(commandName, [context!.task])" @details="openTask(context.task.taskId)" @close="context = null" />
-  </section>
+  </PageShell>
 </template>

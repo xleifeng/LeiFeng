@@ -7,6 +7,7 @@ import { restartDownloadEngine } from '../../api/native-download/system'
 import DiagnosticExportDialog from '../../components/diagnostics/DiagnosticExportDialog.vue'
 import SystemHealthGrid from '../../components/diagnostics/SystemHealthGrid.vue'
 import TaskDiagnosticPanel from '../../components/diagnostics/TaskDiagnosticPanel.vue'
+import PageShell from '../../components/common/PageShell.vue'
 
 const query = useQuery({ queryKey: ['v2-diagnostics'], queryFn: getDiagnostics, refetchInterval: 5000, retry: 1 })
 const events = useQuery({ queryKey: ['v2-diagnostic-events'], queryFn: () => queryDiagnosticEvents(100), refetchInterval: 3000, retry: 1 })
@@ -38,8 +39,8 @@ function eventTime(value: unknown) { return typeof value === 'number' ? new Date
 </script>
 
 <template>
-  <section class="data-page diagnostics-page">
-    <header class="data-page-header"><div><h1>下载诊断</h1><p>检查下载引擎、目录、任务仓库、媒体与远程节点，导出内容会严格脱敏</p></div><div class="settings-page-actions"><button class="secondary-button" :disabled="restarting" @click="restartEngine"><RotateCcw :size="14" />{{ restarting ? '重启中…' : '重启引擎' }}</button><button class="secondary-button" @click="query.refetch(); events.refetch()"><RefreshCw :size="14" />刷新</button><button class="primary-button" @click="exportDiagnostics"><Download :size="14" />导出诊断</button></div></header>
+  <PageShell title="下载诊断" subtitle="检查下载引擎、目录、任务仓库与媒体能力，导出内容会严格脱敏" class="diagnostics-page">
+    <template #actions><button class="secondary-button" :disabled="restarting" @click="restartEngine"><RotateCcw :size="14" />{{ restarting ? '重启中…' : '重启引擎' }}</button><button class="secondary-button" @click="query.refetch(); events.refetch()"><RefreshCw :size="14" />刷新</button><button class="primary-button" @click="exportDiagnostics"><Download :size="14" />导出诊断</button></template>
     <p v-if="error" class="settings-error">{{ error }}</p><p v-if="notice" class="settings-notice">{{ notice }}</p>
     <div v-if="query.isPending.value" class="data-loading">正在读取诊断…</div>
     <div v-else-if="query.isError.value" class="settings-error">诊断不可用：{{ query.error.value?.message }}</div>
@@ -51,5 +52,5 @@ function eventTime(value: unknown) { return typeof value === 'number' ? new Date
       <section class="diagnostic-events"><h2>最近事件</h2><div v-if="!eventRows.length" class="inline-note">暂无诊断事件</div><div v-else class="diagnostic-event-list"><article v-for="event in eventRows" :key="String(event.id || event.sequence)" class="diagnostic-event-row"><strong>{{ event.message || event.code || event.type }}</strong><span>{{ eventTime(event.at) }} · {{ event.level || 'info' }} · {{ event.category || 'daemon' }}</span></article></div></section>
     </template>
     <DiagnosticExportDialog v-if="showExport && exportUrl" :url="exportUrl" @close="showExport = false" />
-  </section>
+  </PageShell>
 </template>
