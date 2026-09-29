@@ -33,7 +33,7 @@ class QbitDriver extends EventEmitter {
     // 缺省用全局 fetch + 手拼 cookie（与桥 qbit-client 同形态，注入式便于单测）
     this.transport = transport || ((request) => this._fetchTransport(request));
     this.engineMode = 'qbit';
-    this.taskDbPath = null; // 缺口：qbit 无 TaskDb 直读对应物
+    this.taskDbPath = null; // P3：taskDbPath 已归契约可选属性（迅雷富件）；qbit 缺席，壳层经 slot.nativeBtLookup 消费
     this.sdkReady = false;
     this._healthy = false;
     this._generation = 0;
@@ -345,7 +345,8 @@ class QbitDriver extends EventEmitter {
 
   async setAutoMoveLowSpeed() { throw notSupported('setAutoMoveLowSpeed'); }
 
-  // ---- 迅雷扩展（显式拒绝——满足契约形态，进缺口清单）----
+  // ---- 迅雷扩展（P3 已归契约可选方法；保留显式拒绝实现——形态满足即合规，
+  // 缺席语义与 NOT_SUPPORTED 并存，删掉这些方法同样不违反契约）----
   async notifyAuth() { throw notSupported('notifyAuth'); }
   async notifyLogout() { throw notSupported('notifyLogout'); }
   async getBtFileRuntime() { throw notSupported('getBtFileRuntime'); }

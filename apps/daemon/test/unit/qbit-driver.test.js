@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { QbitDriver, QBIT_PROTOCOLS } = require('../../host/src/qbit-driver');
+const { QbitDriver, QBIT_PROTOCOLS } = require('../../host/kernels/qbit/qbit-driver');
 const { assertKernel, KERNEL_METHODS } = require('../../host/src/domain/kernel-port');
 
 // transport 注入式 fake qbit（借鉴 vip-speedup-client 测试范式）：

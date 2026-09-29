@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { CredentialWallet } = require('../../host/src/auth-wallet');
+const { CredentialWallet } = require('../../host/kernels/thunder/auth-wallet');
 
 function setup() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wallet-'));

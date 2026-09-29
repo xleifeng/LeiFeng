@@ -1,6 +1,6 @@
 'use strict';
 
-const { decryptJson, encryptJson } = require('../../../host/src/vip-speedup-client');
+const { decryptJson, encryptJson } = require('../../../host/kernels/thunder/vip-speedup-client');
 
 function startFakeSpeedupServer({ context, intervalSec = 305, tokenPrefix = 'fixture-token-', script = {} } = {}) {
   if (!context || !context.uid) throw new Error('fake speedup context required');

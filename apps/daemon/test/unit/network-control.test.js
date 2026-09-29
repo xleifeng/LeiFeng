@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createNetworkControlHandlers } = require('../../engine/network-control');
+const { createNetworkControlHandlers } = require('../../host/kernels/thunder/engine/network-control');
 
 test('network control applies limits and keeps an applied runtime mirror', () => {
   const calls = [];

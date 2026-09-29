@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { readSdkPeerId, PEER_ID_PATTERN } = require('../../host/src/sdk-peer-id');
+const { readSdkPeerId, PEER_ID_PATTERN } = require('../../host/kernels/thunder/sdk-peer-id');
 
 const tempDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-peer-'));
 

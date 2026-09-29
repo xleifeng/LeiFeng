@@ -1,6 +1,6 @@
 'use strict';
 const test = require('node:test'); const assert = require('node:assert/strict');
-const { detectNativeCapabilities } = require('../../engine/native-capabilities');
+const { detectNativeCapabilities } = require('../../host/kernels/thunder/engine/native-capabilities');
 
 test('native capability report only marks existing methods present', () => {
   const result = detectNativeCapabilities({ tm: { batchStartTasks() {}, batchStopTasks() {}, updateDownloadSpeedLimit() {} }, NativeTaskInterface: { toTaskExtra() {} }, NativeDkHelper: { parseBtTaskInfo() {} }, sdkVersion: 'test' });

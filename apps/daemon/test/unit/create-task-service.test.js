@@ -5,7 +5,7 @@ const fs = require('fs'); const os = require('os'); const path = require('path')
 const { TaskRepository } = require('../../host/src/repositories/task-repository');
 const { CreateTaskService } = require('../../host/src/services/create-task-service');
 const { FtpSecretStore } = require('../../host/src/secrets/ftp-secret-store');
-const { linuxToWinePath } = require('../../host/src/driver');
+const { linuxToWinePath } = require('../../host/kernels/thunder/driver');
 
 test('compat create URI preserves create native → repository → start order', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'create-v2-')); const repo = new TaskRepository({ filePath: path.join(dir, 'tasks.json') }); repo.load();
@@ -105,8 +105,8 @@ test('torrent create adopts the most progressed persisted native task instead of
     deleteTasks: async () => calls.push('delete'),
   };
   const service = new CreateTaskService({
-    tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => [
+    tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => [
       { engineId: 51, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 },
       { engineId: 52, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 200, resourceSize: 1000, failureErrorCode: 0 },
     ],
@@ -132,8 +132,8 @@ test('torrent native adoption explicitly starts an existing status-5 row when re
     startTasks: async (ids) => calls.push(['start', ids]),
   };
   const service = new CreateTaskService({
-    tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => [{ engineId: 51, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 }],
+    tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => [{ engineId: 51, status: 5, savePath: linuxToWinePath(dir), name: 'ubuntu.iso', totalReceiveSize: 600, resourceSize: 1000, failureErrorCode: 0 }],
   });
   const taskId = await service.createTorrentCompat({ torrentInput: torrent, savePath: dir, displayName: 'ubuntu.iso' });
   assert.equal(repo.get(taskId).engineId, 51);
@@ -152,8 +152,8 @@ test('同 hash 原生会话仍活跃时拒绝在其他目录重复建 BT 任务'
   };
   // 引擎行 savePath 下放真实部分数据：数据在盘 → 不是可释放僵尸 → 保持 BUSY（会话被别的目录活跃任务占用）。
   fs.writeFileSync(path.join(dir, 'other-fixture.xltd'), 'partial-data');
-  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => [{ engineId: 51, status: 5, savePath: dir, name: 'other-fixture', totalReceiveSize: 1, failureErrorCode: 0 }] });
+  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => [{ engineId: 51, status: 5, savePath: dir, name: 'other-fixture', totalReceiveSize: 1, failureErrorCode: 0 }] });
   await assert.rejects(service.createTorrentCompat({ torrentInput: torrent, savePath: path.join(dir, 'elsewhere') }), (e) => e.code === 'BT_NATIVE_SESSION_BUSY');
   assert.equal(creates, 0);
 });
@@ -165,8 +165,8 @@ test('原生状态读取失败时停止 BT 创建', async () => {
   let creates = 0;
   const driver = { parseTaskInfo: async () => ({ infoId: '00112233445566778899AABBCCDDEEFF00112233', title: 'fixture', fileLists: [] }),
     createTask: async () => { creates++; return 1; }, getTaskSnapshots: async () => new Map() };
-  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => { throw new Error('unavailable'); } });
+  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => { throw new Error('unavailable'); } });
   await assert.rejects(service.createTorrentCompat({ torrentInput: torrent, savePath: dir }), (e) => e.code === 'BT_NATIVE_STATE_UNAVAILABLE');
   assert.equal(creates, 0);
 });
@@ -178,8 +178,8 @@ test('TaskDb 历史行不在实时队列时允许新建', async () => {
   let creates = 0;
   const driver = { parseTaskInfo: async () => ({ infoId: '00112233445566778899AABBCCDDEEFF00112233', title: 'fixture', fileLists: [] }),
     getTaskSnapshots: async () => new Map(), createTask: async () => { creates++; return 77; }, startTasks: async () => {} };
-  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => [{ engineId: 51, status: 5, savePath: '/old', name: 'fixture', totalReceiveSize: 1, failureErrorCode: 0 }] });
+  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => [{ engineId: 51, status: 5, savePath: '/old', name: 'fixture', totalReceiveSize: 1, failureErrorCode: 0 }] });
   await service.createTorrentCompat({ torrentInput: torrent, savePath: dir });
   assert.equal(creates, 1);
 });
@@ -193,8 +193,8 @@ test('不同保存目录并发创建同 hash 时仅生成一条原生任务', as
     getTaskSnapshots: async () => new Map(rows.map((row) => [row.engineId, {}])),
     createTask: async ({ savePath, taskName }) => { creates++; rows.push({ engineId: creates, status: 5, savePath, name: taskName, totalReceiveSize: 0, failureErrorCode: 0 }); return creates; },
     startTasks: async () => {} };
-  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => rows });
+  const service = new CreateTaskService({ tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => rows });
   const results = await Promise.allSettled(['a', 'b'].map((name) =>
     service.createTorrentCompat({ torrentInput: torrent, savePath: path.join(dir, name) })));
   assert.equal(results.filter((result) => result.status === 'fulfilled').length, 1);
@@ -218,8 +218,8 @@ test('stopped orphan native rows without host reference are released once, then 
     deleteTasks: async (ids) => { calls.push(['delete', ids]); nativeRows = []; },
   };
   const service = new CreateTaskService({
-    tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => nativeRows,
+    tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => nativeRows,
   });
   const taskId = await service.createTorrentCompat({ torrentInput: torrent, savePath: dir, displayName: 'ubuntu.iso', options: { startMode: 'queued' } });
   const task = repo.get(taskId);
@@ -242,8 +242,8 @@ test('stopped native row still owned by a host task is NOT released (explicit BU
     deleteTasks: async () => calls.push('delete'),
   };
   const service = new CreateTaskService({
-    tasks: repo, driver, runtimeDir: dir, taskDbPath: path.join(dir, 'TaskDb.dat'),
-    readNativeBtTasks: async () => [{ engineId: 77, status: 7, savePath: 'Z:\\gone', name: 'ubuntu.iso', totalReceiveSize: 5, resourceSize: 1000, failureErrorCode: 0 }],
+    tasks: repo, driver, runtimeDir: dir,
+    nativeBtLookup: async () => [{ engineId: 77, status: 7, savePath: 'Z:\\gone', name: 'ubuntu.iso', totalReceiveSize: 5, resourceSize: 1000, failureErrorCode: 0 }],
   });
   await assert.rejects(service.createTorrentCompat({ torrentInput: torrent, savePath: dir, displayName: 'ubuntu.iso' }), (e) => {
     assert.equal(e.code, 'BT_NATIVE_SESSION_BUSY');

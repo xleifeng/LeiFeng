@@ -122,7 +122,7 @@ function hasNativePartialData(targetDir, taskName) {
 }
 
 class CreateTaskService {
-  constructor({ tasks, driver, settings = null, httpProbe = fetchContentLength, seedStore = null, ftpSecrets = null, operationLock = new OperationLock(), clock = Date, runtimeDir = null, magnetTimeoutSec = 120, taskDbPath = null, readNativeBtTasks = null, defaultKernelId = null } = {}) {
+  constructor({ tasks, driver, settings = null, httpProbe = fetchContentLength, seedStore = null, ftpSecrets = null, operationLock = new OperationLock(), clock = Date, runtimeDir = null, magnetTimeoutSec = 120, nativeBtLookup = null, defaultKernelId = null } = {}) {
     if (!tasks || !driver) throw new Error('CreateTaskService tasks and driver are required');
     this.tasks = tasks;
     this.driver = driver;
@@ -134,8 +134,10 @@ class CreateTaskService {
     this.clock = clock;
     this.runtimeDir = runtimeDir;
     this.magnetTimeoutSec = Math.min(600, Math.max(30, Number(magnetTimeoutSec) || 120));
-    this.taskDbPath = taskDbPath;
-    this.readNativeBtTasks = typeof readNativeBtTasks === 'function' ? readNativeBtTasks : null;
+    // P3（cordis-arch）：TaskDb 直读细节退出壳层装配面——taskDbPath/readNativeBtTasks
+    // 两参数收敛为内核侧注入的 nativeBtLookup(infoId) → 行集合（迅雷槽富件，
+    // 内核插件闭包 taskDbPath；qbit 等无对应物的内核缺席即走旧创建路径）。
+    this.nativeBtLookup = typeof nativeBtLookup === 'function' ? nativeBtLookup : null;
     // P2：任务归属内核由 create 路由决定（domain/create-router）。单一内核时代
     // repository 默认值同为 'thunder'，此参数显式接通写入路径，P3 换内核只改路由表。
     this.defaultKernelId = defaultKernelId || resolveCreateKernel() || null;
@@ -261,14 +263,14 @@ class CreateTaskService {
         // instead of creating a third task. The reader is deliberately
         // injected so unit tests and deployments without sqlite keep the old
         // create path unchanged.
-        if (this.readNativeBtTasks && this.taskDbPath) {
+        if (this.nativeBtLookup) {
           let nativeMatches;
           try {
             // Match the requested native name before filesystem collision
             // suffixing. A previous redownload may have left only the seed
             // directory on disk, which would otherwise turn the name into
             // "*.1.iso" and hide the persisted SDK task we intend to reuse.
-            nativeMatches = await this.readNativeBtTasks(this.taskDbPath, parsed.infoId);
+            nativeMatches = await this.nativeBtLookup(parsed.infoId);
           } catch (cause) {
             throw error('BT_NATIVE_STATE_UNAVAILABLE', '无法确认同 hash 原生任务状态，已停止创建');
           }
@@ -444,10 +446,10 @@ class CreateTaskService {
         const btTaskName = finalName === taskName ? taskName : resolveCollision(targetDir, finalName);
         const taskNameModify = Boolean(btTaskName && String(btTaskName) !== String(btParsed.title || ''));
         await this.operationLock.run(`create:bt:${String(btParsed.infoId || '').toUpperCase()}`, async () => {
-        if (this.readNativeBtTasks && this.taskDbPath) {
+        if (this.nativeBtLookup) {
           let matches;
           try {
-            matches = await this.readNativeBtTasks(this.taskDbPath, btParsed.infoId);
+            matches = await this.nativeBtLookup(btParsed.infoId);
             const snapshots = await this.driver.getTaskSnapshots(matches.map((item) => item.engineId));
             const liveMagnet = matches.filter((item) => snapshots.has(item.engineId) && ![8, 9].includes(Number(item.status)));
             if (liveMagnet.length > 0 && options.orphansReleased !== true) {

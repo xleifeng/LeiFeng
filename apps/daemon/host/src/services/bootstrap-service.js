@@ -1,7 +1,7 @@
 'use strict';
 
 const { computeGlobalCapabilities } = require('../domain/task-capabilities');
-const { classifyVipAccount } = require('../vip-account');
+const { classifyVipAccount } = require('../domain/vip-account');
 const { ALWAYS: ALWAYS_UI_CAPABILITIES } = require('../domain/ui-capabilities');
 const { shellFallbackOperations } = require('../domain/shell-capabilities');
 

@@ -22,9 +22,13 @@ function bridgePatch(argv) {
 async function main(argv = process.argv.slice(2), options = {}) {
   const { runCli } = await import('../../../packages/runtime/src/index.mjs');
   const registry = createBridgePluginRegistry();
-  const profileArgv = argv.includes('--profile') ? argv : ['--profile', 'bridge-host', ...argv];
+  // P5（cordis-arch）：按 mode 选 profile——serve 不装 bridge-daemon-client（不触 daemon），
+  // hybrid 走 bridge-host 全量。mode 在首个非 flag 位（serve|hybrid）。
+  const command = argv.find((arg) => !arg.startsWith('-'));
+  const profile = command === 'serve' ? 'bridge-serve' : 'bridge-host';
+  const profileArgv = argv.includes('--profile') ? argv : [`--profile`, profile, ...argv];
   return runCli({ registry, argv: profileArgv, parseProfileArgs: (rest, profile) => {
-    if (profile !== 'bridge-host') throw new Error('桥入口仅支持 bridge-host profile');
+    if (profile !== 'bridge-host' && profile !== 'bridge-serve') throw new Error('桥入口仅支持 bridge-host / bridge-serve profile');
     return bridgePatch(rest);
   }, profilePatch: [{ id: 'runtime-config', config: {
     bearerToken: process.env.THUNDERD_RPC_SECRET || '',

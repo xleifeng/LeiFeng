@@ -8,8 +8,8 @@ const { EventEmitter } = require('events');
 const { createMethodHandler } = require('../../host/src/methods');
 const { createAccountMethods } = require('../../host/src/rpc/account-methods');
 const { RpcRegistry } = require('../../host/src/rpc/registry');
-const { AuthManager } = require('../../host/src/auth-manager');
-const { CredentialWallet } = require('../../host/src/auth-wallet');
+const { AuthManager } = require('../../host/kernels/thunder/auth-manager');
+const { CredentialWallet } = require('../../host/kernels/thunder/auth-wallet');
 const { AccountService } = require('../../host/src/services/account-service');
 const { startFakeXluser } = require('./helpers/fake-xluser');
 

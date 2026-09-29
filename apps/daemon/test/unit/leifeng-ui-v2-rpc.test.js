@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const { TaskRepository } = require('../../host/src/repositories/task-repository'); const { DraftRepository } = require('../../host/src/repositories/draft-repository'); const { TaskRegistry } = require('../../host/src/registry'); const { SettingsRepository } = require('../../host/src/repositories/settings-repository');
 const { TaskService } = require('../../host/src/services/task-service'); const { TaskQueryService } = require('../../host/src/services/task-query-service'); const { CreateTaskService } = require('../../host/src/services/create-task-service'); const { CreateDraftService } = require('../../host/src/services/create-draft-service'); const { PathService } = require('../../host/src/services/path-service'); const { SettingsService } = require('../../host/src/services/settings-service'); const { BootstrapService } = require('../../host/src/services/bootstrap-service');
-const { createTaskRpcMethods } = require('../../host/src/rpc/task-rpc-methods'); const { createProductRpcMethods } = require('../../host/src/rpc/product-rpc-methods'); const { RpcRegistry } = require('../../host/src/rpc/registry'); const { createMethodHandler } = require('../../host/src/methods');
+const { createTaskRpcMethods } = require('../../host/src/rpc/task-rpc-methods'); const { RpcRegistry } = require('../../host/src/rpc/registry'); const { createMethodHandler } = require('../../host/src/methods');
 
 function setup() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'v2-rpc-test-')); const repository = new TaskRepository({ filePath: path.join(dir, 'data', 'tasks.json') }); repository.load(); const settings = new SettingsRepository({ filePath: path.join(dir, 'data', 'settings.json'), defaults: { downloadDir: dir } }); settings.load();
@@ -13,7 +13,8 @@ function setup() {
   const auth = { getStatus: async () => ({ account: { valid: false } }) }; const vip = { disableTask: async () => {} }; const taskService = new TaskService({ tasks: repository, driver, vip }); const query = new TaskQueryService({ tasks: repository }); const create = new CreateTaskService({ tasks: repository, driver, settings, runtimeDir: dir, httpProbe: async () => 10 }); const createDraft = new CreateDraftService({ drafts, tasks: repository, pathService: new PathService({ defaultPath: dir }), parser: { parseInput: async (value) => ({ kind: 'http', normalizedSource: value, displayName: 'file.bin', totalBytes: 10, files: [] }) }, sourceProbe: async () => ({ status: 200, reachable: true, suggestedName: 'file.bin', totalBytes: 10, acceptRanges: true }), createTaskService: create }); const policy = new SettingsService({ settings, driver }); const bootstrap = new BootstrapService({ repository, settings, driver, auth, config: { version: 'test', rpcSecret: 'secret', host: '127.0.0.1' } });
   const registry = new RpcRegistry();
   registry.register('test:task', createTaskRpcMethods({ taskService, taskQueryService: query, createTaskService: create, createDraftService: createDraft, settingsService: policy }));
-  registry.register('test:product', createProductRpcMethods({ bootstrapService: bootstrap }));
+  // P4 拆分后 bootstrap 面归 product-core 聚合核
+  registry.register('test:product-core', new Map([['leifeng.ui.v2.bootstrap', (_params, ctx) => bootstrap.getSnapshot(ctx)]]));
   return { repository, handler: createMethodHandler({ config: { downloadDir: dir, runtimeDir: dir, version: 'test', rpcSecret: 'secret' }, registry }) };
 }
 

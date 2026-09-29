@@ -35,6 +35,27 @@ class RateLimiter {
 
   allow(key) { return this.check({ principalId: key }).allowed; }
   snapshot() { return [...this.buckets.entries()].map(([key, value]) => ({ key, ...value })); }
+  // P1（cordis-arch）：运行期桶管理——策略服务先立基础桶，产品插件贡献自己的
+  // 桶并随生命周期撤销（addBuckets 返回的 disposer 调 removeBuckets）。
+  addBuckets(buckets) {
+    const added = [];
+    for (const [name, rule] of Object.entries(buckets || {})) {
+      if (this.rules.has(name)) continue;
+      this.rules.set(name, {
+        limit: Math.max(1, Number(rule.limit) || this.limit),
+        windowMs: Math.max(1, Number(rule.windowMs) || this.windowMs),
+        concurrency: rule.concurrency == null ? null : Math.max(1, Number(rule.concurrency) || 1),
+      });
+      added.push(name);
+    }
+    return () => this.removeBuckets(added);
+  }
+  removeBuckets(names) {
+    for (const name of names || []) {
+      this.rules.delete(name);
+      for (const key of [...this.buckets.keys()]) if (key.startsWith(`${name}:`)) this.buckets.delete(key);
+    }
+  }
   reset(key) {
     const value = String(key || 'anonymous');
     for (const bucket of [...this.buckets.keys()]) if (bucket.endsWith(`:${value}`) || bucket === value) this.buckets.delete(bucket);

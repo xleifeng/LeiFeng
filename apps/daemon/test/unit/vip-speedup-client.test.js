@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const {
   VipSpeedupClient, VipSpeedupError, deriveAesKey, encryptJson, decryptJson,
-} = require('../../host/src/vip-speedup-client');
+} = require('../../host/kernels/thunder/vip-speedup-client');
 
 const context = { ok: true, uid: '664727041', accessToken: 'access-secret', sessionId: 'sid-secret',
   isVip: true, isDownloadVip: true, userVas: 2, vipType: 5, vipLevel: 9 };

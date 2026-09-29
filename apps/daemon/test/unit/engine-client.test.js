@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { duplexPair } = require('node:stream');
-const { EngineClient } = require('../../host/src/engine-client');
+const { EngineClient } = require('../../host/kernels/thunder/engine-client');
 
 function fakeConnection(onMessage) {
   const [clientSocket, engineSocket] = duplexPair();

@@ -55,8 +55,12 @@ function createBridgePluginRegistry({
         username: config.qbitUsername, password: config.qbitPassword }));
     },
   };
+  // P5（cordis-arch）：serve 模式不触 daemon（bridge-serve profile 无 bridge-daemon-client）。
+  // Cordis 语义：apply 内访问未 inject 的属性必抛错——可选依赖用 ctx.reflect.get(name, false)
+  // 消费（未 provide → undefined；已 provide → 值），缺席即 null 传下游。
+  const daemonClientOf = (ctx) => ctx.reflect.get('bridgeDaemon', false) ?? null;
   const httpPlugin = {
-    inject: ['bridgeConfig', 'bridgeDaemon'],
+    inject: ['bridgeConfig'],
     async apply(ctx) {
       const config = ctx.bridgeConfig;
       const sessions = new Map();
@@ -67,12 +71,12 @@ function createBridgePluginRegistry({
     },
   };
   const orchestratorPlugin = {
-    inject: ['bridgeConfig', 'bridgeDaemon', 'recipient', 'bridgeHttp'],
+    inject: ['bridgeConfig', 'recipient', 'bridgeHttp'],
     async apply(ctx) {
       const config = ctx.bridgeConfig;
       const http = ctx.bridgeHttp;
       const orch = orchestratorFactory({ savePath: config.savePath, bridgeHost: http.host,
-        bridgePort: http.port, daemonClient: ctx.bridgeDaemon, recipient: ctx.recipient,
+        bridgePort: http.port, daemonClient: daemonClientOf(ctx), recipient: ctx.recipient,
         sessionStore: http.sessions });
       try {
         if (config.mode === 'serve') {
@@ -111,8 +115,9 @@ function createBridgePluginRegistry({
     }, configKeys: ['mode', 'host', 'port', 'daemonHost', 'daemonPort', 'qbitHost', 'qbitPort', 'qbitUsername', 'qbitPassword', 'bearerToken', 'csrfToken', 'origin', 'nonce', 'savePath', 'inputs', 'concurrency', 'out'] },
     'bridge-daemon-client': { plugin: daemonPlugin, provides: ['bridgeDaemon'], requires: ['bridgeConfig'] },
     'recipient-qbit': { plugin: recipientPlugin, provides: ['recipient'], requires: ['bridgeConfig'] },
-    'bridge-seed-http': { plugin: httpPlugin, provides: ['bridgeHttp'], requires: ['bridgeConfig', 'bridgeDaemon'] },
-    'bridge-orchestrator': { plugin: orchestratorPlugin, provides: ['bridgeOrchestrator'], requires: ['bridgeConfig', 'bridgeDaemon', 'recipient', 'bridgeHttp'] },
+    // bridgeDaemon 可选：serve 模式缺席（bridge-serve profile），hybrid 必在（bridge-host profile）
+    'bridge-seed-http': { plugin: httpPlugin, provides: ['bridgeHttp'], requires: ['bridgeConfig'] },
+    'bridge-orchestrator': { plugin: orchestratorPlugin, provides: ['bridgeOrchestrator'], requires: ['bridgeConfig', 'recipient', 'bridgeHttp'] },
   };
 }
 

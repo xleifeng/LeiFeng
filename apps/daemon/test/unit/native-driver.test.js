@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { WindowsNodeDriver, WindowsProgramProcessController } = require('../../host/src/driver');
+const { WindowsNodeDriver, WindowsProgramProcessController } = require('../../host/kernels/thunder/driver');
 
 test('native driver 路径恒等、launch args 显式 addon、env 无 WSL 痕迹', () => {
   const driver = new WindowsNodeDriver({
@@ -15,8 +15,10 @@ test('native driver 路径恒等、launch args 显式 addon、env 无 WSL 痕迹
   // 路径恒等：宿主与引擎同文件系统，无翻译层
   assert.equal(driver.toEnginePath('C:\\Users\\test\\downloads'), 'C:\\Users\\test\\downloads');
   assert.equal(driver.engineMode, 'native');
-  // 测试跑在 Linux（path 分隔符是 /），用 path.join 断言与实现同一规则；真机 win32 下两者天然一致
-  assert.equal(driver.engineScript, path.join('C:\\repo', 'apps', 'daemon', 'engine', 'engine.js'));
+  // 测试跑在 Linux（path 分隔符是 /），用 path.join 断言与实现同一规则；真机 win32 下两者天然一致。
+  // P2（cordis-arch）：engineScript 相对 driver 实现解析（host/kernels/thunder/engine/），
+  // 不再依赖 repoRoot 下的 apps/daemon/engine 旧路径。
+  assert.equal(driver.engineScript, path.join(path.dirname(require.resolve('../../host/kernels/thunder/driver.js')), 'engine', 'engine.js'));
   // 引擎参数：显式 addon，路径经 path 规范化（无 Z: 前缀、无 UNC）
   assert.deepEqual(driver._launchArguments(16800), [
     driver.engineScript, '--port', '16800',

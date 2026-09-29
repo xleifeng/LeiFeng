@@ -1,30 +1,17 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
 import { useUiCapabilitiesStore } from '../stores/ui-capabilities'
-import { navContributions, routeContributions } from '../app/plugins'
+import { routeContributions } from '../app/plugins'
+import { builtinRoutes, registerBuiltinFeatures } from '../app/builtin'
 
-// 核心路由 + 插件注册表贡献合并；capability 缺省（旧 daemon / 未门控）时全量生效。
-const coreRoutes: RouteRecordRaw[] = [
-  { path: '/', redirect: '/download' },
-  { path: '/download', name: 'task-center', component: () => import('../views/downloads/TaskCenterPage.vue'), meta: { title: '下载', taskView: 'downloading' } },
-  { path: '/download/downloading', redirect: (to) => ({ path: '/download', query: { ...to.query, tab: 'downloading' } }) },
-  { path: '/download/completed', redirect: (to) => ({ path: '/download', query: { ...to.query, tab: 'completed' } }) },
-  { path: '/private-space', name: 'private-space', component: () => import('../views/private-space/PrivateSpaceView.vue'), meta: { title: '私人空间', capability: 'private-space' } },
-  { path: '/history', name: 'history', component: () => import('../views/history/DownloadHistoryView.vue'), meta: { title: '下载记录', capability: 'history' } },
-  { path: '/links', name: 'links', component: () => import('../views/link-library/LinkLibraryView.vue'), meta: { title: '链接库', capability: 'link-library' } },
-  { path: '/links/:id', name: 'link-details', component: () => import('../views/link-library/LinkDetailsView.vue'), meta: { title: '链接详情', capability: 'link-library' } },
-  { path: '/trash', name: 'trash', component: () => import('../views/downloads/TrashView.vue'), meta: { title: '回收站', taskView: 'trash' } },
-  { path: '/settings', name: 'settings', component: () => import('../views/settings/DownloadSettingsView.vue'), meta: { title: '下载设置' } },
-  { path: '/settings/integration', name: 'integration-settings', component: () => import('../views/settings/IntegrationSettingsView.vue'), meta: { title: '系统集成' } },
-  { path: '/remote', name: 'remote', component: () => import('../views/remote/RemoteDownloadsView.vue'), meta: { title: '远程下载', capability: 'remote' } },
-  { path: '/diagnostics', name: 'diagnostics', component: () => import('../views/diagnostics/DiagnosticsView.vue'), meta: { title: '诊断' } },
-  { path: '/status', redirect: '/diagnostics' },
-]
+// P6（cordis-arch）：内置功能贡献化——路由表不再本地持 coreRoutes，builtin 插件
+// 经 registerFrontendPlugin 贡献（与运行期前端插件同一面）；注册表响应式派生
+// routeContributions 即初始路由表。模块级一次性注册（幂等）。
+registerBuiltinFeatures()
 
 export const router = createRouter({
   history: createWebHashHistory(),
-  // 编译期只有核心路由；插件路由由 loader 在运行期 router.addRoute（响应式注册表）
-  routes: [...coreRoutes],
+  // capability 缺省（旧 daemon / 未门控）时全量生效。
+  routes: [...routeContributions.value],
 })
 
 // 能力守卫：目标路由声明了不可用能力时回退到任务中心。
@@ -36,4 +23,4 @@ router.beforeEach((to) => {
   return capabilities.enabled(capability as never) ? true : '/download'
 })
 
-export { coreRoutes, navContributions }
+export { navContributions } from '../app/plugins'

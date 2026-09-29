@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildVipDescriptor } = require('../../host/src/vip-descriptor');
+const { buildVipDescriptor } = require('../../host/kernels/thunder/vip-descriptor');
 
 const base = (overrides = {}) => ({ gid: 'g1', engineId: 1, taskType: 'http', taskName: 'a.bin', url: 'https://x/a.bin',
   selectedFileIndices: [], fileLists: [], vipEnabled: true, metadataPhase: '', ...overrides });

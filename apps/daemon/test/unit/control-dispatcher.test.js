@@ -8,7 +8,9 @@ const path = require('node:path');
 const { DaemonControlDispatcher } = require('../../host/src/control/dispatcher');
 const { RpcRegistry } = require('../../host/src/rpc/registry');
 const { createTaskControlMethods } = require('../../host/src/rpc/task-control-methods');
-const { createProductControlMethods } = require('../../host/src/rpc/product-control-methods');
+const { createMediaCaptureControlMethods } = require('../../host/src/rpc/media-capture-control-methods');
+const { createRemoteControlMethods } = require('../../host/src/rpc/remote-control-methods');
+const { createDiagnosticsControlMethods } = require('../../host/src/rpc/diagnostics-control-methods');
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'control-dispatcher-')); const uploadsDir = path.join(root, 'uploads'); fs.mkdirSync(uploadsDir);
@@ -22,7 +24,10 @@ function fixture() {
   const config = { runtimeDir: root, uploadsDir, maxTorrentUploadBytes: 1024, version: 'test', rpcSecret: '' };
   const registry = new RpcRegistry();
   registry.register('test:task', createTaskControlMethods({ ...services, config }));
-  registry.register('test:product', createProductControlMethods({ ...services, config }));
+  // P4 拆分后 product 控制面三域独立注册（media-capture / remote / diagnostics）
+  registry.register('test:media-capture', createMediaCaptureControlMethods({ media: services.media, capture: services.capture, config }));
+  registry.register('test:remote', createRemoteControlMethods({ remotePairing: services.remotePairing, taskQueryService: services.taskQueryService, operationService: services.operationService, createDraftService: services.createDraftService, media: services.media, config }));
+  registry.register('test:diagnostics', createDiagnosticsControlMethods({ diagnostics: services.diagnostics, config }));
   const dispatcher = new DaemonControlDispatcher({
     config, handle: async (method, params) => ({ method, params }), registry,
   });

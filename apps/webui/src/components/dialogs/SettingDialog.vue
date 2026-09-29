@@ -10,6 +10,7 @@ import { usePluginManagerStore } from '../../stores/plugin-manager'
 import { useUiCapabilitiesStore } from '../../stores/ui-capabilities'
 import { settingSectionContributions } from '../../app/plugins'
 
+// P6：核心分区 id 集（builtin 贡献的 6 项）——内容区分支判断用（核心走内联模板，插件走 component）
 type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'integration' | 'plugin-manager'
 
 const form = useDownloadPolicyFormStore()
@@ -20,19 +21,13 @@ const pluginManager = usePluginManagerStore()
 const activeSection = ref<Section | string>('basic')
 const notice = ref('')
 
-// 核心分区 + 插件注册表贡献合并（运行期响应式）；capability 缺省项恒显示（views 缺失 = 不门控）
-const navigation: { id: Section; label: string; capability?: 'remote' }[] = [
-  { id: 'basic', label: '基本设置' },
-  { id: 'download', label: '下载设置' },
-  { id: 'tasks', label: '任务管理' },
-  { id: 'automation', label: '计划任务' },
-  { id: 'integration', label: '系统集成' },
-  { id: 'plugin-manager', label: '插件管理' },
-]
-const visibleNavigation = computed(() => [...navigation, ...settingSectionContributions.value].filter((item) => !item.capability || capabilities.enabled(item.capability)))
+// P6：核心分区已贡献化（builtin 插件经 registerFrontendPlugin），本组件只消费注册表派生流
+const visibleNavigation = computed(() => settingSectionContributions.value.filter((item) => !item.capability || capabilities.enabled(item.capability)))
 
-// activeSection 命中插件贡献分区时（id 非核心枚举），内容区渲染其 component
-const activePluginSection = computed(() => settingSectionContributions.value.find((section) => section.id === activeSection.value))
+// activeSection 命中插件贡献分区时（id 非核心枚举），内容区渲染其 component；
+// builtin 贡献的核心 6 分区无 component，须排除在本分支外（否则落「未提供内容组件」空态）
+const coreSectionIds: readonly string[] = ['basic', 'download', 'tasks', 'automation', 'integration', 'plugin-manager']
+const activePluginSection = computed(() => coreSectionIds.includes(activeSection.value) ? undefined : settingSectionContributions.value.find((section) => section.id === activeSection.value))
 
 watch(activeSection, (section) => {
   // 插件管理分区的数据面独立于下载策略 form：进入即拉取（幂等，失败可重试）
@@ -130,7 +125,13 @@ async function restore() {
             />
             <span class="plugin-manager-label">
               <span class="plugin-manager-id">{{ plugin.id }}</span>
-              <span class="plugin-manager-provides">提供 {{ plugin.provides.join(' / ') || '—' }}</span>
+              <span class="plugin-manager-provides">
+                提供 {{ plugin.provides.join(' / ') || '—' }}
+                <template v-if="plugin.defaultEnabled === false && plugin.enabled">（默认关，已显式启用）</template>
+                <template v-else-if="plugin.defaultEnabled === false">（默认关）</template>
+                <template v-else-if="plugin.explicit === true">（已显式启用）</template>
+                <template v-else-if="plugin.explicit === false">（已显式禁用）</template>
+              </span>
             </span>
           </label>
         </template>

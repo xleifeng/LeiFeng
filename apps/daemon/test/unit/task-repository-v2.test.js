@@ -51,6 +51,23 @@ test('mutation uses revision/fileRevision and appends outbox atomically', () => 
   assert.throws(() => repo.mutate(task.id, { expectedRevision: 1 }, { displayName: 'c' }), (error) => error.code === 'REVISION_CONFLICT');
 });
 
+test('P4 消费者注册：eventConsumers 注入驱动事件受众（缺省保持 history/links）', () => {
+  const p = paths();
+  const custom = new TaskRepository({ filePath: p.file, legacyFilePath: p.legacy, eventConsumers: ['history'] });
+  custom.load();
+  custom.create({ source: 'http://x/a', savePath: p.dir, displayName: 'a', kind: 'http' });
+  // 注入面：history 有事件、links 无事件（不再写死名单）
+  assert.ok(custom.listUnacknowledgedEvents('history').length >= 1);
+  assert.equal(custom.listUnacknowledgedEvents('links').length, 0);
+  // 缺省面：不传 eventConsumers 的仓库行为与历史一致（history/links 双受众）
+  const p2 = paths();
+  const legacy = new TaskRepository({ filePath: p2.file, legacyFilePath: p2.legacy });
+  legacy.load();
+  legacy.create({ source: 'http://x/b', savePath: p2.dir, displayName: 'b', kind: 'http' });
+  assert.ok(legacy.listUnacknowledgedEvents('history').length >= 1);
+  assert.ok(legacy.listUnacknowledgedEvents('links').length >= 1);
+});
+
 test('observation revision does not conflict with command revision', () => {
   const p = paths(); const repo = new TaskRepository({ filePath: p.file, legacyFilePath: p.legacy }); repo.load();
   const task = repo.create({ source: 'http://x/a', savePath: p.dir, displayName: 'a', kind: 'http' });

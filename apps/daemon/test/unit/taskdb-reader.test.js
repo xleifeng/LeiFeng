@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { readTasks, readVipTasks, readNativeBtTasks, hasSqlite } = require('../../host/src/taskdb-reader');
+const { readTasks, readVipTasks, readNativeBtTasks, hasSqlite } = require('../../host/kernels/thunder/taskdb-reader');
 
 test('readTasks returns rows keyed by TaskId', { skip: !hasSqlite && 'sqlite3 missing' }, async () => {
   const db = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'taskdb-')), 'TaskDb.dat');
@@ -85,7 +85,7 @@ test('readNativeBtTasks finds persisted BT rows and filters by native path/name'
 });
 
 // ---- node:sqlite reader（Windows native 模式）----
-const { createNodeSqliteTaskDbReader } = require('../../host/src/taskdb-reader');
+const { createNodeSqliteTaskDbReader } = require('../../host/kernels/thunder/taskdb-reader');
 const { DatabaseSync } = require('node:sqlite');
 
 test('node:sqlite reader 与 CLI reader 行为对齐（tasks/vip/native-bt）', async () => {

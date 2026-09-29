@@ -3,7 +3,7 @@
 const { EventEmitter } = require('events');
 const { buildVipDescriptor } = require('./vip-descriptor');
 const { readSdkPeerId } = require('./sdk-peer-id');
-const { classifyVipAccount } = require('./vip-account');
+const { classifyVipAccount } = require('../../src/domain/vip-account');
 
 const TRACKED = new Set(['active', 'waiting']);
 const TERMINAL = new Set(['complete', 'error', 'removed']);

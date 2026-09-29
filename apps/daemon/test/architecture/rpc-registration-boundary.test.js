@@ -11,6 +11,9 @@ const hostRoot = path.join(__dirname, '../../host');
 test('rpc-host 与 methods.js 不含业务方法名字面量（壳零 RPC）', () => {
   const mechanismFiles = [
     path.join(hostRoot, 'plugins/rpc-host.cjs'),
+    path.join(hostRoot, 'plugins/rpc-registry.cjs'),
+    path.join(hostRoot, 'plugins/request-policy.cjs'),
+    path.join(hostRoot, 'plugins/control-transport.cjs'),
     path.join(hostRoot, 'src/methods.js'),
     path.join(hostRoot, 'src/control/dispatcher.js'),
     path.join(hostRoot, 'src/rpc/registry.js'),
@@ -38,4 +41,14 @@ test('account.*/vip.* 注册点只在 kernel-thunder（迅雷绑定域随内核�
     for (const hit of hits) violations.push(`${name}: ${hit}`);
   }
   assert.deepEqual(violations, []);
+});
+
+test('P4 拆分无方法丢失：聚合方法面的注册点守卫（restartEngine 随 product-core）', () => {
+  // P4 拆分时 restartEngine 曾随 product-services 退役丢失（e2e sup1v2 抓回）——
+  // 静态钉死：内核生命周期 system 面注册在 product-core（聚合核持 driver/operations/eventBus）。
+  const productCore = fs.readFileSync(path.join(hostRoot, 'plugins/product-core.cjs'), 'utf8');
+  assert.match(productCore, /createSystemMethods\(\{[^}]*driver/s, 'product-core 须注册 system 面（含 restartEngine）');
+  // 其余域插件不得重复注册（media-capture 只持 mediaCapabilities——createSystemMethods media 专属面）
+  const mediaCapture = fs.readFileSync(path.join(hostRoot, 'plugins/media-capture.cjs'), 'utf8');
+  assert.doesNotMatch(mediaCapture, /restartEngine/, 'media-capture 不注册内核生命周期面');
 });

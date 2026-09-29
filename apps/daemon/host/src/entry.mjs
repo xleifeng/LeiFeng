@@ -15,7 +15,7 @@ export async function main(argv = process.argv.slice(2)) {
   // 仅 daemon 侧 profile 读取；bridge-host 无此插件面。
   let statePatch;
   if (profile === 'thunderd' || profile === 'thunderd-core') {
-    const { readDisabledState } = require('../plugins/plugin-admin.cjs');
+    const { readEnabledState } = require('../plugins/plugin-admin.cjs');
     const runtimeDir = process.env.THUNDERD_RUNTIME_DIR
       ? require('node:path').resolve(process.env.THUNDERD_RUNTIME_DIR)
       : null;
@@ -24,15 +24,18 @@ export async function main(argv = process.argv.slice(2)) {
       // tlei- → leifeng- 前缀（leifeng 改名，2026-09-29）。旧 disabled 集合里的
       // id 映射到新 id，保证升级后禁用意图不丢失。
       const migrated = {
-        'control-rpc': 'rpc-host',
+        'control-rpc': 'rpc-host', 'rpc-host': 'control-transport',
+        // P4 拆分迁移：product-services 的禁用意图映射到聚合核 product-core
+        //（域插件是新面，旧意图保守落在核上——用户可再细调各域）。
+        'product-services': 'product-core',
         'tlei-runtime-config': 'leifeng-runtime-config', 'tlei-repositories': 'leifeng-repositories',
         'tlei-kernel-hub': 'leifeng-kernel-hub', 'tlei-rpc-host': 'leifeng-rpc-host',
         'tlei-kernel-thunder': 'leifeng-kernel-thunder', 'tlei-kernel-qbit': 'leifeng-kernel-qbit',
         'tlei-task-shell': 'leifeng-task-shell', 'tlei-product-services': 'leifeng-product-services',
         'tlei-plugin-admin': 'leifeng-plugin-admin', 'tlei-web-api-process': 'leifeng-web-api-process',
       };
-      statePatch = readDisabledState(runtimeDir)
-        .map((id) => ({ id: migrated[id] || id, enabled: false }));
+      statePatch = Object.entries(readEnabledState(runtimeDir))
+        .map(([id, enabled]) => ({ id: migrated[id] || id, enabled }));
     }
   }
   if (profile === 'bridge-host') {

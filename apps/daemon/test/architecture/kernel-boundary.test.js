@@ -46,6 +46,51 @@ test('poller 观察通道纯构造注入（迅雷 TaskDb 回退在 kernel-thunde
   assert.equal(/require\([^)]*taskdb-reader/.test(source), false, 'poller 已不依赖 taskdb-reader');
 });
 
+// P3（cordis-arch）新守卫：壳层源码不 import 内核私有模块——host/kernels/ 是
+// 内核实现树（thunder/qbit 私有领地），P2 搬迁后旧路径兼容转发文件已删，
+// 壳层对内核的一切消费必须经 KernelPort 契约或 hub slot 富件，静态钉死
+// 不许任何 require 直接伸进 kernels/（防止转发文件与跨树引用回潮）。
+test('壳层源码不 require host/kernels/ 内核私有模块', () => {
+  const root = path.join(__dirname, '../../host/src');
+  const shellDirs = ['domain', 'services', 'repositories', 'rpc', 'control', 'security', 'adapters', 'secrets', 'remote'];
+  const violations = [];
+  const scan = (file) => {
+    const requires = [...fs.readFileSync(file, 'utf8').matchAll(/require\((['"])([^'"]+)\1\)/g)].map((m) => m[2]);
+    for (const spec of requires) {
+      if (/kernels\//.test(spec.replace(/\\/g, '/'))) violations.push(`${path.relative(root, file)} -> ${spec}`);
+    }
+  };
+  for (const dir of shellDirs) {
+    const dirPath = path.join(root, dir);
+    if (!fs.existsSync(dirPath)) continue;
+    for (const name of fs.readdirSync(dirPath).filter((n) => n.endsWith('.js'))) scan(path.join(dirPath, name));
+  }
+  for (const name of fs.readdirSync(root).filter((n) => n.endsWith('.js'))) scan(path.join(root, name));
+  assert.deepEqual(violations, [], '壳层对内核的消费只许经 KernelPort / hub slot');
+});
+
+// P3：反向也钉死——内核树对壳层的依赖只许是纯领域模块（domain/ 下的纯函数），
+// 不许拉 services/rpc/repositories 等有状态壳件（内核实现保持可独立装载）。
+test('内核树 require 壳层只限纯领域模块（domain/）', () => {
+  const root = path.join(__dirname, '../../host/kernels');
+  const violations = [];
+  const scan = (dirPath) => {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      const file = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) { scan(file); continue; }
+      if (!entry.name.endsWith('.js')) continue;
+      const requires = [...fs.readFileSync(file, 'utf8').matchAll(/require\((['"])(\.\.[^'"]+)\1\)/g)].map((m) => m[2]);
+      for (const spec of requires) {
+        if (/src\/(services|rpc|repositories|control|security|adapters|secrets|remote)\//.test(spec)) {
+          violations.push(`${path.relative(root, file)} -> ${spec}`);
+        }
+      }
+    }
+  };
+  scan(root);
+  assert.deepEqual(violations, [], '内核树对壳层只许依赖 src/domain 纯函数');
+});
+
 // P1：壳层 services 对 driver 的成员访问必须 ⊆ KernelPort 契约面——
 // 契约外成员（如迅雷内部 SDK 调用）只能住在 kernel 插件里，静态扫描兜底。
 const { KERNEL_METHODS, KERNEL_PROPERTIES } = require('../../host/src/domain/kernel-port');

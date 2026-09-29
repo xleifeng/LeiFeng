@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test'); const assert = require('node:assert/strict');
 const { KERNEL_PROTOCOL_ROUTES, supportedProtocols, resolveCreateKernel } = require('../../host/src/domain/create-router');
-const { WineNodeDriver, WindowsNodeDriver } = require('../../host/src/driver');
+const { WineNodeDriver, WindowsNodeDriver } = require('../../host/kernels/thunder/driver');
 
 test('路由表：单一内核时代每个受支持 kind 都路由到 thunder', () => {
   for (const kind of ['http', 'https', 'ftp', 'magnet', 'bt', 'ed2k', 'thunder']) {
@@ -16,12 +16,13 @@ test('qbit 条目就位但 bt/magnet 默认仍路由 thunder（首命中不漂�
   assert.equal(resolveCreateKernel('magnet'), 'thunder');
 });
 
-test('未知 kind 与非法输入返回 null（不抛错）', () => {
+test('未知 kind 与非法输入返回 null（不抛错）；无参调用兜底表序首内核', () => {
   assert.equal(resolveCreateKernel('unknown'), null);
   assert.equal(resolveCreateKernel(''), null);
   assert.equal(resolveCreateKernel(null), null);
-  assert.equal(resolveCreateKernel(undefined), null);
   assert.equal(resolveCreateKernel(123), null);
+  // P3：无参调用（undefined）= CreateTaskService defaultKernelId 兜底语义
+  assert.equal(resolveCreateKernel(), 'thunder');
 });
 
 test('supportedProtocols 多内核汇总去重（qbit 子集并入不重复）', () => {

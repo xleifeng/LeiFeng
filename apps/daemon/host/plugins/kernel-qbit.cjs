@@ -2,10 +2,10 @@
 // kernel-qbit：qBittorrent 参照内核插件（P3）——KernelPort 完备性验证用第二内核。
 // kernel-any-only 后升级为常驻 profile 成员（defaultEnabled:false）：patch
 // { id: 'kernel-qbit', enabled: true } 启用。slot 标准形状注册进 kernel-hub
-// （kernel + 事件桥 + diagnosticEvents + start）；poller/account/taskDbReaders
+// （kernel + 事件桥 + diagnosticEvents + start）；poller/account/nativeBtLookup
 // 是迅雷槽富件，qbit 不提供（缺席语义，消费方可选链）。account 槽不 provide
 // ——qbit-only 下 account.*/vip.* 整体 -32601（rpc 注册点在 kernel-thunder）。
-const { QbitDriver } = require('../src/qbit-driver');
+const { QbitDriver } = require('../kernels/qbit/qbit-driver');
 const { assertKernel } = require('../src/domain/kernel-port');
 const { DomainEventBus } = require('../src/services/domain-event-bus');
 const { DiagnosticEventBuffer } = require('../src/domain/diagnostic-events');

@@ -46,7 +46,7 @@ async function main() {
     server.once('connection', (s) => { clearTimeout(t); res(s); });
   });
 
-  const engineScript = path.join(repoRoot, 'apps', 'daemon', 'engine', 'engine.js');
+  const engineScript = path.join(repoRoot, 'apps', 'daemon', 'host', 'kernels', 'thunder', 'engine', 'engine.js');
   const thunderExe = path.join(repoRoot, 'thunder_x', 'program', 'thunder.exe');
   const logFd = fs.openSync(path.join(runtime, 'engine.log'), 'a');
   child = spawn('wine', [winePath(thunderExe), winePath(engineScript), '--port', String(tcpPort), '--profile', winePath(runtime)], {

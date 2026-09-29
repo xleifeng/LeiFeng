@@ -5,14 +5,14 @@
 // TaskDb 直读、OAuth device flow、VIP 加速）从此全部住进本插件内部。
 const path = require('path');
 const fs = require('fs');
-const { WineNodeDriver, WindowsNodeDriver } = require('../src/driver');
-const { readVipTasks, readNativeBtTasks, createNodeSqliteTaskDbReader } = require('../src/taskdb-reader');
-const { CredentialWallet } = require('../src/auth-wallet');
-const { AuthManager, clampKeepAliveSec } = require('../src/auth-manager');
-const { CLIENT_ID, CLIENT_SECRET } = require('../src/xunlei-client-config');
-const { readSdkPeerId } = require('../src/sdk-peer-id');
-const { VipSpeedupClient } = require('../src/vip-speedup-client');
-const { VipAccelerationManager } = require('../src/vip-manager');
+const { WineNodeDriver, WindowsNodeDriver } = require('../kernels/thunder/driver');
+const { readVipTasks, readNativeBtTasks, createNodeSqliteTaskDbReader } = require('../kernels/thunder/taskdb-reader');
+const { CredentialWallet } = require('../kernels/thunder/auth-wallet');
+const { AuthManager, clampKeepAliveSec } = require('../kernels/thunder/auth-manager');
+const { CLIENT_ID, CLIENT_SECRET } = require('../kernels/thunder/xunlei-client-config');
+const { readSdkPeerId } = require('../kernels/thunder/sdk-peer-id');
+const { VipSpeedupClient } = require('../kernels/thunder/vip-speedup-client');
+const { VipAccelerationManager } = require('../kernels/thunder/vip-manager');
 const { ProgressPoller } = require('../src/poller');
 const { DomainEventBus } = require('../src/services/domain-event-bus');
 const { DiagnosticEventBuffer } = require('../src/domain/diagnostic-events');
@@ -77,7 +77,7 @@ const kernelThunder = plugin('leifeng-kernel-thunder', ['leifengConfig', 'leifen
   // ---- 观察通道（原 event-observation）：迅雷特有 TaskDb 直读回退住内核内部 ----
   const eventBus = new DomainEventBus();
   const diagnosticEvents = new DiagnosticEventBuffer();
-  const { hasSqlite, readTasks } = require('../src/taskdb-reader');
+  const { hasSqlite, readTasks } = require('../kernels/thunder/taskdb-reader');
   const poller = new ProgressPoller(taskRepository, {
     dbPath: driver.taskDbPath,
     readTasksFn: (ids) => driver.getTaskSnapshots(ids).catch(() => (hasSqlite ? readTasks(driver.taskDbPath, ids) : [])),
@@ -151,6 +151,9 @@ const kernelThunder = plugin('leifeng-kernel-thunder', ['leifengConfig', 'leifen
     poller,
     account: { wallet, auth, vipManager, accountService },
     taskDbReaders,
+    // P3（cordis-arch）：壳层 BT 查重入口——闭包 taskDbPath，壳层不再接触
+    // 迅雷 TaskDb 路径与 reader 形状（qbit 等内核缺席此富件即走旧创建路径）。
+    nativeBtLookup: (infoId) => taskDbReaders.readNativeBtTasks(driver.taskDbPath, infoId),
     crashInfoPath,
     peerIdCandidates,
     start: () => { poller.start(); driver.start(); },

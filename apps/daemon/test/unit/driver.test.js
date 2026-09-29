@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { WineNodeDriver, linuxToWinePath } = require('../../host/src/driver');
+const { WineNodeDriver, linuxToWinePath } = require('../../host/kernels/thunder/driver');
 const { startFakeEngine, createInMemoryDriverHarness } = require('./helpers/fake-engine');
 
 const FAKE = path.join(__dirname, 'helpers', 'fake-engine.js');

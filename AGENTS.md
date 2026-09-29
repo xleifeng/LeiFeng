@@ -7,9 +7,9 @@ leifeng 是迅雷（Thunder）Linux 下载栈的逆向移植与产品化仓库�
 ```
 apps/
   daemon/          thunderd 宿主：CJS 领域类 + Cordis 插件树装配
-    engine/        原生引擎 JS（Wine 下驱动迅雷 SDK 的 dk_addon.node）
     host/src/      domain / services / repositories / rpc 源码；entry.mjs 为 launcher 入口
     host/plugins/  daemon 插件定义（一插件一文件 + index.cjs 汇总）
+    host/kernels/  内核实现包（thunder: driver/engine/账号/VIP；qbit: qbit-driver）
     test/          unit / architecture / regression
   web-api/         外部 HTTP 网关：JSON-RPC、静态 WebUI、mTLS 远程面
   webui/           原生风格 WebUI（Vue 3 + Vite + Playwright 像素验收）

@@ -5,8 +5,11 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, execFile } = require('child_process');
 const { EngineClient } = require('./engine-client');
-const { repairTorrentSdkResult } = require('./domain/native-text');
-const { supportedProtocols } = require('./domain/create-router');
+const { repairTorrentSdkResult } = require('../../src/domain/native-text');
+
+// 迅雷内核协议能力声明（P3：内核自持，与 qbit 的 QBIT_PROTOCOLS 同型；
+// 壳侧 create-router 路由表条目须 ⊆ 此声明，一致性由单测钉死）
+const THUNDER_PROTOCOLS = Object.freeze(['http', 'https', 'ftp', 'magnet', 'bt', 'ed2k', 'thunder']);
 
 const DEFAULT_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 32000, 60000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -77,7 +80,7 @@ class EngineDriverBase extends EventEmitter {
     this.repoRoot = opts.repoRoot;
     this.programDir = opts.programDir || path.join(opts.repoRoot, 'thunder_x', 'program');
     this.thunderExe = path.join(this.programDir, 'thunder.exe'); // Electron-as-Node 运行时
-    this.engineScript = opts.engineScript || path.join(opts.repoRoot, 'apps', 'daemon', 'engine', 'engine.js');
+    this.engineScript = opts.engineScript || path.join(__dirname, 'engine', 'engine.js');
     this.profileDir = opts.profileDir;
     this.logFile = opts.logFile || path.join(opts.profileDir, 'engine.log');
     this.toEnginePath = opts.toEnginePath || ((value) => value);
@@ -104,9 +107,10 @@ class EngineDriverBase extends EventEmitter {
 
   isHealthy() { return this._healthy && this.sdkReady && this.client.isConnected(); }
   enginePid() { return this.child && !this.child.killed ? this.child.pid : null; }
-  // P2：内核协议能力声明（KernelPort 契约方法，与观察方法同返回 Promise）。
-  // 单一来源是 domain/create-router 的路由表——迅雷内核静态面，双实现一致。
-  async getSupportedProtocols() { return supportedProtocols(); }
+  // P3（cordis-arch）：内核协议能力声明（KernelPort 契约方法）改为内核自持常量——
+  // 能力声明的真源是内核自身，壳侧路由表（create-router）只做默认序与兜底，
+  // 两者一致性由 create-router 单测钉死（表 ⊆ 驱动声明双向）。
+  async getSupportedProtocols() { return [...THUNDER_PROTOCOLS]; }
 
   // engine.log 大小轮转：append-only 无上限会吃盘（Wine 崩溃时的句柄 dump 一次可数 KB，
   // respawn 循环下增长加速）。每次 boot 前检查，超限轮转保留一份旧档。
@@ -539,6 +543,7 @@ module.exports = {
   WineNodeDriver,
   WindowsNodeDriver,
   WindowsProgramProcessController,
+  THUNDER_PROTOCOLS,
   linuxToWinePath,
   defaultSdkReadyCheck,
   discoverSdkPids,

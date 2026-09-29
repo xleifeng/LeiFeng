@@ -15,7 +15,7 @@ const {
   APP_NAME,
   buildDesktopAuthHeaders,
 } = require('./xunlei-client-config');
-const { classifyVipAccount } = require('./vip-account');
+const { classifyVipAccount } = require('../../src/domain/vip-account');
 const NOTIFY_SEQUENCE = ['setUserInfo', 'setCurrentPanUserId', 'setGlobalExtInfo'];
 
 // devicesign = "div101." + deviceId + md5(sha1hex(deviceId+bundleName+appId+appSignKey))（signing.md §2 实证）

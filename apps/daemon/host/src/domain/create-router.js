@@ -1,12 +1,16 @@
 'use strict';
 
 /**
- * create 路由表（P2）：协议 kind → 下载内核的映射。
+ * 协议路由表（P3 能力化）：内核 ID → 协议 kind 集合的**能力声明序**。
  *
- * 单一来源是 KERNEL_PROTOCOL_ROUTES 常量——内核侧能力声明
- * （driver.getSupportedProtocols）与壳侧创建路由（resolveCreateKernel）
- * 是同一张表的两个视图，一致性由单测钉死。P3 第二内核接入时只改此表
- * 与 registry 查询，壳层装配面不动。
+ * 语义拆分（P2 的常量表正名）：
+ *  - 各内核的**真能力声明**住内核自身（driver.getSupportedProtocols），
+ *    单测钉死本表条目 ⊆ 驱动声明（两视图不漂移）；
+ *  - 本表只承担两件事：① 默认内核解析序（hub.default 无显式 defaultKernelId
+ *    时按表序取第一个已注册内核）；② create 兜底路由（CreateTaskService
+ *    未显式传 defaultKernelId 时的 resolveCreateKernel()）。
+ *  - bootstrap 的能力上报不走本表（P2 起由 KernelPort.getSupportedProtocols
+ *    声明，见 bootstrap-service）。
  */
 
 const KERNEL_PROTOCOL_ROUTES = Object.freeze({
@@ -21,10 +25,13 @@ function supportedProtocols() {
 
 /**
  * 按 kind 解析创建路由的内核 ID。
- * @param {string} kind 协议 kind（http/https/ftp/magnet/bt/ed2k/thunder）
+ * @param {string} kind 协议 kind（http/https/ftp/magnet/bt/ed2k/thunder）；
+ *   无参调用（undefined）取表序首内核（CreateTaskService 的 defaultKernelId 兜底）；
+ *   非字符串/未知 kind 返回 null（非法输入不兜底）
  * @returns {string|null} 内核 ID；无内核声明该协议时 null
  */
 function resolveCreateKernel(kind) {
+  if (kind === undefined) return Object.keys(KERNEL_PROTOCOL_ROUTES)[0] ?? null;
   if (!kind || typeof kind !== 'string') return null;
   for (const [kernelId, protocols] of Object.entries(KERNEL_PROTOCOL_ROUTES)) {
     if (protocols.includes(kind)) return kernelId;

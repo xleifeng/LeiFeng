@@ -16,18 +16,22 @@ class RpcRegistry {
   }
 
   /**
-   * 批量注册。entries: Map 或任意 [name, handler] 可迭代对象。
+   * 批量注册（P1 cordis-arch 原子化）：先验证整批再写入——批次中途冲突/
+   * 非法名时整批拒绝，不留半批方法。entries: Map 或任意 [name, handler] 可迭代对象。
    * 返回撤销函数（撤销本次注册且未被他人接管的条目）。
    */
   register(owner, entries) {
     if (typeof owner !== 'string' || !owner) throw new Error('RpcRegistry.register 需要非空 owner（插件 id）');
     if (!entries || typeof entries[Symbol.iterator] !== 'function') throw new Error('RpcRegistry.register 需要可迭代的 [name, handler] 条目');
-    const added = [];
-    for (const [name, handler] of entries) {
+    const batch = [...entries];
+    for (const [name, handler] of batch) {
       if (typeof name !== 'string' || !ALLOWED_PREFIXES.some((prefix) => name.startsWith(prefix)))
         throw new Error(`RPC 方法名不在受支持命名空间: ${name}`);
       if (typeof handler !== 'function') throw new Error(`RPC handler 必须是函数: ${name}`);
       if (this._methods.has(name)) throw new Error(`RPC 方法已注册: ${name}（当前 owner: ${this._owners.get(name)}）`);
+    }
+    const added = [];
+    for (const [name, handler] of batch) {
       this._methods.set(name, handler);
       this._owners.set(name, owner);
       added.push(name);

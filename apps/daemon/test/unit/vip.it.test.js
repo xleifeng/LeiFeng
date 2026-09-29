@@ -7,8 +7,8 @@ const os = require('os');
 const path = require('path');
 const { EventEmitter } = require('events');
 const { TaskRegistry } = require('../../host/src/registry');
-const { VipSpeedupClient } = require('../../host/src/vip-speedup-client');
-const { VipAccelerationManager } = require('../../host/src/vip-manager');
+const { VipSpeedupClient } = require('../../host/kernels/thunder/vip-speedup-client');
+const { VipAccelerationManager } = require('../../host/kernels/thunder/vip-manager');
 const { startFakeSpeedupServer } = require('./helpers/fake-speedup-server');
 
 test('VIP fake E2E：申请→enable→刷新→pause disable→unpause 新 cert→终态清理', async () => {

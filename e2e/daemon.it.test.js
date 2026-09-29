@@ -127,8 +127,8 @@ test('sup1: 插件管理面 plugins.list / setEnabled 持久化（plugin-admin�
   const before = await rpc(PORT, 'leifeng.ui.v2.plugins.list', [{}]);
   assert.ok(Array.isArray(before) && before.length > 0, 'plugins.list 应返回注册表全量');
   const byId = new Map(before.map((p) => [p.id, p]));
-  // 全 daemon profile 必含的面
-  for (const id of ['runtime-config', 'rpc-host', 'product-services', 'plugin-admin', 'web-api-process']) {
+  // 全 daemon profile 必含的面（P4 拆分后 product-services → 五插件）
+  for (const id of ['runtime-config', 'rpc-host', 'private-space', 'history-links', 'media-capture', 'remote-access', 'product-core', 'plugin-admin', 'web-api-process']) {
     assert.ok(byId.has(id), `plugins.list 应含 ${id}`);
     assert.equal(byId.get(id).enabled, true, `${id} 初始应为启用`);
   }
@@ -141,7 +141,8 @@ test('sup1: 插件管理面 plugins.list / setEnabled 持久化（plugin-admin�
   assert.equal(after.find((p) => p.id === 'web-api-process').enabled, false);
   const stateFile = path.join(runtime, 'plugin-state.json');
   assert.ok(fs.existsSync(stateFile), 'plugin-state.json 应落盘');
-  assert.deepEqual(JSON.parse(fs.readFileSync(stateFile, 'utf8')).disabled, ['web-api-process']);
+  // P0 三态：v2 形状 { enabled: { id: bool } }（v1 disabled 数组已退役）
+  assert.deepEqual(JSON.parse(fs.readFileSync(stateFile, 'utf8')).enabled, { 'web-api-process': false });
   // 复原（保持后续用例环境干净）
   await rpc(PORT, 'leifeng.ui.v2.plugins.setEnabled', [{ id: 'web-api-process', enabled: true }]);
 });

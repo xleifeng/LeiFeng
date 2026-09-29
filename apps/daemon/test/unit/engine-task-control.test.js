@@ -2,8 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createTaskControlHandlers } = require('../../engine/task-control');
-const { createBtControlHandlers } = require('../../engine/bt-control');
+const { createTaskControlHandlers } = require('../../host/kernels/thunder/engine/task-control');
+const { createBtControlHandlers } = require('../../host/kernels/thunder/engine/bt-control');
 
 function makeFixture() {
   const calls = [];

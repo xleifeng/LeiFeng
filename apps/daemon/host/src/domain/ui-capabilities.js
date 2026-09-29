@@ -9,12 +9,12 @@ const ALWAYS = Object.freeze(['tasks', 'settings', 'diagnostics']);
 /** 已知能力 ID 全集（声明处校验，防拼写漂移）。 */
 const KNOWN = Object.freeze(new Set([
   ...ALWAYS,
-  'history',          // 下载记录（product-services）
-  'link-library',     // 链接库（product-services）
-  'private-space',    // 私人空间（product-services）
-  'media',            // 媒体播放（product-services）
-  'capture',          // 浏览器捕获（product-services）
-  'remote',           // 远程节点（product-services）
+  'history',          // 下载记录（history-links 插件）
+  'link-library',     // 链接库（history-links 插件）
+  'private-space',    // 私人空间（private-space 插件）
+  'media',            // 媒体播放（media-capture 插件）
+  'capture',          // 浏览器捕获（media-capture 插件）
+  'remote',           // 远程节点（remote-access 插件）
 ]));
 
 function createUiCapabilityRegistry() {

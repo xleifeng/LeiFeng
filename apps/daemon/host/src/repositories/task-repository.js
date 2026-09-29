@@ -211,7 +211,7 @@ function hasMeaningfulChange(before, after, patch) {
 }
 
 class TaskRepository {
-  constructor({ filePath, legacyFilePath, clock = Date, idFactory, log = console, maxOutbox = 100000 } = {}) {
+  constructor({ filePath, legacyFilePath, clock = Date, idFactory, log = console, maxOutbox = 100000, eventConsumers = null } = {}) {
     if (!filePath) throw new Error('TaskRepository filePath is required');
     this.filePath = filePath;
     this.legacyFilePath = legacyFilePath || path.join(path.dirname(filePath), '..', 'registry.json');
@@ -219,6 +219,10 @@ class TaskRepository {
     this.idFactory = idFactory || (() => crypto.randomBytes(8).toString('hex'));
     this.log = log;
     this.maxOutbox = maxOutbox;
+    // P4（cordis-arch）outbox 消费者注册机制：事件受众由构造注入（缺省
+    // ['history','links'] 与历史行为一致），task 仓库不再写死功能名单——
+    // history/links 拆独立插件后经 repositories 装配面声明注册。
+    this.eventConsumers = Object.freeze([...new Set((Array.isArray(eventConsumers) ? eventConsumers : ['history', 'links']).map(String))]);
     this.state = { schemaVersion: SCHEMA_VERSION, repositoryRevision: 0, writtenAt: 0, tasks: [], outbox: [], outboxSequence: 0 };
     this.outbox = new EventOutbox({ maxEvents: maxOutbox, clock, idFactory: () => crypto.randomBytes(12).toString('hex') });
     this.loaded = false;
@@ -264,7 +268,7 @@ class TaskRepository {
       task.updatedAt = nowMs(this.clock);
       task.revision += 1;
       task.observationRevision += 1;
-      try { this._appendEvent({ type: 'task.lifecycle.changed', taskId: task.id, revision: task.revision, payload: { from: 'engine-running', to: 'failed', reason: 'engine restarted' }, requiredConsumers: ['history', 'links'] }); } catch (error) {
+      try { this._appendEvent({ type: 'task.lifecycle.changed', taskId: task.id, revision: task.revision, payload: { from: 'engine-running', to: 'failed', reason: 'engine restarted' }, requiredConsumers: this.eventConsumers }); } catch (error) {
         this.log.error?.('[task-repository] recovery event could not be queued:', error.message);
       }
       changed = true;
@@ -352,7 +356,7 @@ class TaskRepository {
     if (this.state.tasks.some((item) => item.id === task.id)) { const error = new Error('task id already exists'); error.code = 'TASK_ID_CONFLICT'; throw error; }
     this.state.tasks.push(task);
     this.state.repositoryRevision += 1;
-    this._appendEvent({ type: 'task.created', taskId: task.id, revision: task.revision, payload: { task: clone(task) }, requiredConsumers: ['history', 'links'] });
+    this._appendEvent({ type: 'task.created', taskId: task.id, revision: task.revision, payload: { task: clone(task) }, requiredConsumers: this.eventConsumers });
     this._writeAtomic();
     return clone(task);
   }
@@ -379,8 +383,8 @@ class TaskRepository {
     this.state.repositoryRevision += 1;
     // 事件随 tasks.json 同一持久化事务落盘；payload 带任务快照使 UI 状态可从 outbox 重放
     // （task.updated 曾只有 reason，compact 后无法重建投影，见 spec §7）。
-    if (lifecycleChanged) this._appendEvent({ type: 'task.lifecycle.changed', taskId: next.id, revision: next.revision, payload: { from: current.lifecycle, to: next.lifecycle, reason, task: clone(next) }, requiredConsumers: ['history', 'links'] });
-    else if (meaningful) this._appendEvent({ type: 'task.updated', taskId: next.id, revision: next.revision, payload: { reason, task: clone(next) }, requiredConsumers: ['history', 'links'] });
+    if (lifecycleChanged) this._appendEvent({ type: 'task.lifecycle.changed', taskId: next.id, revision: next.revision, payload: { from: current.lifecycle, to: next.lifecycle, reason, task: clone(next) }, requiredConsumers: this.eventConsumers });
+    else if (meaningful) this._appendEvent({ type: 'task.updated', taskId: next.id, revision: next.revision, payload: { reason, task: clone(next) }, requiredConsumers: this.eventConsumers });
     this._writeAtomic();
     return clone(next);
   }
@@ -406,7 +410,7 @@ class TaskRepository {
     if (expectedRevision !== undefined && Number(expectedRevision) !== task.revision) { const error = new Error('任务状态已变化，请刷新后重试'); error.code = 'REVISION_CONFLICT'; throw error; }
     this.state.tasks.splice(index, 1);
     this.state.repositoryRevision += 1;
-    this._appendEvent({ type: 'task.deleted', taskId: task.id, revision: task.revision + 1, payload: { task: clone(task) }, requiredConsumers: ['history', 'links'] });
+    this._appendEvent({ type: 'task.deleted', taskId: task.id, revision: task.revision + 1, payload: { task: clone(task) }, requiredConsumers: this.eventConsumers });
     this._writeAtomic();
     return true;
   }

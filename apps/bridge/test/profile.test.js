@@ -40,9 +40,11 @@ test('bridge-host profile composes real Cordis services and releases HTTP listen
   });
   let instance;
   try {
-    instance = await bootProfile({ profile: 'bridge-host', registry, userPatch: [{ id: 'runtime-config', config: {
+    instance = await bootProfile({ profile: 'bridge-serve', registry, userPatch: [{ id: 'runtime-config', config: {
       mode: 'serve', port: 0, savePath: dir, inputs: [{ kind: 'torrent', value: torrentPath }], out: output,
     } }] });
+    // P5：serve 走 bridge-serve profile——不装 bridge-daemon-client，daemon 伪造件里 rpc 一旦被调即炸
+    assert.equal(instance.context.reflect.get('bridgeDaemon', false), undefined);
     const http = instance.context.bridgeHttp;
     assert.ok(http.port > 0);
     assert.ok(fs.existsSync(output));

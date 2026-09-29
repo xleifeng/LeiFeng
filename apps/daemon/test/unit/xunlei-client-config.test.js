@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const config = require('../../host/src/xunlei-client-config');
+const config = require('../../host/kernels/thunder/xunlei-client-config');
 
 test('官方客户端常量集中且别名一致', () => {
   const { XUNLEI_CLIENT: c } = config;

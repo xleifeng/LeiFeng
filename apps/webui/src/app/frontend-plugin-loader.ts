@@ -5,6 +5,10 @@
 // 内联 importmap，而 HTML spec 不支持外链 importmap（src 属性直接 error 事件），
 // 声明式映射两条路都堵死——插件经 activate(host) 从宿主拿同一 vue 实例引用
 // （DSH 宿主注入渲染同款思路，U2 spec D1 预案）。
+//
+// P6（cordis-arch）：activate 增补 disposer 契约——返回的清理函数与路由 remover
+// 一并保存；unloadFrontendPlugin 按装载逆序回收。activate 中途抛错时插件直接
+// 放弃（贡献槽数组留在局部对象里，未进注册表，无需回滚）。
 import * as vue from 'vue'
 import type { Router } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
@@ -33,7 +37,8 @@ export interface PluginHost {
 }
 
 interface PluginModule {
-  activate?: (host: PluginHost) => void | Promise<void>
+  /** 返回 disposer：装载器保留并在插件回收时调用（当前主流程常驻，供测试与宿主重载用） */
+  activate?: (host: PluginHost) => void | (() => void) | Promise<void | (() => void)>
 }
 
 /** manifest 里的字符串能力 ID 保守收窄：未知 ID 原样保留（渲染点 enabled() 对未知保守降级） */
@@ -47,6 +52,19 @@ function safePluginId(id: string): boolean {
 }
 
 const loadedPlugins = new Map<string, () => void>()
+
+/**
+ * 卸载一个已装载插件：disposer（activate 返回值）→ 注册表撤销 → 路由移除，
+ * 与装载序对称。disposer 抛错不阻塞后续回收（各清理项独立执行）。
+ * 路由移除由装载时保存的 remover 完成（P6 前 remover 被丢弃——母文档 §8.4 缺口）。
+ */
+export function unloadFrontendPlugin(id: string): boolean {
+  const teardown = loadedPlugins.get(id)
+  if (!teardown) return false
+  loadedPlugins.delete(id)
+  teardown()
+  return true
+}
 
 /**
  * 装载全部运行期插件。幂等：已装载 id 跳过；失败插件只 console.warn，绝不
@@ -71,23 +89,30 @@ export async function loadFrontendPlugins(router: Router, registryUrl = '/plugin
       routes: [] as RouteRecordRaw[],
       settingSections: [] as SettingSectionDef[],
     }
+    let activateDisposer: (() => void) | undefined
     try {
       const entry = manifest.entry && /^[\w.-]+$/.test(manifest.entry) ? manifest.entry : 'ui.js'
       const module = (await import(/* @vite-ignore */ `/plugins-frontend/${manifest.id}/${entry}`)) as PluginModule
       if (typeof module.activate === 'function') {
-        await module.activate({
+        const returned = await module.activate({
           vue,
           navItems: contribution.navItems,
           routes: contribution.routes,
           settingSections: contribution.settingSections,
         })
+        if (typeof returned === 'function') activateDisposer = returned
       }
     } catch (error) {
       console.warn(`[webui] 前端插件 ${manifest.id} 装载失败:`, error)
       continue
     }
-    loadedPlugins.set(manifest.id, registerFrontendPlugin(contribution))
-    for (const route of contribution.routes) router.addRoute(route)
+    const withdraw = registerFrontendPlugin(contribution)
+    const routeRemovers = contribution.routes.map((route) => router.addRoute(route))
+    loadedPlugins.set(manifest.id, () => {
+      try { activateDisposer?.() } catch (error) { console.warn(`[webui] 前端插件 ${manifest.id} disposer 抛错:`, error) }
+      withdraw()
+      for (const remove of routeRemovers) remove()
+    })
     // 首次导航先于插件装载完成时（用户直达插件路由），路由表此刻才补齐——
     // 未匹配则重解析当前地址，否则停在空匹配直到下一次跳转
     if (router.currentRoute.value.matched.length === 0) await router.replace(router.currentRoute.value.fullPath).catch(() => {})

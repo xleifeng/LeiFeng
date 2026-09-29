@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('events');
-const { VipAccelerationManager, accountTier } = require('../../host/src/vip-manager');
+const { VipAccelerationManager, accountTier } = require('../../host/kernels/thunder/vip-manager');
 
 function makeFixture({ taskType = 'http', status = 'active', selectedFileIndices = [], fileLists = [], snapshot = {}, runtimeFiles = null, speedup, authContext, peerIdProvider } = {}) {
   const record = { gid: 'g1', engineId: 11, taskType, status, taskName: 'file.bin', url: 'https://example/file.bin',

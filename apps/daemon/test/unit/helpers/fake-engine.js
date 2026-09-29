@@ -20,9 +20,9 @@ const net = require('net');
 const fs = require('fs');
 const { duplexPair } = require('node:stream');
 const { EventEmitter } = require('node:events');
-const { createVipHandlers } = require('../../../engine/vip-control');
-const { createTaskControlHandlers } = require('../../../engine/task-control');
-const { createBtControlHandlers } = require('../../../engine/bt-control');
+const { createVipHandlers } = require('../../../host/kernels/thunder/engine/vip-control');
+const { createTaskControlHandlers } = require('../../../host/kernels/thunder/engine/task-control');
+const { createBtControlHandlers } = require('../../../host/kernels/thunder/engine/bt-control');
 
 // ---- TASKTYPE/CREATORS/validateInfo/parseTaskInfo（与 engine.js 同构） ----
 const TASKTYPE = { P2SP: 1, BT: 2, EMULE: 3, MAGNET: 5 };

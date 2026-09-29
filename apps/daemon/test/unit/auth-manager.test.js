@@ -5,8 +5,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { EventEmitter } = require('events');
-const { CredentialWallet } = require('../../host/src/auth-wallet');
-const { AuthManager, makeDeviceSign, readDeviceId, parseVipAccount, NOTIFY_SEQUENCE } = require('../../host/src/auth-manager');
+const { CredentialWallet } = require('../../host/kernels/thunder/auth-wallet');
+const { AuthManager, makeDeviceSign, readDeviceId, parseVipAccount, NOTIFY_SEQUENCE } = require('../../host/kernels/thunder/auth-manager');
 const { startFakeXluser } = require('./helpers/fake-xluser');
 
 const CLIENT_SECRET = 'cb739ddf62c04899992fed9e07373ec9'; // 测试显式注入，不依赖生产常量

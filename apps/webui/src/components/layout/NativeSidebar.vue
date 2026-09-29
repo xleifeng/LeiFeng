@@ -3,7 +3,7 @@
 // 导航只展示当前 daemon 提供的真实能力；云盘不在本项目范围内。
 // capability 过滤：views 缺失（旧 daemon）时全量，views 存在时严格门控。
 import { computed } from 'vue'
-import { Download, Trash2, X } from '@lucide/vue'
+import { Trash2, X } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { useRoute } from 'vue-router'
 import { useUiCapabilitiesStore } from '../../stores/ui-capabilities'
@@ -15,13 +15,8 @@ const route = useRoute()
 const capabilities = useUiCapabilitiesStore()
 const trashReference = computed(() => route.path === '/trash')
 
-const links: { to: string; label: string; icon?: typeof Download; trashActive?: boolean; capability?: 'private-space' | 'history' | 'link-library' }[] = [
-  { to: '/download', label: '下载', icon: Download },
-  { to: '/private-space', label: '私人空间', trashActive: true, capability: 'private-space' },
-  { to: '/history', label: '下载记录', trashActive: true, capability: 'history' },
-  { to: '/links', label: '链接库', trashActive: true, capability: 'link-library' },
-]
-const visibleLinks = computed(() => [...links, ...navContributions.value].filter((link) => !link.capability || capabilities.enabled(link.capability)))
+// P6：内置导航项已贡献化（builtin 插件），本组件只消费注册表派生流
+const visibleLinks = computed(() => navContributions.value.filter((link) => !link.capability || capabilities.enabled(link.capability)))
 const remoteVisible = computed(() => capabilities.enabled('remote'))
 </script>
 

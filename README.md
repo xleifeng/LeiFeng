@@ -150,7 +150,7 @@ node apps/bridge/src/main.js serve --torrent ./x.torrent --data /path/to/files
 .
 ├── apps/
 │   ├── daemon/            thunderd 宿主
-│   │   ├── engine/        引擎 JS：驱动原生下载组件
+│   │   ├── host/kernels/  内核实现包（thunder driver/engine/账号/VIP；qbit）
 │   │   ├── host/src/      领域源码：domain / services / repositories / rpc
 │   │   │   └── entry.mjs  profile launcher 入口
 │   │   ├── host/plugins/  daemon 插件定义（见下方插件清单）

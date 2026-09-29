@@ -1,6 +1,6 @@
 'use strict';
 
-const { classifyVipAccount } = require('../vip-account');
+const { classifyVipAccount } = require('../domain/vip-account');
 
 class AccountService {
   constructor({ auth, vip = null, privateSpace = null, linkSync = null, eventBus = null } = {}) { if (!auth) throw new Error('AccountService auth is required'); this.auth = auth; this.vip = vip; this.privateSpace = privateSpace; this.linkSync = linkSync; this.eventBus = eventBus; }
