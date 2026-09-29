@@ -15,6 +15,7 @@ const KNOWN = Object.freeze(new Set([
   'media',            // 媒体播放（media-capture 插件）
   'capture',          // 浏览器捕获（media-capture 插件）
   'remote',           // 远程节点（remote-access 插件）
+  'daemon-admin',     // daemon 管理面（daemon-admin 插件：状态查询 + 整体重启）
 ]));
 
 function createUiCapabilityRegistry() {

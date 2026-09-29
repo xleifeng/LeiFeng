@@ -18,6 +18,7 @@ export const DAEMON_CORE = Object.freeze([
   'remote-access',
   'product-core',
   'plugin-admin',
+  'daemon-admin', // P5 后追加（daemon 管理面）：状态查询 + 标记文件重启协议
 ]);
 // P5（cordis-arch）：Web API 子进程内部装配插件树（gateway profile）。
 export const GATEWAY = Object.freeze([

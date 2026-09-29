@@ -41,6 +41,7 @@ const builtinSettingSections = [
   { id: 'automation', label: '计划任务' },
   { id: 'integration', label: '系统集成' },
   { id: 'plugin-manager', label: '插件管理' },
+  { id: 'daemon-admin', label: '守护进程', capability: 'daemon-admin' as ViewCapabilityId },
 ]
 
 /** 幂等注册（main.ts 与测试各自调用一次）。返回注销函数供测试隔离。 */

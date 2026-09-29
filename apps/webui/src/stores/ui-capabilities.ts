@@ -12,6 +12,7 @@ export type ViewCapabilityId =
   | 'media'
   | 'capture'
   | 'remote'
+  | 'daemon-admin'
 
 /**
  * 视图能力门控：数据源 = leifeng.ui.v2.bootstrap 的 capabilities.views。

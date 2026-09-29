@@ -3,7 +3,6 @@
 import { ChevronDown, ChevronLeft, ChevronRight, FileUp, Link2, Menu, Plus, RotateCw, Search, Shirt, UserRound, X } from '@lucide/vue'
 import { onBeforeUnmount, ref } from 'vue'
 import IconButton from '../common/IconButton.vue'
-import brandUrl from '@orig/svg/logo-hummingbird.svg'
 
 defineProps<{ search: string; accountLabel: string; accountVip?: boolean; offline?: boolean }>()
 const emit = defineEmits<{
@@ -29,8 +28,7 @@ onBeforeUnmount(() => { if (closeTimer) window.clearTimeout(closeTimer) })
 <template>
   <header class="native-topbar">
     <div class="topbar-brand">
-      <img class="brand-bird" :src="brandUrl" alt="迅雷" width="28" height="28" />
-      <span class="brand-word">迅雷</span>
+      <span class="brand-word" aria-label="Leifeng">Leifeng</span>
     </div>
     <div class="topbar-navgroup">
       <IconButton label="后退" @click="emit('back')"><ChevronLeft :size="16" :stroke-width="2" /></IconButton>

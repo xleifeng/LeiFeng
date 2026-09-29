@@ -102,7 +102,7 @@ test('pixel diff against originals', async ({ page }, testInfo) => {
       }
       if (s.action === 'about') {
         await page.locator('.settings-link').click()
-        await page.getByRole('button', { name: '关于迅雷' }).click()
+        await page.getByRole('button', { name: '关于 Leifeng' }).click()
       }
     }
     await page.evaluate(async () => { await document.fonts.ready })

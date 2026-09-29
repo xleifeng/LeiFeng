@@ -156,3 +156,9 @@
   .proxy-window { width: min(100%, 680px); }
   .about-window { transform-origin: top left; transform: scale(.62); }
 }
+
+/* 守护进程分区（daemon-admin）：状态网格 + 重启动作 */
+.daemon-admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; margin: 0; }
+.daemon-admin-grid > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.daemon-admin-grid dt { flex: 0 0 auto; color: var(--xl-text-tertiary); font-size: 11px; }
+.daemon-admin-grid dd { margin: 0; min-width: 0; color: var(--xl-text-primary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

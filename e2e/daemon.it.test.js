@@ -118,7 +118,7 @@ test('sup0: bootstrap capabilities.views 含全量 UI 能力（thunderd profile�
   assert.ok(Array.isArray(views), 'views 应为数组');
   // ALWAYS 集合 + product-services 贡献（daemon 侧 host/src/domain/ui-capabilities.js）
   for (const id of ['tasks', 'settings', 'diagnostics', 'history', 'link-library',
-    'private-space', 'media', 'capture', 'remote']) {
+    'private-space', 'media', 'capture', 'remote', 'daemon-admin']) {
     assert.ok(views.includes(id), `views 应含 ${id}，实际: ${views.join(',')}`);
   }
 });
@@ -128,7 +128,7 @@ test('sup1: 插件管理面 plugins.list / setEnabled 持久化（plugin-admin�
   assert.ok(Array.isArray(before) && before.length > 0, 'plugins.list 应返回注册表全量');
   const byId = new Map(before.map((p) => [p.id, p]));
   // 全 daemon profile 必含的面（P4 拆分后 product-services → 五插件）
-  for (const id of ['runtime-config', 'rpc-host', 'private-space', 'history-links', 'media-capture', 'remote-access', 'product-core', 'plugin-admin', 'web-api-process']) {
+  for (const id of ['runtime-config', 'rpc-host', 'private-space', 'history-links', 'media-capture', 'remote-access', 'product-core', 'plugin-admin', 'daemon-admin', 'web-api-process']) {
     assert.ok(byId.has(id), `plugins.list 应含 ${id}`);
     assert.equal(byId.get(id).enabled, true, `${id} 初始应为启用`);
   }

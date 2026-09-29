@@ -17,6 +17,7 @@ const { mediaCapture } = require('./media-capture.cjs');
 const { remoteAccess } = require('./remote-access.cjs');
 const { productCore } = require('./product-core.cjs');
 const { pluginAdmin } = require('./plugin-admin.cjs');
+const { daemonAdmin } = require('./daemon-admin.cjs');
 const { webApiProcess } = require('./web-api-process.cjs');
 
 function daemonRegistry() {
@@ -44,6 +45,7 @@ function daemonRegistry() {
     ['remote-access', remoteAccess, 'leifengRemoteAccess'],
     ['product-core', productCore, 'leifengProducts'],
     ['plugin-admin', pluginAdmin, 'leifengPluginAdmin'],
+    ['daemon-admin', daemonAdmin, 'leifengDaemonAdmin'],
     ['web-api-process', webApiProcess, 'leifengWebApi'],
   ];
   return Object.fromEntries(definitions.map(([id, definition, provided, extraProvides, defaultEnabled]) => [id, {

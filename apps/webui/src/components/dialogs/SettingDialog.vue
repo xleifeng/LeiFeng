@@ -2,16 +2,29 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { X } from '@lucide/vue'
 import { useRouter } from 'vue-router'
+import { useQuery } from '@tanstack/vue-query'
 import type { DownloadPolicy } from '../../api/contracts/v2/policies'
 import { enableFullSpeed, restoreLimits } from '../../api/native-download/policies'
+import { getDaemonStatus, restartDaemon } from '../../api/native-download/daemon-admin'
 import { useDownloadPolicyFormStore } from '../../stores/download-policy-form'
 import { useOverlayStore } from '../../stores/overlay'
 import { usePluginManagerStore } from '../../stores/plugin-manager'
 import { useUiCapabilitiesStore } from '../../stores/ui-capabilities'
 import { settingSectionContributions } from '../../app/plugins'
 
-// P6：核心分区 id 集（builtin 贡献的 6 项）——内容区分支判断用（核心走内联模板，插件走 component）
-type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'integration' | 'plugin-manager'
+function formatBytes(bytes: number) {
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(0)} MB`
+  return `${(bytes / 1024).toFixed(0)} KB`
+}
+function formatUptime(ms: number) {
+  const s = Math.floor(ms / 1000)
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+  return h > 0 ? `${h} 小时 ${m} 分` : m > 0 ? `${m} 分 ${s % 60} 秒` : `${s} 秒`
+}
+
+// P6：核心分区 id 集（builtin 贡献）——内容区分支判断用（核心走内联模板，插件走 component）
+type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'integration' | 'plugin-manager' | 'daemon-admin'
 
 const form = useDownloadPolicyFormStore()
 const overlay = useOverlayStore()
@@ -26,7 +39,7 @@ const visibleNavigation = computed(() => settingSectionContributions.value.filte
 
 // activeSection 命中插件贡献分区时（id 非核心枚举），内容区渲染其 component；
 // builtin 贡献的核心 6 分区无 component，须排除在本分支外（否则落「未提供内容组件」空态）
-const coreSectionIds: readonly string[] = ['basic', 'download', 'tasks', 'automation', 'integration', 'plugin-manager']
+const coreSectionIds: readonly string[] = ['basic', 'download', 'tasks', 'automation', 'integration', 'plugin-manager', 'daemon-admin']
 const activePluginSection = computed(() => coreSectionIds.includes(activeSection.value) ? undefined : settingSectionContributions.value.find((section) => section.id === activeSection.value))
 
 watch(activeSection, (section) => {
@@ -42,6 +55,24 @@ async function togglePlugin(event: Event) {
 }
 
 const limited = computed(() => form.draft?.globalDownloadLimit !== null)
+
+// 守护进程分区：状态 5s 轮询（分区进入才挂 query——useQuery 在 setup 顶层无条件执行，
+// 但 queryKey 稳定 + refetchInterval 只在文档可见时跑，开销可忽略；重启用独立 pending 态）
+const daemonStatusQuery = useQuery({ queryKey: ['v2-daemon-status'], queryFn: getDaemonStatus, refetchInterval: 5000, retry: 1 })
+const daemonRestarting = ref(false)
+const daemonNotice = ref('')
+async function restartDaemonProcess() {
+  if (!window.confirm('将整体重启 daemon 进程（含下载引擎与 Web API），页面会短暂失联后自动恢复。继续吗？')) return
+  daemonRestarting.value = true
+  daemonNotice.value = ''
+  try {
+    await restartDaemon()
+    daemonNotice.value = '重启请求已发出，daemon 正在退出并等待守护脚本拉起…'
+  } catch (cause) {
+    daemonNotice.value = cause instanceof Error ? cause.message : '重启请求失败'
+    daemonRestarting.value = false
+  }
+}
 
 onMounted(() => {
   if (!form.draft) void form.load()
@@ -102,7 +133,7 @@ async function restore() {
     <aside class="settings-window-nav" aria-label="设置分类">
       <button v-for="item in visibleNavigation" :key="item.id" :class="{ active: activeSection === item.id }" @click="activeSection = item.id">{{ item.label }}</button>
       <span class="settings-window-nav-spacer" />
-      <button class="settings-about-entry" @click="openAbout">关于迅雷</button>
+      <button class="settings-about-entry" @click="openAbout">关于 Leifeng</button>
     </aside>
 
     <main class="settings-window-main">
@@ -110,7 +141,7 @@ async function restore() {
       <section v-if="activeSection === 'plugin-manager'" class="settings-section plugin-manager-section">
         <h1>插件管理</h1>
         <h2>daemon 装配插件</h2>
-        <p v-if="pluginManager.notice" class="plugin-manager-message">{{ pluginManager.notice }}</p>
+        <p v-if="pluginManager.notice" class="plugin-manager-message">{{ pluginManager.notice }} <button class="settings-text-button" :disabled="daemonRestarting" @click="restartDaemonProcess">{{ daemonRestarting ? '重启中…' : '立即重启' }}</button></p>
         <p v-else-if="pluginManager.error" class="plugin-manager-message is-error">{{ pluginManager.error }} <button class="settings-text-button" @click="pluginManager.load">重试</button></p>
         <div v-if="pluginManager.loading" class="settings-window-state">正在加载插件列表…</div>
         <template v-else-if="pluginManager.plugins.length">
@@ -135,6 +166,41 @@ async function restore() {
             </span>
           </label>
         </template>
+      </section>
+
+      <!-- 守护进程分区：daemon 状态实时快照 + 整体重启（daemon-admin 插件面） -->
+      <section v-else-if="activeSection === 'daemon-admin'" class="settings-section daemon-admin-section">
+        <h1>守护进程</h1>
+        <h2>运行状态</h2>
+        <div v-if="daemonStatusQuery.isPending.value" class="settings-window-state">正在读取 daemon 状态…</div>
+        <div v-else-if="daemonStatusQuery.isError.value" class="settings-window-state is-error">
+          <span>{{ daemonStatusQuery.error.value?.message || '状态不可用' }}</span>
+          <button @click="daemonStatusQuery.refetch()">重试</button>
+        </div>
+        <dl v-else-if="daemonStatusQuery.data.value" class="daemon-admin-grid">
+          <div><dt>PID</dt><dd>{{ daemonStatusQuery.data.value.pid }}</dd></div>
+          <div><dt>版本</dt><dd>{{ daemonStatusQuery.data.value.version }}</dd></div>
+          <div><dt>Profile</dt><dd>{{ daemonStatusQuery.data.value.profile || '—' }}</dd></div>
+          <div><dt>运行时长</dt><dd>{{ formatUptime(daemonStatusQuery.data.value.uptimeMs) }}</dd></div>
+          <div><dt>内存</dt><dd>{{ formatBytes(daemonStatusQuery.data.value.memory.rssBytes) }}（堆 {{ formatBytes(daemonStatusQuery.data.value.memory.heapUsedBytes) }}）</dd></div>
+          <div>
+            <dt>下载引擎</dt>
+            <dd>
+              <template v-if="daemonStatusQuery.data.value.engine">
+                {{ daemonStatusQuery.data.value.engine.sdkReady ? '就绪' : '未就绪' }}
+                · PID {{ daemonStatusQuery.data.value.engine.enginePid ?? '—' }}
+                · 代际 {{ daemonStatusQuery.data.value.engine.generation }}
+                · 重启 {{ daemonStatusQuery.data.value.engine.restarts }} 次
+              </template>
+              <template v-else>未装配内核</template>
+            </dd>
+          </div>
+        </dl>
+        <p v-if="daemonStatusQuery.data.value?.restartPending" class="plugin-manager-message">重启已请求，等待进程退出…</p>
+        <p v-if="daemonNotice" class="plugin-manager-message">{{ daemonNotice }}</p>
+        <h2>重启</h2>
+        <p class="settings-hint">整体重启 daemon 进程：插件开关等需要重装配的变更在此生效。进程退出后由守护脚本拉起新进程，页面会短暂失联。</p>
+        <button class="secondary-button" :disabled="daemonRestarting || daemonStatusQuery.data.value?.restartPending" @click="restartDaemonProcess">{{ daemonRestarting ? '重启中…' : '重启 daemon' }}</button>
       </section>
 
       <section v-else-if="activePluginSection" :key="activePluginSection.id" class="settings-section settings-plugin-section">

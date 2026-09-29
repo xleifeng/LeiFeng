@@ -41,7 +41,7 @@ const accountLabel = computed(() => {
   if (account.isPanVip) return `网盘会员 Lv.${account.vipLevel || 0}`
   return account.isVip ? `VIP Lv.${account.vipLevel || 0}` : '已登录'
 })
-const routeTitle = computed(() => String(route.meta.title || '迅雷下载中心'))
+const routeTitle = computed(() => String(route.meta.title || 'Leifeng 下载中心'))
 const taskSurface = computed(() => route.path === '/download' || route.path.startsWith('/download/') || route.path === '/trash')
 function openAccount() { overlay.open({ type: 'account' }) }
 function openNewLinkTask() { createTask.openForLinks(); overlay.open({ type: 'new-task' }) }

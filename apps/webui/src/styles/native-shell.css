@@ -27,8 +27,7 @@
 /* ---- 顶栏 ---- */
 .native-topbar { display: flex; flex: 0 0 var(--xl-topbar-height); height: var(--xl-topbar-height); align-items: center; padding: 0 10px 0 22px; background: var(--xl-content-bg); }
 .topbar-brand { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; margin-right: 105px; }
-.brand-bird { display: block; width: 26px; height: 26px; }
-.brand-word { color: var(--xl-text-brand); font-size: 20px; font-weight: 600; letter-spacing: 0; line-height: 1; white-space: nowrap; }
+.brand-word { color: var(--xl-text-brand); font-size: 20px; font-weight: 600; letter-spacing: 0.2px; line-height: 1; white-space: nowrap; }
 .topbar-navgroup { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
 .topbar-navgroup .nav-refresh { --icon-btn-color: #333; }
 .topbar-search { display: flex; flex: 1 1 auto; min-width: 200px; max-width: 394px; height: 38px; margin-left: 14px; padding: 0 12px 0 15px; gap: 9px; align-items: center; border: 1px solid var(--xl-border); border-radius: 6px; color: var(--xl-search-icon); background: #fff; }
