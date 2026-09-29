@@ -15,7 +15,6 @@ export const DAEMON_CORE = Object.freeze([
   'private-space',
   'history-links',
   'media-capture',
-  'remote-access',
   'product-core',
   'plugin-admin',
   'daemon-admin', // P5 后追加（daemon 管理面）：状态查询 + 标记文件重启协议
@@ -26,7 +25,6 @@ export const GATEWAY = Object.freeze([
   'daemon-connection',
   'gateway-routes',
   'http-server',
-  'remote-mtls',
 ]);
 export const BRIDGE_HOST = Object.freeze([
   'bridge-daemon-client',

@@ -17,7 +17,6 @@ const trashReference = computed(() => route.path === '/trash')
 
 // P6：内置导航项已贡献化（builtin 插件），本组件只消费注册表派生流
 const visibleLinks = computed(() => navContributions.value.filter((link) => !link.capability || capabilities.enabled(link.capability)))
-const remoteVisible = computed(() => capabilities.enabled('remote'))
 </script>
 
 <template>
@@ -33,10 +32,6 @@ const remoteVisible = computed(() => capabilities.enabled('remote'))
       </template>
     </nav>
     <div class="sidebar-divider" />
-    <nav v-if="remoteVisible" class="sidebar-nav" aria-label="远程导航" @click="emit('close')">
-      <RouterLink to="/remote" class="sidebar-link" :class="{ 'trash-reference-active': trashReference }"><span>远程下载</span></RouterLink>
-    </nav>
-    <div v-if="remoteVisible" class="sidebar-divider" />
     <nav class="sidebar-nav" aria-label="系统导航" @click="emit('close')">
       <button type="button" class="sidebar-link settings-link" @click="emit('settings')"><span>设置</span></button>
     </nav>

@@ -11,14 +11,14 @@ test('ui capability registry: 空 snapshot 只有 ALWAYS', () => {
 
 test('ui capability registry: contribute 合并进 snapshot，withdraw 后消失', () => {
   const registry = createUiCapabilityRegistry();
-  const withdraw = registry.contribute('product-services', ['history', 'remote']);
+  const withdraw = registry.contribute('product-services', ['history', 'media']);
   const snapshot = registry.snapshot();
   assert.ok(snapshot.includes('history'));
-  assert.ok(snapshot.includes('remote'));
+  assert.ok(snapshot.includes('media'));
   assert.ok(snapshot.includes('tasks')); // ALWAYS 仍在
   withdraw();
   assert.ok(!registry.snapshot().includes('history'));
-  assert.ok(!registry.snapshot().includes('remote'));
+  assert.ok(!registry.snapshot().includes('media'));
   assert.ok(registry.snapshot().includes('tasks'));
 });
 
@@ -31,7 +31,7 @@ test('ui capability registry: 未知能力 ID 拒绝（防拼写漂移）', () =
 test('ui capability registry: 同插件重复 contribute 拒绝', () => {
   const registry = createUiCapabilityRegistry();
   registry.contribute('p1', ['history']);
-  assert.throws(() => registry.contribute('p1', ['remote']), /duplicate plugin id p1/);
+  assert.throws(() => registry.contribute('p1', ['media']), /duplicate plugin id p1/);
 });
 
 test('ui capability registry: 非法入参拒绝', () => {
@@ -57,7 +57,7 @@ test('bootstrap snapshot: 无 uiCapabilitiesProvider 时 views = ALWAYS', async 
 
 test('bootstrap snapshot: 有 provider 时 views = ALWAYS ∪ 贡献', async () => {
   const registry = createUiCapabilityRegistry();
-  registry.contribute('product-services', ['history', 'link-library', 'private-space', 'media', 'capture', 'remote']);
+  registry.contribute('product-services', ['history', 'link-library', 'private-space', 'media', 'daemon-admin']);
   const service = new BootstrapService({
     repository: { repositoryRevision: 0 },
     settings: { get: async () => ({ revision: 0, desired: {}, applied: null }) },
@@ -66,7 +66,7 @@ test('bootstrap snapshot: 有 provider 时 views = ALWAYS ∪ 贡献', async () 
     uiCapabilitiesProvider: () => registry.snapshot(),
   });
   const views = await service.getSnapshot().then((s) => s.capabilities.views);
-  for (const id of ['tasks', 'settings', 'diagnostics', 'history', 'link-library', 'private-space', 'media', 'capture', 'remote']) {
+  for (const id of ['tasks', 'settings', 'diagnostics', 'history', 'link-library', 'private-space', 'media', 'daemon-admin']) {
     assert.ok(views.includes(id), `views 应含 ${id}`);
   }
 });

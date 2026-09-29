@@ -16,7 +16,7 @@ function problem(code, message, details) {
 class DiagnosticsService {
   constructor({
     config = {}, tasks = null, driver = null, settings = null, events = null,
-    privateSpace = null, media = null, remoteNodes = null, taskDbReader = null,
+    privateSpace = null, media = null, taskDbReader = null,
     operations = null, policy = null, auth = null, vip = null,
     startedAt = Date.now(), clock = Date, exportTtlMs = 10 * 60 * 1000,
   } = {}) {
@@ -27,7 +27,6 @@ class DiagnosticsService {
     this.events = events;
     this.privateSpace = privateSpace;
     this.media = media;
-    this.remoteNodes = remoteNodes;
     this.taskDbReader = taskDbReader;
     this.operations = operations;
     this.policy = policy;
@@ -83,7 +82,7 @@ class DiagnosticsService {
       vip: vipStatus ? { enabled: vipStatus.enabled, accountReady: vipStatus.accountReady, isVip: vipStatus.isVip, tasks: Array.isArray(vipStatus.tasks) ? vipStatus.tasks.length : 0 } : null,
       privateSpace: this.privateSpace?.getStatus?.() || { configured: false, unlocked: false },
       media: this.media?.getCapabilities?.() || { openOnHost: false, streamInBrowser: false },
-      remoteNodes: this.remoteNodes?.query?.() || { items: [] },
+      remoteNodes: { items: [] },
       policy: this.policy?.get?.() || null,
       settings: { revision: settings.revision || 0, downloadDir: this._safePath(settings.desired?.downloadDir, { privateRoot: this.config.privateSpaceDir }) },
       filesystem: { platform: process.platform, freeMemory: os.freemem(), totalMemory: os.totalmem() },
@@ -121,7 +120,7 @@ class DiagnosticsService {
 
   async runCheck({ checkId, taskId } = {}, context = {}) {
     const id = String(checkId || '');
-    if (!['engine', 'filesystem', 'task-repository', 'media', 'remote', 'task'].includes(id)) throw problem('DIAGNOSTIC_CHECK_UNKNOWN', '诊断检查项不存在');
+    if (!['engine', 'filesystem', 'task-repository', 'media', 'task'].includes(id)) throw problem('DIAGNOSTIC_CHECK_UNKNOWN', '诊断检查项不存在');
     if (id === 'task') {
       if (!taskId) return { checkId: id, ok: false, details: { code: 'TASK_ID_REQUIRED' } };
       try { await this.getTaskDiagnostics({ taskId }, context); return { checkId: id, ok: true }; }
@@ -136,7 +135,7 @@ class DiagnosticsService {
     }
     if (id === 'task-repository') return { checkId: id, ok: Boolean(this.tasks?.list), details: { revision: this.tasks?.repositoryRevision || 0 } };
     if (id === 'media') return { checkId: id, ok: this.media?.getCapabilities?.().streamInBrowser === true, details: this.media?.getCapabilities?.() || {} };
-    return { checkId: id, ok: (this.remoteNodes?.query?.().items || []).every((node) => node.state !== 'incompatible'), details: this.remoteNodes?.query?.() || { items: [] } };
+    throw problem('DIAGNOSTIC_CHECK_UNKNOWN', '诊断检查项不存在');
   }
 
   _newExportId() { return `diagnostic-${this._now().toString(36)}-${crypto.randomBytes(6).toString('base64url')}`; }

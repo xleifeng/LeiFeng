@@ -14,7 +14,7 @@ function lastRequest(requests: Array<{ method: string, input: Record<string, unk
 }
 const bootstrap = {
   apiVersion: 2, daemonVersion: 'e2e', repositoryRevision: 1, serverTime: now,
-  capabilities: { protocols: ['http', 'https', 'ftp', 'magnet', 'bt', 'ed2k', 'thunder'], taskControl: true, recycle: true, recover: true, rename: true, move: true, redownload: true, perTaskRateLimit: true, btFileSelection: true, btSequential: true, globalRateLimit: true, proxy: true, proxyVerify: true, p2pSwitch: true, p2sSwitch: true, autoMoveLowSpeed: true, schedules: true, idleDownload: true, completionActions: true, powerActions: false, linkSync: 'local-only', superChannel: false, speedTrial: false, openOnHost: true, streamInBrowser: true, remoteNodes: true, cloudDrive: false },
+  capabilities: { protocols: ['http', 'https', 'ftp', 'magnet', 'bt', 'ed2k', 'thunder'], taskControl: true, recycle: true, recover: true, rename: true, move: true, redownload: true, perTaskRateLimit: true, btFileSelection: true, btSequential: true, globalRateLimit: true, proxy: true, proxyVerify: true, p2pSwitch: true, p2sSwitch: true, autoMoveLowSpeed: true, schedules: true, idleDownload: true, completionActions: true, powerActions: false, linkSync: 'local-only', superChannel: false, speedTrial: false, openOnHost: true, streamInBrowser: true, remoteNodes: false, cloudDrive: false },
   engine: { transportReady: true, sdkReady: true, enginePid: 1, queue: 0, dht: 1, p2p: true, p2s: true, restarts: 0, uptimeMs: 1000 },
   account: { valid: false, isVip: false, isDownloadVip: false, isSuperVip: false, isPlatinumVip: false, isPanVip: false, userVas: 0, vipType: 0, vipLevel: 0 },
   policy: { revision: 1, desired: policy, applied: policy, fullSpeed: false }, privateSpace: { configured: false, unlocked: false, directoryConfigured: false, metadataEncrypted: true, downloadContentEncrypted: false, requiresEncryptedFilesystemForAtRest: true }, media: { openOnHost: true, streamInBrowser: true }, security: { authRequired: false, csrfRequired: false, loopback: true },
@@ -38,12 +38,6 @@ async function mockAllFeatures(page: Page, requests: Array<{ method: string, inp
     else if (body.method === 'leifeng.ui.v2.private.getStatus') result = { configured: false, unlocked: false, directoryConfigured: false, metadataEncrypted: true, downloadContentEncrypted: false, requiresEncryptedFilesystemForAtRest: true }
     else if (body.method === 'leifeng.ui.v2.private.setup') result = { configured: true, directory: '/downloads/.private', status: {} }
     else if (body.method === 'leifeng.ui.v2.private.queryTasks') result = { items: [] }
-    else if (body.method === 'leifeng.ui.v2.remote.nodes.query') result = { items: [] }
-    else if (body.method === 'leifeng.ui.v2.capture.clients.query' || body.method === 'leifeng.ui.v2.remote.server.clients.query') result = { items: [] }
-    else if (body.method === 'leifeng.ui.v2.capture.startPairing') result = { pairingId: 'capture-pair', code: '123456', expiresAt: now + 60_000 }
-    else if (body.method === 'leifeng.ui.v2.capture.desktop.provision') result = { clientId: 'desktop', endpoint: 'http://127.0.0.1', configPath: '/tmp/e2e-config' }
-    else if (body.method === 'leifeng.ui.v2.remote.server.startPairing') result = { pairingId: 'remote-pair', code: '654321', expiresAt: now + 60_000, serverFingerprint: 'AA' }
-    else if (body.method === 'leifeng.ui.v2.remote.server.stopPairing') result = { stopped: true }
     else if (body.method === 'leifeng.ui.v2.diagnostics.get') result = { apiVersion: 2, daemonVersion: 'e2e', startedAt: now - 1000, now, hostname: 'e2e', repositoryRevision: 1, counts, engine: { healthy: true }, taskDb: { writable: true }, auth: null, vip: null, privateSpace: {}, media: {}, remoteNodes: { items: [] }, settings: {}, filesystem: {}, events: [] }
     else if (body.method === 'leifeng.ui.v2.diagnostics.events.query') result = []
     else if (body.method === 'leifeng.ui.v2.diagnostics.checks.run') result = { ok: true, checkId: input.checkId }
@@ -67,7 +61,7 @@ test('all non-cloud routes render without browser errors', async ({ page }) => {
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()) })
   page.on('pageerror', (error) => errors.push(error.message))
   await mockAllFeatures(page, requests)
-  for (const [route, heading] of [['/download', '下载中'], ['/private-space', '私人空间'], ['/history', '下载记录'], ['/links', '链接库'], ['/trash', '回收站'], ['/remote', '远程下载'], ['/settings', '下载设置'], ['/settings/integration', '系统集成'], ['/diagnostics', '下载诊断']] as const) {
+  for (const [route, heading] of [['/download', '下载中'], ['/private-space', '私人空间'], ['/history', '下载记录'], ['/links', '链接库'], ['/trash', '回收站'], ['/settings', '下载设置'], ['/diagnostics', '下载诊断']] as const) {
     await page.goto(`/#${route}`)
     await expect(page.getByText(heading).first()).toBeVisible()
   }
@@ -140,20 +134,11 @@ test('limit dialog can clear both limits and about component details work', asyn
   await expect(about.getByText('JSON-RPC v2')).toBeVisible()
 })
 
-test('integration and diagnostics actions call their real RPC surfaces', async ({ page }) => {
+test('diagnostics actions call their real RPC surfaces', async ({ page }) => {
   const requests: Array<{ method: string, input: Record<string, unknown> }> = []
   await mockAllFeatures(page, requests)
-  await page.goto('/#/settings/integration')
-  await page.getByRole('button', { name: '生成扩展配对码' }).click()
-  await expect(page.getByText('扩展配对码已生成')).toBeVisible()
-  await page.getByRole('button', { name: '生成桌面接管凭据' }).click()
-  await expect(page.getByText(/桌面接管凭据已写入/)).toBeVisible()
-  await page.getByRole('button', { name: '开启配对窗口' }).click()
-  await expect(page.getByText('远程设备配对窗口已开启')).toBeVisible()
-  await page.getByRole('button', { name: '停止配对' }).click()
-  await expect(page.getByText('远程配对窗口已关闭')).toBeVisible()
   await page.goto('/#/diagnostics')
-  for (const name of ['检查引擎', '检查下载目录', '检查任务仓库', '检查媒体能力', '检查远程节点']) await page.getByRole('button', { name }).click()
+  for (const name of ['检查引擎', '检查下载目录', '检查任务仓库', '检查媒体能力']) await page.getByRole('button', { name }).click()
   await page.getByRole('button', { name: '导出诊断' }).click()
   await expect(page.getByText('导出已准备')).toBeVisible()
 })

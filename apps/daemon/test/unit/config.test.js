@@ -8,7 +8,7 @@ test('config resolves all paths once and rejects unsafe roots', () => {
   // win32 下控制通道是 named pipe，无文件系统实体；socket 文件路径断言仅 POSIX 平台有效
   if (process.platform === 'win32') assert.ok(config.controlSocketPath.startsWith('\\\\.\\pipe\\thunderd-control-'), config.controlSocketPath);
   else assert.equal(config.controlSocketPath, path.join(dir, 'runtime', 'thunderd-control.sock'));
-  assert.equal(config.captureClientConfigPath, path.join(dir, 'home', '.config', 'thunder', 'capture.json')); assert.equal(Object.isFrozen(config), true);
+  assert.equal(Object.isFrozen(config), true);
   assert.throws(() => loadConfig({ repoRoot: dir, env: { HOME: '/tmp/home', THUNDERD_RUNTIME_DIR: '/' } }), (error) => error.code === 'UNSAFE_PATH');
 });
 

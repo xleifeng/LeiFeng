@@ -10,8 +10,6 @@ export type ViewCapabilityId =
   | 'link-library'
   | 'private-space'
   | 'media'
-  | 'capture'
-  | 'remote'
   | 'daemon-admin'
 
 /**

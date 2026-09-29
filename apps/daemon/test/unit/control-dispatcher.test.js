@@ -8,8 +8,7 @@ const path = require('node:path');
 const { DaemonControlDispatcher } = require('../../host/src/control/dispatcher');
 const { RpcRegistry } = require('../../host/src/rpc/registry');
 const { createTaskControlMethods } = require('../../host/src/rpc/task-control-methods');
-const { createMediaCaptureControlMethods } = require('../../host/src/rpc/media-capture-control-methods');
-const { createRemoteControlMethods } = require('../../host/src/rpc/remote-control-methods');
+const { createMediaControlMethods } = require('../../host/src/rpc/media-capture-control-methods');
 const { createDiagnosticsControlMethods } = require('../../host/src/rpc/diagnostics-control-methods');
 
 function fixture() {
@@ -19,14 +18,13 @@ function fixture() {
     tasks: { repositoryRevision: 3, require: () => ({ displayName: 'demo', seedRef: 'sha256:x' }) }, seedStore: { resolve: () => path.join(root, 'seed.torrent') },
     createDraftService: { createTorrentDraftFromFile: async () => ({ draftId: `draft-${++imports}` }) },
     media: { issueToken: () => ({ token: 'token' }), resolveContent: () => ({ target: path.join(root, 'media.bin'), status: 200, mimeType: 'application/octet-stream', disposition: 'inline', etag: 'etag', start: 0, end: 0, length: 1, availableBytes: 1, complete: true, contentRange: null, task: { displayName: 'media.bin' }, release: () => { released += 1; } }) },
-    capture: { tokens: { isOriginAllowed: () => true }, authenticate: () => null }, diagnostics: {}, remotePairing: { clients: new Map() }, taskQueryService: {}, operationService: {},
+    diagnostics: {},
   };
   const config = { runtimeDir: root, uploadsDir, maxTorrentUploadBytes: 1024, version: 'test', rpcSecret: '' };
   const registry = new RpcRegistry();
   registry.register('test:task', createTaskControlMethods({ ...services, config }));
-  // P4 拆分后 product 控制面三域独立注册（media-capture / remote / diagnostics）
-  registry.register('test:media-capture', createMediaCaptureControlMethods({ media: services.media, capture: services.capture, config }));
-  registry.register('test:remote', createRemoteControlMethods({ remotePairing: services.remotePairing, taskQueryService: services.taskQueryService, operationService: services.operationService, createDraftService: services.createDraftService, media: services.media, config }));
+  // P4 拆分后 product 控制面独立注册（media / diagnostics；remote/capture 已删）
+  registry.register('test:media-capture', createMediaControlMethods({ media: services.media, config }));
   registry.register('test:diagnostics', createDiagnosticsControlMethods({ diagnostics: services.diagnostics, config }));
   const dispatcher = new DaemonControlDispatcher({
     config, handle: async (method, params) => ({ method, params }), registry,

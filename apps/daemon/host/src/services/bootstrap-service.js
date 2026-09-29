@@ -6,7 +6,7 @@ const { ALWAYS: ALWAYS_UI_CAPABILITIES } = require('../domain/ui-capabilities');
 const { shellFallbackOperations } = require('../domain/shell-capabilities');
 
 class BootstrapService {
-  constructor({ repository, settings, driver, auth = null, accountService = null, vipService = null, privateSpace = null, capabilityProvider = null, config, policyService = null, mediaService = null, requestAuth = null, remoteEnabledProvider = null, uiCapabilitiesProvider = null } = {}) {
+  constructor({ repository, settings, driver, auth = null, accountService = null, vipService = null, privateSpace = null, capabilityProvider = null, config, policyService = null, mediaService = null, requestAuth = null, uiCapabilitiesProvider = null } = {}) {
     this.repository = repository;
     this.settings = settings;
     this.driver = driver;
@@ -19,7 +19,6 @@ class BootstrapService {
     this.policyService = policyService;
     this.mediaService = mediaService;
     this.requestAuth = requestAuth;
-    this.remoteEnabledProvider = remoteEnabledProvider;
     this.uiCapabilitiesProvider = uiCapabilitiesProvider;
   }
 
@@ -48,7 +47,7 @@ class BootstrapService {
       isPlatinumVip: false, isPanVip: false, userVas: 0, vipType: 0, vipLevel: 0 };
     const media = this.mediaService?.getCapabilities?.() || { openOnHost: false, streamInBrowser: false };
     const vipFeatures = this.vipService?.getFeatureCapabilities?.() || { superChannel: false, speedTrial: false };
-    const capabilities = computeGlobalCapabilities({ native: native && native.flat ? native.flat : native, environment: { fallbackOperations: shellFallbackOperations(null), globalRateLimit: true, schedules: true, idleDownload: true, completionActions: true, powerActions: this.config.allowPowerActions === true, linkSync: 'local-only', superChannel: vipFeatures.superChannel === true, speedTrial: vipFeatures.speedTrial === true, openOnHost: media.openOnHost === true, streamInBrowser: media.streamInBrowser === true, remoteNodes: this.remoteEnabledProvider ? this.remoteEnabledProvider() === true : false }, protocols, views: this.uiCapabilitiesProvider ? this.uiCapabilitiesProvider() : [...ALWAYS_UI_CAPABILITIES] });
+    const capabilities = computeGlobalCapabilities({ native: native && native.flat ? native.flat : native, environment: { fallbackOperations: shellFallbackOperations(null), globalRateLimit: true, schedules: true, idleDownload: true, completionActions: true, powerActions: this.config.allowPowerActions === true, linkSync: 'local-only', superChannel: vipFeatures.superChannel === true, speedTrial: vipFeatures.speedTrial === true, openOnHost: media.openOnHost === true, streamInBrowser: media.streamInBrowser === true, remoteNodes: false /* 远程下载功能已删除（2026-09-29） */ }, protocols, views: this.uiCapabilitiesProvider ? this.uiCapabilitiesProvider() : [...ALWAYS_UI_CAPABILITIES] });
     const csrf = this.requestAuth?.issue?.({ principalId: context.bearerToken || 'loopback', origin: context.origin, host: this.config.host, port: this.config.port }) || null;
     return {
       apiVersion: 2,

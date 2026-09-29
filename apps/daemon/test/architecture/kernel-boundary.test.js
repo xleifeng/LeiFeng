@@ -10,7 +10,7 @@ const THUNDER_ONLY = /driver|taskdb-reader|auth-manager|auth-wallet|vip-manager|
 
 test('壳层源码不 require 迅雷内核专属模块', () => {
   const root = path.join(__dirname, '../../host/src');
-  const shellDirs = ['domain', 'services', 'repositories', 'rpc', 'control', 'security', 'adapters', 'secrets', 'remote'];
+  const shellDirs = ['domain', 'services', 'repositories', 'rpc', 'control', 'security', 'adapters', 'secrets'];
   const violations = [];
   for (const dir of shellDirs) {
     const dirPath = path.join(root, dir);
@@ -52,7 +52,7 @@ test('poller 观察通道纯构造注入（迅雷 TaskDb 回退在 kernel-thunde
 // 不许任何 require 直接伸进 kernels/（防止转发文件与跨树引用回潮）。
 test('壳层源码不 require host/kernels/ 内核私有模块', () => {
   const root = path.join(__dirname, '../../host/src');
-  const shellDirs = ['domain', 'services', 'repositories', 'rpc', 'control', 'security', 'adapters', 'secrets', 'remote'];
+  const shellDirs = ['domain', 'services', 'repositories', 'rpc', 'control', 'security', 'adapters', 'secrets'];
   const violations = [];
   const scan = (file) => {
     const requires = [...fs.readFileSync(file, 'utf8').matchAll(/require\((['"])([^'"]+)\1\)/g)].map((m) => m[2]);
@@ -81,7 +81,7 @@ test('内核树 require 壳层只限纯领域模块（domain/）', () => {
       if (!entry.name.endsWith('.js')) continue;
       const requires = [...fs.readFileSync(file, 'utf8').matchAll(/require\((['"])(\.\.[^'"]+)\1\)/g)].map((m) => m[2]);
       for (const spec of requires) {
-        if (/src\/(services|rpc|repositories|control|security|adapters|secrets|remote)\//.test(spec)) {
+        if (/src\/(services|rpc|repositories|control|security|adapters|secrets)\//.test(spec)) {
           violations.push(`${path.relative(root, file)} -> ${spec}`);
         }
       }

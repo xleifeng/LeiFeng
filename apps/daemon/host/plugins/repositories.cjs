@@ -16,8 +16,6 @@ const { HistoryRepository } = require('../src/repositories/history-repository');
 const { LinkRepository } = require('../src/repositories/link-repository');
 const { PrivateSpaceSecretStore } = require('../src/secrets/private-space-secret-store');
 const { MediaSecretStore } = require('../src/secrets/media-secret-store');
-const { CaptureTokenStore } = require('../src/secrets/capture-token-store');
-const { RemoteNodeRepository } = require('../src/repositories/remote-node-repository');
 const { plugin } = require('./shared.cjs');
 
 const repositories = plugin('leifeng-repositories', ['leifengConfig'], (ctx) => {
@@ -36,8 +34,6 @@ const repositories = plugin('leifeng-repositories', ['leifengConfig'], (ctx) => 
   const operationRepository = new OperationRepository({ filePath: appConfig.operationsPath }); operationRepository.load(); operationRepository.prune();
   const privateSecretStore = new PrivateSpaceSecretStore({ filePath: appConfig.privateSpaceSecretsPath }); privateSecretStore.load();
   const mediaSecretStore = new MediaSecretStore({ filePath: appConfig.mediaSecretPath }); mediaSecretStore.load();
-  const captureTokenStore = new CaptureTokenStore({ filePath: appConfig.captureSecretsPath }); captureTokenStore.load();
-  const remoteNodeRepository = new RemoteNodeRepository({ filePath: appConfig.remoteNodesPath }); remoteNodeRepository.load();
   const dataDatabase = new SqliteDatabase({ filePath: appConfig.dataDbPath, backupDir: path.join(runtimeDir, 'backups') });
   dataDatabase.open();
   try { dataDatabase.backup(); } catch (error) { console.error('[thunderd] data database backup skipped:', error.message); }
@@ -47,7 +43,7 @@ const repositories = plugin('leifeng-repositories', ['leifengConfig'], (ctx) => 
   ctx.provide('leifengRepositories', {
     taskRepository, registry, settingsRepository, ftpSecretStore, proxySecretStore,
     scheduleRepository, recentPathRepository, draftRepository, operationRepository,
-    privateSecretStore, mediaSecretStore, captureTokenStore, remoteNodeRepository,
+    privateSecretStore, mediaSecretStore,
     dataDatabase, historyRepository, linkRepository, seedStore,
   });
   return () => {

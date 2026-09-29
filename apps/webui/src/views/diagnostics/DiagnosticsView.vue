@@ -45,7 +45,7 @@ function eventTime(value: unknown) { return typeof value === 'number' ? new Date
     <div v-else-if="query.isError.value" class="settings-error">诊断不可用：{{ query.error.value?.message }}</div>
     <template v-else-if="query.data.value">
       <SystemHealthGrid :diagnostics="query.data.value" />
-      <div class="diagnostic-checks"><button v-for="item in [{ id: 'engine', label: '检查引擎' }, { id: 'filesystem', label: '检查下载目录' }, { id: 'task-repository', label: '检查任务仓库' }, { id: 'media', label: '检查媒体能力' }, { id: 'remote', label: '检查远程节点' }]" :key="item.id" :disabled="activeCheck === item.id" @click="check(item.id)">{{ activeCheck === item.id ? '检查中…' : item.label }}</button></div>
+      <div class="diagnostic-checks"><button v-for="item in [{ id: 'engine', label: '检查引擎' }, { id: 'filesystem', label: '检查下载目录' }, { id: 'task-repository', label: '检查任务仓库' }, { id: 'media', label: '检查媒体能力' }]" :key="item.id" :disabled="activeCheck === item.id" @click="check(item.id)">{{ activeCheck === item.id ? '检查中…' : item.label }}</button></div>
       <pre v-if="checkResult" class="diagnostic-result">{{ JSON.stringify(checkResult, null, 2) }}</pre>
       <TaskDiagnosticPanel />
       <section class="diagnostic-events"><h2>最近事件</h2><div v-if="!eventRows.length" class="inline-note">暂无诊断事件</div><div v-else class="diagnostic-event-list"><article v-for="event in eventRows" :key="String(event.id || event.sequence)" class="diagnostic-event-row"><strong>{{ event.message || event.code || event.type }}</strong><span>{{ eventTime(event.at) }} · {{ event.level || 'info' }} · {{ event.category || 'daemon' }}</span></article></div></section>

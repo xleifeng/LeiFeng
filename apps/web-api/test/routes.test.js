@@ -9,7 +9,6 @@ const { createTorrentUploadRoute } = require('../src/routes/torrent-upload');
 const { createTaskMediaRoutes } = require('../src/routes/task-media');
 const { createTaskExportRoute } = require('../src/routes/task-export');
 const { createDiagnosticExportRoute } = require('../src/routes/diagnostic-export');
-const { createBrowserCaptureRoute } = require('../src/routes/browser-capture');
 const { invokeHttp } = require('../../daemon/test/unit/helpers/http-fixture');
 
 test('external torrent route stages bytes and sends only a private file capability to daemon', async () => {
@@ -43,11 +42,3 @@ test('external task and diagnostic exports stream daemon capabilities without ex
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test('external browser capture route keeps pairing tokens inside daemon client calls', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'web-capture-')); const methods = [];
-  const client = { call: async (method, params) => { methods.push(method); if (method.endsWith('originAllowed')) return { allowed: true }; if (method.endsWith('authenticate')) return { principal: { clientId: 'browser-1', permissions: ['submit'] } }; if (method.endsWith('capture.submit')) return { capturedBy: params.principal.clientId, draftIds: ['draft-1'] }; throw new Error(method); } };
-  const route = createBrowserCaptureRoute({ client, tempRoot: root });
-  const response = await invokeHttp((req, res) => route.tryHandle(req, res, { isLoopback: true, remoteAddress: '127.0.0.1' }), { method: 'POST', url: '/api/v2/capture', headers: { origin: 'chrome-extension://capture', authorization: 'Capture private-token', 'content-type': 'application/json' }, body: JSON.stringify({ urls: ['https://example.test/file'] }) });
-  assert.equal(response.status, 200); assert.equal(JSON.parse(response.body).capturedBy, 'browser-1'); assert.deepEqual(methods, ['daemon.v1.web.capture.originAllowed', 'daemon.v1.web.capture.authenticate', 'daemon.v1.web.capture.submit']);
-  fs.rmSync(root, { recursive: true, force: true });
-});

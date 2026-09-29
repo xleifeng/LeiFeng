@@ -32,7 +32,7 @@ export const taskListItemV2Schema = z.object({
   displayName: z.string(), totalBytes: z.number().nonnegative(), completedBytes: z.number().nonnegative(),
   downloadBytesPerSecond: z.number().nonnegative(), uploadBytesPerSecond: z.number().nonnegative(), progress: z.number().min(0).max(1),
   etaSeconds: z.number().nonnegative().nullable(), createdAt: z.number(), completedAt: z.number().nullable(), error: taskErrorSchema.nullable(),
-  group: z.object({ id: z.string(), label: z.string() }).nullable(), groupResult: z.enum(['partial-failed', 'failed']).nullable().optional(), badges: z.array(z.enum(['vip', 'private', 'remote', 'bt'])),
+  group: z.object({ id: z.string(), label: z.string() }).nullable(), groupResult: z.enum(['partial-failed', 'failed']).nullable().optional(), badges: z.array(z.enum(['vip', 'private', 'bt'])),
   capabilities: z.array(taskListCapabilitySchema), pendingOperation: z.object({ operationId: z.string(), command: z.string() }).nullable(),
   revision: z.number().int().positive(), observationRevision: z.number().int().positive(),
 })

@@ -14,7 +14,6 @@ const { taskShell } = require('./task-shell.cjs');
 const { privateSpace } = require('./private-space.cjs');
 const { historyLinks } = require('./history-links.cjs');
 const { mediaCapture } = require('./media-capture.cjs');
-const { remoteAccess } = require('./remote-access.cjs');
 const { productCore } = require('./product-core.cjs');
 const { pluginAdmin } = require('./plugin-admin.cjs');
 const { daemonAdmin } = require('./daemon-admin.cjs');
@@ -42,7 +41,6 @@ function daemonRegistry() {
     ['private-space', privateSpace, 'leifengPrivateSpace'],
     ['history-links', historyLinks, 'leifengHistoryLinks'],
     ['media-capture', mediaCapture, 'leifengMediaCapture'],
-    ['remote-access', remoteAccess, 'leifengRemoteAccess'],
     ['product-core', productCore, 'leifengProducts'],
     ['plugin-admin', pluginAdmin, 'leifengPluginAdmin'],
     ['daemon-admin', daemonAdmin, 'leifengDaemonAdmin'],

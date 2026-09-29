@@ -24,7 +24,7 @@ function formatUptime(ms: number) {
 }
 
 // P6：核心分区 id 集（builtin 贡献）——内容区分支判断用（核心走内联模板，插件走 component）
-type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'integration' | 'plugin-manager' | 'daemon-admin'
+type Section = 'basic' | 'download' | 'tasks' | 'automation' | 'plugin-manager' | 'daemon-admin'
 
 const form = useDownloadPolicyFormStore()
 const overlay = useOverlayStore()
@@ -39,7 +39,7 @@ const visibleNavigation = computed(() => settingSectionContributions.value.filte
 
 // activeSection 命中插件贡献分区时（id 非核心枚举），内容区渲染其 component；
 // builtin 贡献的核心 6 分区无 component，须排除在本分支外（否则落「未提供内容组件」空态）
-const coreSectionIds: readonly string[] = ['basic', 'download', 'tasks', 'automation', 'integration', 'plugin-manager', 'daemon-admin']
+const coreSectionIds: readonly string[] = ['basic', 'download', 'tasks', 'automation', 'plugin-manager', 'daemon-admin']
 const activePluginSection = computed(() => coreSectionIds.includes(activeSection.value) ? undefined : settingSectionContributions.value.find((section) => section.id === activeSection.value))
 
 watch(activeSection, (section) => {
@@ -276,15 +276,6 @@ async function restore() {
           <div class="settings-rule" />
           <h2>会员下载加速</h2>
           <div class="settings-sub-action"><span>查看账号、Peer ID 和任务级加速状态</span><button class="settings-inline-button" @click="openVip">查看加速状态</button></div>
-        </section>
-
-        <section v-else-if="activeSection === 'integration'" class="settings-section">
-          <h1>系统集成</h1>
-          <h2>协议接管与远程下载</h2>
-          <div class="settings-sub-action"><span>管理浏览器接管、远程节点与配对凭据</span><button class="settings-inline-button" @click="openPage('/settings/integration')">打开系统集成</button></div>
-          <div class="settings-rule" />
-          <h2>下载诊断</h2>
-          <div class="settings-sub-action"><span>运行引擎检查、查看脱敏事件并导出诊断包</span><button class="settings-inline-button" @click="openPage('/diagnostics')">打开下载诊断</button></div>
         </section>
 
         <footer v-if="form.dirty || form.error || notice" class="settings-window-savebar">

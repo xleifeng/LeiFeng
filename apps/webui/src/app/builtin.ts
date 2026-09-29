@@ -19,8 +19,6 @@ export const builtinRoutes: RouteRecordRaw[] = [
   { path: '/links/:id', name: 'link-details', component: () => import('../views/link-library/LinkDetailsView.vue'), meta: { title: '链接详情', capability: 'link-library' } },
   { path: '/trash', name: 'trash', component: () => import('../views/downloads/TrashView.vue'), meta: { title: '回收站', taskView: 'trash' } },
   { path: '/settings', name: 'settings', component: () => import('../views/settings/DownloadSettingsView.vue'), meta: { title: '下载设置' } },
-  { path: '/settings/integration', name: 'integration-settings', component: () => import('../views/settings/IntegrationSettingsView.vue'), meta: { title: '系统集成' } },
-  { path: '/remote', name: 'remote', component: () => import('../views/remote/RemoteDownloadsView.vue'), meta: { title: '远程下载', capability: 'remote' } },
   { path: '/diagnostics', name: 'diagnostics', component: () => import('../views/diagnostics/DiagnosticsView.vue'), meta: { title: '诊断' } },
   { path: '/status', redirect: '/diagnostics' },
 ]
@@ -39,7 +37,6 @@ const builtinSettingSections = [
   { id: 'download', label: '下载设置' },
   { id: 'tasks', label: '任务管理' },
   { id: 'automation', label: '计划任务' },
-  { id: 'integration', label: '系统集成' },
   { id: 'plugin-manager', label: '插件管理' },
   { id: 'daemon-admin', label: '守护进程', capability: 'daemon-admin' as ViewCapabilityId },
 ]

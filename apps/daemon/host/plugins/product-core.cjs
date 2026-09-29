@@ -1,9 +1,13 @@
 'use strict';
 // product-core（P4 拆分残留聚合核，原 product-services）：bootstrap 快照聚合
 // + diagnostics 聚合 + account shell 协作者晚绑定。对 UI 能力不再贡献面板
-// （各域插件自持）；本插件消费 private-space / media-capture / remote-access /
-// history-links 槽构造装配级聚合视图——它们缺席时各段诚实降级。
+// （各域插件自持）；本插件消费 private-space / media-capture / history-links
+// 槽构造装配级聚合视图——它们缺席时各段诚实降级。
+// 远程下载功能已整层删除（2026-09-29，docs/specs/2026-09-29-remove-remote-capture.md）；
+// 账号链接同步（LinkSync，迅雷账号域件）随本插件直构。
 const { DiagnosticsService } = require('../src/services/diagnostics-service');
+const { LinkSyncService } = require('../src/services/link-sync-service');
+const { LinkSyncAdapter } = require('../src/adapters/link-sync-adapter');
 const { BootstrapService } = require('../src/services/bootstrap-service');
 const { createDiagnosticsControlMethods } = require('../src/rpc/diagnostics-control-methods');
 const { createSystemMethods } = require('../src/rpc/system-methods');
@@ -19,24 +23,24 @@ const productCore = plugin('leifeng-product-core', ['leifengConfig', 'leifengRep
   const { kernel: driver, eventBus, diagnosticEvents } = kernelSlot;
   const { auth = null, vipManager = null, accountService = null } = kernelSlot.account || {};
   const { policyService } = ctx.leifengTasks;
-  // 四域插件可选消费（域插件被禁用时聚合视图逐段诚实降级——P4 拆分时各服务
+  // 域插件可选消费（域插件被禁用时聚合视图逐段诚实降级——P4 拆分时各服务
   // 构造器已带 = null 缺省，此处只是把「装配期硬依赖」放成运行期缺席）。
   const { privateSpace } = ctx.reflect.get('leifengPrivateSpace', false) ?? { privateSpace: null };
   const { mediaService } = ctx.reflect.get('leifengMediaCapture', false) ?? { mediaService: null };
-  const { remoteNodeService = null, remoteCredentialsReady = null, linkSyncService = null } = ctx.reflect.get('leifengRemoteAccess', false) ?? {};
+  const linkSyncService = new LinkSyncService({ adapter: new LinkSyncAdapter({ enabled: false }) });
   const { requestAuth } = ctx.leifengRequestPolicy;
 
   const diagnosticsService = new DiagnosticsService({
     config: appConfig, tasks: taskRepository, driver, settings: settingsRepository,
     events: diagnosticEvents, privateSpace, media: mediaService,
-    remoteNodes: remoteNodeService, operations: operationRepository,
+    operations: operationRepository,
     policy: policyService, auth, vip: vipManager,
   });
   const bootstrapService = new BootstrapService({
     repository: taskRepository, settings: settingsRepository, driver, auth,
     accountService, vipService: vipManager, privateSpace,
     capabilityProvider: () => driver.nativeCapabilities || {}, config: appConfig,
-    policyService, mediaService, requestAuth, remoteEnabledProvider: remoteCredentialsReady,
+    policyService, mediaService, requestAuth, remoteEnabledProvider: null,
     uiCapabilitiesProvider: () => ctx.leifengUiRegistry.snapshot(),
   });
   // AccountService 已随迅雷绑定域归 kernel-thunder：从 kernel account 槽取实例，

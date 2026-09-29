@@ -47,24 +47,6 @@ function versionNameFromProgramDir(value, fallback = '') {
   return match ? match[1] : fallback;
 }
 
-function parseListenAddress(value, fallback = { host: '127.0.0.1', port: 0 }) {
-  const input = String(value || '').trim();
-  if (!input) return { ...fallback };
-  let host = ''; let portText = '';
-  if (input.startsWith('[')) {
-    const close = input.indexOf(']');
-    if (close < 0 || input[close + 1] !== ':') return null;
-    host = input.slice(1, close); portText = input.slice(close + 2);
-  } else {
-    const index = input.lastIndexOf(':');
-    if (index <= 0) return null;
-    host = input.slice(0, index); portText = input.slice(index + 1);
-  }
-  const port = Number(portText);
-  if (!host || !Number.isSafeInteger(port) || port < 1 || port > 65535) return null;
-  return { host, port };
-}
-
 function assertSafeWritableRoot(candidate, home, label) {
   const resolved = path.resolve(candidate);
   const root = path.parse(resolved).root;
@@ -85,7 +67,7 @@ const CONFIG_FILE_KEYS = new Set([
   'THUNDERD_MAGNET_TIMEOUT_SEC', 'THUNDERD_VERSION', 'THUNDERD_VIP_ENABLED',
   'THUNDERD_ALLOW_POWER_ACTIONS', 'THUNDERD_CSRF', 'THUNDERD_WEBUI_DIR',
   'THUNDERD_SDK_VERSION_NAME', 'THUNDERD_SDK_VERSION_CODE', 'THUNDERD_SDK_PLATFORM',
-  'WINEPREFIX', 'THUNDERD_CAPTURE_CLIENT_CONFIG',
+  'WINEPREFIX',
 ]);
 // secret 类键永不入文件：RPC secret / CSRF token / 凭据只能走环境变量。
 const CONFIG_FILE_FORBIDDEN = /(?:SECRET|TOKEN|PASSWORD|PASSKEY|SESSION|CREDENTIAL|AUTH)/i;
@@ -153,11 +135,6 @@ function loadConfig({
     ftpSecretsPath: path.join(runtimeDir, 'secrets', 'ftp.json'),
     privateSpaceSecretsPath: path.join(runtimeDir, 'secrets', 'private-space.json'),
     mediaSecretPath: path.join(runtimeDir, 'secrets', 'media-hmac.key'),
-    captureSecretsPath: path.join(runtimeDir, 'secrets', 'capture.json'),
-    captureClientConfigPath: path.resolve(mergedEnv.THUNDERD_CAPTURE_CLIENT_CONFIG || path.join(mergedEnv.XDG_CONFIG_HOME || path.join(homeDir, '.config'), 'thunder', 'capture.json')),
-    remoteNodesPath: path.join(runtimeDir, 'data', 'remote-nodes.json'),
-    remoteClientsPath: path.join(runtimeDir, 'secrets', 'remote-clients.json'),
-    remoteSecretsDir: path.join(runtimeDir, 'secrets', 'remote'),
     privateSpaceDir: path.join(downloadDir, '.private'),
     dataDbPath: path.join(runtimeDir, 'data', 'thunder-data.db'),
     seedsDir: path.join(runtimeDir, 'seeds'),
@@ -188,6 +165,6 @@ function loadConfig({
   return freezeDeep(config);
 }
 
-module.exports = { loadConfig, freezeDeep, assertSafeWritableRoot, positiveInt, parseListenAddress, engineMode,
+module.exports = { loadConfig, freezeDeep, assertSafeWritableRoot, positiveInt, engineMode,
   versionCodeFromName, versionNameFromProgramDir, mergeConfigFile, CONFIG_FILE_KEYS };
 

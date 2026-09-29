@@ -74,7 +74,7 @@ function computeGlobalCapabilities({ native = {}, environment = {}, protocols = 
     speedTrial: environment.speedTrial === true,
     openOnHost: environment.openOnHost === true,
     streamInBrowser: environment.streamInBrowser === true,
-    remoteNodes: environment.remoteNodes === true,
+    remoteNodes: false, // 远程下载功能已删除（2026-09-29），契约字段保留恒假
     cloudDrive: false,
   });
 }

@@ -2,7 +2,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { RequestAuth } = require('../../host/src/security/request-auth');
-const { parseListenAddress } = require('../../host/src/config');
 
 test('CSRF session binds principal and exact origin, then expires', () => {
   let now = 1000;
@@ -21,9 +20,3 @@ test('loopback CLI mutation without Origin bypasses browser CSRF session', () =>
   assert.throws(() => auth.assertCsrf({ principalId: 'secret', isLoopback: false, origin: null }), { code: 'CSRF_INVALID' });
 });
 
-test('remote listen parser handles IPv4, IPv6 and rejects malformed values', () => {
-  assert.deepEqual(parseListenAddress('127.0.0.1:7443'), { host: '127.0.0.1', port: 7443 });
-  assert.deepEqual(parseListenAddress('[::1]:7443'), { host: '::1', port: 7443 });
-  assert.equal(parseListenAddress('bad'), null);
-  assert.equal(parseListenAddress('127.0.0.1:0'), null);
-});

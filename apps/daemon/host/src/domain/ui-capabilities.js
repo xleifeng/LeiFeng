@@ -13,8 +13,6 @@ const KNOWN = Object.freeze(new Set([
   'link-library',     // 链接库（history-links 插件）
   'private-space',    // 私人空间（private-space 插件）
   'media',            // 媒体播放（media-capture 插件）
-  'capture',          // 浏览器捕获（media-capture 插件）
-  'remote',           // 远程节点（remote-access 插件）
   'daemon-admin',     // daemon 管理面（daemon-admin 插件：状态查询 + 整体重启）
 ]));
 

@@ -16,7 +16,6 @@ function presentBadges(task) {
   const badges = [];
   if (task.vip && ['active', 'injected', 'effective'].includes(task.vip.state)) badges.push('vip');
   if (task.privateSpace === true) badges.push('private');
-  if (task.remote === true || task.remoteNodeId) badges.push('remote');
   if (task.kind === 'bt' || task.kind === 'magnet') badges.push('bt');
   return badges;
 }
