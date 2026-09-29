@@ -2,7 +2,7 @@
 // registerFrontendPlugin 同一贡献面注册（id 固定 'builtin'），与运行期前端插件
 // 单轨合并；NativeSidebar / router / SettingDialog 不再各持一份本地清单。
 // 响应式注册表保证消费方（computed 派生）自动重渲染，行为与双轨时代一致。
-import { Download } from '@lucide/vue'
+import { Download, History, Link2, Lock } from '@lucide/vue'
 import type { RouteRecordRaw } from 'vue-router'
 import { registerFrontendPlugin } from './plugins'
 import type { ViewCapabilityId } from '../stores/ui-capabilities'
@@ -26,9 +26,9 @@ export const builtinRoutes: RouteRecordRaw[] = [
 /** 内置侧栏导航（原 NativeSidebar links 原样迁移） */
 const builtinNavItems = [
   { to: '/download', label: '下载', icon: Download },
-  { to: '/private-space', label: '私人空间', capability: 'private-space' as ViewCapabilityId },
-  { to: '/history', label: '下载记录', capability: 'history' as ViewCapabilityId },
-  { to: '/links', label: '链接库', capability: 'link-library' as ViewCapabilityId },
+  { to: '/private-space', label: '私人空间', icon: Lock, capability: 'private-space' as ViewCapabilityId },
+  { to: '/history', label: '下载记录', icon: History, capability: 'history' as ViewCapabilityId },
+  { to: '/links', label: '链接库', icon: Link2, capability: 'link-library' as ViewCapabilityId },
 ]
 
 /** 内置设置分区（原 SettingDialog navigation 迁移；component 缺省——核心分区由模板内联渲染） */

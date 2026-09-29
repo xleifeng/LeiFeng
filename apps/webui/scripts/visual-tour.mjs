@@ -72,6 +72,13 @@ await page.waitForSelector('[data-testid="settings-dialog"]')
 await settle()
 await page.screenshot({ path: `${outDir}/04-settings.png` })
 
+// 关于弹窗（设置内入口）
+await page.getByRole('button', { name: '关于 Leifeng' }).click()
+await page.waitForTimeout(400)
+await settle()
+await page.screenshot({ path: `${outDir}/06-about.png` })
+await page.getByLabel('关闭关于 Leifeng').click().catch(() => {})
+
 // 回收站（空态）
 await page.keyboard.press('Escape').catch(() => {})
 await page.getByLabel('关闭设置').click().catch(() => {})

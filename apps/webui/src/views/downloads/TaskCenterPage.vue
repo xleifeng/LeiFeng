@@ -138,20 +138,19 @@ useDownloadShortcuts({ selected: selectedTasks, visibleIds, focused: focusedTask
 
 <template>
   <section class="task-center-page" :class="`is-${currentView}`">
-    <header v-if="currentView === 'trash'" class="task-page-header">
-      <h1>回收站</h1>
-      <button class="page-header-action" type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="22" :stroke-width="2" /></button>
+    <header class="task-page-header">
+      <h1>{{ currentView === 'trash' ? '回收站' : '下载' }}</h1>
+      <div class="task-header-actions">
+        <button v-if="currentView !== 'trash'" type="button" aria-label="刷新任务" @click="taskQuery.refresh"><RotateCw :size="16" :stroke-width="1.9" /></button>
+        <button type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="19" :stroke-width="2" /></button>
+      </div>
     </header>
-    <header v-else class="task-page-header" aria-label="下载分类">
+    <div v-if="currentView !== 'trash'" class="task-page-subhead" aria-label="下载分类">
       <div class="view-segment" role="tablist">
         <button type="button" role="tab" :class="{ active: currentView === 'downloading' }" data-testid="tab-downloading" @click="selectDownloadTab('downloading')">下载中 <span>{{ downloadingCount }}</span></button>
         <button type="button" role="tab" :class="{ active: currentView === 'completed' }" data-testid="tab-completed" @click="selectDownloadTab('completed')">已完成 <span>{{ completedCount }}</span></button>
       </div>
-      <div class="task-header-actions">
-        <button type="button" aria-label="刷新任务" @click="taskQuery.refresh"><RotateCw :size="16" :stroke-width="1.9" /></button>
-        <button type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="19" :stroke-width="2" /></button>
-      </div>
-    </header>
+    </div>
     <div class="task-page-body">
       <TaskCenterToolbar :view="currentView" :selected-count="selection.count" :total="taskQuery.data.value?.pages[0]?.total || 0" :sort="sort" :group-by="groupBy" :busy="commandCenter.pendingCount > 0" :can-start="selectedCapabilities.start" :can-pause="selectedCapabilities.pause" :can-recycle="selectedCapabilities.recycle" :can-delete-permanently="selectedCapabilities.deletePermanently" @update:sort="updateSort" @update:group-by="updateGroupBy" @select-all="selectAll" @command="command" @empty-trash="emptyTrash" @refresh="taskQuery.refresh" @more="openDownloadSettings" @vip="openVipOverview" />
       <TaskSelectionToolbar :count="selection.count" :total="visibleIds.length" @clear="selection.clear" @select-all="selectAll" />

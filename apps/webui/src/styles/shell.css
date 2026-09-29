@@ -20,8 +20,10 @@
   transition: background var(--md-motion-fast), color var(--md-motion-fast);
 }
 .rail-item:hover .rail-item-icon { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
-.rail-item.router-link-active { color: var(--md-on-surface); }
+.rail-item.router-link-active { color: var(--md-primary); }
 .rail-item.router-link-active .rail-item-icon { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+/* M3 rail 激活态：label 同步变色加粗（Google 系惯例：图标容器 + 文字双通道反馈） */
+.rail-item.router-link-active .rail-item-label { color: var(--md-primary); font-weight: 700; }
 .rail-item-badge {
   position: absolute; top: -2px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px;
   border-radius: var(--md-shape-full); display: grid; place-items: center;
@@ -73,11 +75,6 @@
 .app-content { flex: 1; min-height: 0; overflow-y: auto; background: var(--md-surface); }
 .app-content.is-task-surface { overflow: hidden; display: flex; flex-direction: column; }
 
-.page-head { display: flex; align-items: center; gap: 12px; padding: 8px 32px 0; }
-.page-head h1 { margin: 0; font-size: 22px; font-weight: 500; }
-.page-head .engine-dot { display: inline-flex; align-items: center; gap: 7px; color: var(--md-success); font-size: 12px; }
-.engine-dot i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, var(--md-success) 18%, transparent); }
-
 .connection-banner {
   display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 40px; padding: 0 18px;
   color: var(--md-on-error-container); background: var(--md-error-container); font-size: 13px;
@@ -113,5 +110,4 @@
   .fab-new-task { right: 16px; bottom: 76px; }
   .app-content { padding-bottom: 72px; }
   .app-content.is-task-surface { padding-bottom: 0; }
-  .page-head { padding: 6px 16px 0; }
 }

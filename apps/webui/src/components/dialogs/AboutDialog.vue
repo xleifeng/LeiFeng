@@ -31,10 +31,6 @@ function openNotices() {
       <button class="about-component-version" :aria-expanded="componentsVisible" @click="componentsVisible = !componentsVisible">查看组件版本 <ChevronDown :size="13" :class="{ expanded: componentsVisible }" /></button>
       <dl v-if="componentsVisible" class="about-component-list"><div><dt>WebUI</dt><dd>0.1.0</dd></div><div><dt>Daemon</dt><dd>{{ version }}</dd></div><div><dt>Web API</dt><dd>JSON-RPC v2</dd></div></dl>
       <div style="margin-top: 14px"><button class="settings-inline-button" @click="openNotices">开源组件许可 <ChevronRight :size="14" /></button></div>
-      <div class="about-copyright">
-        <p>Leifeng 是迅雷 Linux 下载栈的逆向移植项目，仅供个人学习使用</p>
-        <p>迅雷及相关商标归其权利人所有</p>
-      </div>
     </section>
   </div>
 </template>
