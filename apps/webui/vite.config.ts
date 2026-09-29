@@ -5,12 +5,6 @@ import { fileURLToPath, URL } from 'node:url'
 export default defineConfig({
   base: './',
   plugins: [vue()],
-  resolve: {
-    alias: {
-      // 指向 webui/src/assets/orig — 原版 renderer 解包资产（详见 src/assets/orig/NOTICE.md）
-      '@orig': fileURLToPath(new URL('./src/assets/orig', import.meta.url)),
-    },
-  },
   build: {
     rollupOptions: {
       // vue-runtime-exports 作为第二入口：entry 导出不受 tree-shaking 影响，用它把

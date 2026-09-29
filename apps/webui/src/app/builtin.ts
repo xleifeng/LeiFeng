@@ -26,9 +26,9 @@ export const builtinRoutes: RouteRecordRaw[] = [
 /** 内置侧栏导航（原 NativeSidebar links 原样迁移） */
 const builtinNavItems = [
   { to: '/download', label: '下载', icon: Download },
-  { to: '/private-space', label: '私人空间', trashActive: true, capability: 'private-space' as ViewCapabilityId },
-  { to: '/history', label: '下载记录', trashActive: true, capability: 'history' as ViewCapabilityId },
-  { to: '/links', label: '链接库', trashActive: true, capability: 'link-library' as ViewCapabilityId },
+  { to: '/private-space', label: '私人空间', capability: 'private-space' as ViewCapabilityId },
+  { to: '/history', label: '下载记录', capability: 'history' as ViewCapabilityId },
+  { to: '/links', label: '链接库', capability: 'link-library' as ViewCapabilityId },
 ]
 
 /** 内置设置分区（原 SettingDialog navigation 迁移；component 缺省——核心分区由模板内联渲染） */

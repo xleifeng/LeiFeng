@@ -38,10 +38,10 @@ function eventTime(value: unknown) { return typeof value === 'number' ? new Date
 </script>
 
 <template>
-  <section class="feature-data-page replica-data-page diagnostics-page">
-    <header class="replica-page-header"><div><h1>下载诊断</h1><p>检查下载引擎、目录、任务仓库、媒体与远程节点，导出内容会严格脱敏</p></div><div class="settings-page-actions"><button class="secondary-button" :disabled="restarting" @click="restartEngine"><RotateCcw :size="14" />{{ restarting ? '重启中…' : '重启引擎' }}</button><button class="secondary-button" @click="query.refetch(); events.refetch()"><RefreshCw :size="14" />刷新</button><button class="primary-button" @click="exportDiagnostics"><Download :size="14" />导出诊断</button></div></header>
+  <section class="data-page diagnostics-page">
+    <header class="data-page-header"><div><h1>下载诊断</h1><p>检查下载引擎、目录、任务仓库、媒体与远程节点，导出内容会严格脱敏</p></div><div class="settings-page-actions"><button class="secondary-button" :disabled="restarting" @click="restartEngine"><RotateCcw :size="14" />{{ restarting ? '重启中…' : '重启引擎' }}</button><button class="secondary-button" @click="query.refetch(); events.refetch()"><RefreshCw :size="14" />刷新</button><button class="primary-button" @click="exportDiagnostics"><Download :size="14" />导出诊断</button></div></header>
     <p v-if="error" class="settings-error">{{ error }}</p><p v-if="notice" class="settings-notice">{{ notice }}</p>
-    <div v-if="query.isPending.value" class="replica-loading">正在读取诊断…</div>
+    <div v-if="query.isPending.value" class="data-loading">正在读取诊断…</div>
     <div v-else-if="query.isError.value" class="settings-error">诊断不可用：{{ query.error.value?.message }}</div>
     <template v-else-if="query.data.value">
       <SystemHealthGrid :diagnostics="query.data.value" />

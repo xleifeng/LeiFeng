@@ -119,7 +119,7 @@ function toggleSelected() {
   if (selectedTasks.value.some((task) => task.lifecycle === 'downloading')) command('pause')
   else command('start')
 }
-function focusSearch() { document.querySelector<HTMLInputElement>('.topbar-search input')?.focus() }
+function focusSearch() { document.querySelector<HTMLInputElement>('.top-search input')?.focus() }
 function newTask() { overlay.open({ type: 'new-task' }) }
 function openDownloadSettings() { overlay.open({ type: 'settings' }) }
 function openVipOverview() { overlay.open({ type: 'vip-overview' }) }
@@ -138,16 +138,18 @@ useDownloadShortcuts({ selected: selectedTasks, visibleIds, focused: focusedTask
 
 <template>
   <section class="task-center-page" :class="`is-${currentView}`">
-    <header v-if="currentView === 'trash'" class="task-page-header trash-page-header">
+    <header v-if="currentView === 'trash'" class="task-page-header">
       <h1>回收站</h1>
       <button class="page-header-action" type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="22" :stroke-width="2" /></button>
     </header>
-    <header v-else class="task-page-header download-tabs" aria-label="下载分类">
-      <button type="button" :class="{ active: currentView === 'downloading' }" @click="selectDownloadTab('downloading')">下载中 <span>{{ downloadingCount }}</span></button>
-      <button type="button" :class="{ active: currentView === 'completed' }" @click="selectDownloadTab('completed')">已完成 <span>{{ completedCount }}</span></button>
-      <div class="download-header-actions">
-        <button type="button" aria-label="刷新任务" @click="taskQuery.refresh"><RotateCw :size="18" :stroke-width="1.7" /></button>
-        <button type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="21" :stroke-width="2" /></button>
+    <header v-else class="task-page-header" aria-label="下载分类">
+      <div class="view-segment" role="tablist">
+        <button type="button" role="tab" :class="{ active: currentView === 'downloading' }" data-testid="tab-downloading" @click="selectDownloadTab('downloading')">下载中 <span>{{ downloadingCount }}</span></button>
+        <button type="button" role="tab" :class="{ active: currentView === 'completed' }" data-testid="tab-completed" @click="selectDownloadTab('completed')">已完成 <span>{{ completedCount }}</span></button>
+      </div>
+      <div class="task-header-actions">
+        <button type="button" aria-label="刷新任务" @click="taskQuery.refresh"><RotateCw :size="16" :stroke-width="1.9" /></button>
+        <button type="button" aria-label="更多操作" @click="openDownloadSettings"><MoreHorizontal :size="19" :stroke-width="2" /></button>
       </div>
     </header>
     <div class="task-page-body">

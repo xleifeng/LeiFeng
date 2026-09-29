@@ -80,7 +80,7 @@ async function confirm() {
 </script>
 
 <template>
-  <div class="subdialog-canvas">
+  <div class="subdialog-canvas" @mousedown.self="backToSettings">
     <section class="limit-speed-window" role="dialog" aria-modal="true" aria-label="限速设置">
       <h1>限速设置</h1>
       <button class="subdialog-close" aria-label="关闭限速设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></button>

@@ -79,8 +79,8 @@ async function confirm() {
 </script>
 
 <template>
-  <div class="subdialog-canvas">
-    <section class="proxy-window" role="dialog" aria-modal="true" aria-label="添加代理或编辑代理">
+  <div class="subdialog-canvas" @mousedown.self="backToSettings">
+    <section class="proxy-window" role="dialog" aria-modal="true" aria-label="代理设置">
       <h1>添加代理/编辑代理</h1>
       <button class="subdialog-close" aria-label="关闭代理设置" @click="backToSettings"><X :size="16" :stroke-width="1.6" /></button>
 

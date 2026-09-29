@@ -1,10 +1,12 @@
-# 迅雷 Linux WebUI
+# Leifeng WebUI
 
-这是面向 `thunderd` 的独立 Vue 3 WebUI，采用迅雷桌面端的布局和交互语言重新实现，不依赖 Electron renderer，也不再包含 AriaNg、AngularJS、jQuery 或 iframe。
+这是面向 `thunderd` 的独立 Vue 3 WebUI，不依赖 Electron renderer，也不再包含 AriaNg、AngularJS、jQuery 或 iframe。
+
+2026-09-29 起界面为全新「Leifeng Modern」设计（石板灰阶 + teal 强调色、全高侧栏 + 窄顶栏 + 居中模态、暗色主题）；旧迅雷像素复刻版备份在 `apps/webui-legacy/`（冻结，仅供回退参考）。视觉验收不再做原版像素 diff，走视觉子代理截图走查。
 
 ## 当前实现
 
-界面已切换为迅雷原生式壳层和下载中心：`#/download/downloading`、`#/download/completed` 使用 V2 tasks query、稳定 cursor、虚拟列表、任务选择/范围选择、能力驱动右键菜单、快捷键、离线快照和任务详情。创建链路支持 raw torrent 上传、链接/BT 预检与提交、磁力 metadata 轮询、重复任务处理、保存目录草稿更新和任务组视图。任务操作、回收站、重命名/移动/重下载对话框、BT 文件详情、种子导出、下载策略、限速/全速、P2P/P2S/代理、队列、计划任务、账号/VIP、私人空间、下载记录、链接库、媒体预览、系统集成、通知、浏览器接管、远程节点和诊断页均已接入。
+界面为 Leifeng Modern 壳层和下载中心：`#/download/downloading`、`#/download/completed` 使用 V2 tasks query、稳定 cursor、虚拟列表、任务选择/范围选择、能力驱动右键菜单、快捷键、离线快照和任务详情。创建链路支持 raw torrent 上传、链接/BT 预检与提交、磁力 metadata 轮询、重复任务处理、保存目录草稿更新和任务组视图。任务操作、回收站、重命名/移动/重下载对话框、BT 文件详情、种子导出、下载策略、限速/全速、P2P/P2S/代理、队列、计划任务、账号/VIP、私人空间、下载记录、链接库、媒体预览、系统集成、通知、浏览器接管、远程节点和诊断页均已接入。
 
 ## 已接入能力
 

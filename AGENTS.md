@@ -78,15 +78,15 @@ node apps/bridge/src/main.js hybrid --magnet <URI> --data <dir>   # 桥
 - 实现工作在 feature 分支进行，不在 master / main 直接开发。
 - 重大不可逆操作（删除、覆盖未自创文件、外发内容）先确认，除非获持久授权。
 
-## WebUI 像素复刻
+## WebUI 设计（Leifeng Modern，2026-09-29 起）
 
-范围基线 = daemon 真实能力（云盘 / 片库 / 会员 / 企业能力不伪装可用）：
+2026-09-29 全面重设计：旧「迅雷像素复刻」体系（tokens-orig.css / 蜂鸟 / 1200×760 pixelmatch 验收）已整体退役，备份在 `apps/webui-legacy/`（冻结，仅供回退参考）与 git 历史（179e490）。
 
-- 主模型无多模态：一切视觉对比（原版截图 vs webui 同场景截图、字体度量漂移）派视觉子代理读图出报告，禁止凭文件名或经验臆断像素差异。
-- 许可线：允许 import 原版 CSS / 字体 / 3D 插画 / 蜂鸟 logo（个人使用，禁再分发）；资产放 `apps/webui/src/assets/orig/` 并保留 NOTICE.md。
-- 验收：Playwright 固定视口 1200×760、deviceScaleFactor=1、字体加载后截图，与 `docs/ui-reference/orig-*.png` 做 pixelmatch diff，mismatch ≤5%（threshold 0.1 容抗锯齿）；超阈值出报告人工复核。
-- 弹窗用页内 dialog 模态（`useDialog()` 单例注册表 + Teleport），组件名沿用原版 kebab；遮罩 / 圆角 / 宽高按 `orig-modal-*.png` 定死，不自适应。
-- 数据面 100% 走真实 RPC（`leifeng.ui.v2.*`），无 fallback 伪装；daemon RPC 面之外的原版设置项直接隐藏，不伪装。
+- 设计语言：现代工具风——石板灰阶 + teal 强调色（`--lf-*` 令牌，`src/styles/tokens.css`），全高侧栏 + 窄顶栏 + 居中模态，暗色主题经 `data-theme='dark'`。
+- 品牌：产品名 Leifeng，禁用蜂鸟 logo 与迅雷字样做品牌；仅登录二维码等「功能属实」场景保留迅雷 App 提示。
+- 视觉验收：主模型无多模态——截图走查一律派视觉子代理（glm-5.3-flash）读图出报告，禁止臆断；不再做原版像素 diff。
+- 数据面 100% 走真实 RPC（`leifeng.ui.v2.*`），无 fallback 伪装；daemon RPC 面之外的能力直接隐藏，不伪装。
+- 交互关键元素带 `data-testid`；e2e 用语义选择器（role/label/text）优先。
 
 ## Vendoring
 

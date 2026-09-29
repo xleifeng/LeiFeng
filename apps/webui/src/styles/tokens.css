@@ -1,30 +1,76 @@
+/* Leifeng Modern 设计令牌（v2 重设计，2026-09-29）
+ * 与旧迅雷复刻令牌（--xl-*）彻底切割：石板灰阶 + teal 单一强调色。
+ * 暗色主题经 :root[data-theme='dark'] 切换（shell store 写入）。
+ */
 :root {
-  --xl-sidebar-width: 180px;
-  --xl-topbar-height: 70px;
-  --xl-content-bg: #f6f6f6; /* 原版实渲染顶栏/侧栏底色（像素实测，原 tokens-orig 覆盖层收口） */
-  --xl-panel-bg: #fff;
-  --xl-text-primary: #272e3b; /* 原版三级灰阶（收口自 tokens-orig） */
-  --xl-text-secondary: #86909c;
-  --xl-text-tertiary: #c9cdd4;
-  --xl-border: #e5e6eb;
-  --xl-blue: #226df5; /* 主色（收口自 tokens-orig 原版视觉令牌；侧栏激活、链接、按钮 hover 用 hover 色） */
-  --xl-blue-hover: #1a5fd8;
-  --xl-danger: #ff4d4f;
-  --xl-success: #1bd08d;
-  --xl-radius-control: 8px;
-  --xl-radius-panel: 12px;
-  --xl-row-height: 72px;
-  --xl-row-height-compact: 56px;
-  --xl-focus-ring: 0 0 0 3px rgb(52 120 246 / 22%);
-  --xl-shadow-panel: 0 1px 3px rgb(31 35 41 / 5%), 0 8px 24px rgb(31 35 41 / 3%);
+  /* ---- 色板：中性 ---- */
+  --lf-bg: #f4f5f7;              /* 内容区底 */
+  --lf-surface: #ffffff;         /* 卡片 / 弹窗 / 列表行 */
+  --lf-surface-sunken: #eceef1;  /* 凹陷底（输入、进度条槽） */
+  --lf-sidebar: #fafbfc;         /* 侧栏 */
+  --lf-border: #e4e7eb;
+  --lf-border-strong: #d3d8de;
+  --lf-text-1: #1d232c;
+  --lf-text-2: #5c6672;
+  --lf-text-3: #98a1ac;
+
+  /* ---- 色板：语义 ---- */
+  --lf-accent: #0d9488;          /* teal-600 */
+  --lf-accent-hover: #0f766e;    /* teal-700 */
+  --lf-accent-strong: #115e59;   /* teal-800，深色文字用 */
+  --lf-accent-soft: rgb(13 148 136 / 10%);
+  --lf-accent-soft-2: rgb(13 148 136 / 18%);
+  --lf-danger: #e11d48;
+  --lf-danger-hover: #be123c;
+  --lf-danger-soft: rgb(225 29 72 / 8%);
+  --lf-warning: #d97706;
+  --lf-warning-soft: rgb(217 119 6 / 10%);
+  --lf-success: #16a34a;
+
+  /* ---- 形状 ---- */
+  --lf-radius-lg: 14px;          /* 面板 / 卡片 */
+  --lf-radius-md: 10px;          /* 控件 / 弹窗内部块 */
+  --lf-radius-sm: 8px;           /* 小元素 */
+  --lf-radius-full: 999px;       /* 胶囊（按钮 / chip / 搜索） */
+
+  /* ---- 阴影（柔和分层，替代硬边框分区） ---- */
+  --lf-shadow-card: 0 1px 2px rgb(16 24 40 / 4%), 0 1px 3px rgb(16 24 40 / 6%);
+  --lf-shadow-pop: 0 4px 16px rgb(16 24 40 / 10%), 0 2px 6px rgb(16 24 40 / 6%);
+  --lf-shadow-modal: 0 24px 64px rgb(16 24 40 / 20%), 0 4px 16px rgb(16 24 40 / 8%);
+
+  /* ---- 焦点 ---- */
+  --lf-focus-ring: 0 0 0 3px rgb(13 148 136 / 25%);
+
+  /* ---- 布局 ---- */
+  --lf-sidebar-w: 232px;
+  --lf-topbar-h: 56px;
+  --lf-row-h: 68px;
+  --lf-row-h-compact: 52px;
 }
 
 :root[data-theme='dark'] {
-  --xl-content-bg: #181a1f;
-  --xl-panel-bg: #23262d;
-  --xl-text-primary: #f3f4f6;
-  --xl-text-secondary: #a7adb8;
-  --xl-text-tertiary: #737a86;
-  --xl-border: #343841;
-  --xl-shadow-panel: 0 1px 3px rgb(0 0 0 / 20%);
+  --lf-bg: #101214;
+  --lf-surface: #1a1d21;
+  --lf-surface-sunken: #26292e;
+  --lf-sidebar: #15171a;
+  --lf-border: #2b2f35;
+  --lf-border-strong: #3a3f47;
+  --lf-text-1: #ecedef;
+  --lf-text-2: #b4bbc4;
+  --lf-text-3: #828b96;
+  --lf-accent: #14b8a6;          /* teal-500：暗色下提一档亮度 */
+  --lf-accent-hover: #2dd4bf;
+  --lf-accent-strong: #5eead4;
+  --lf-accent-soft: rgb(20 184 166 / 14%);
+  --lf-accent-soft-2: rgb(20 184 166 / 22%);
+  --lf-danger: #fb7185;
+  --lf-danger-hover: #fda4af;
+  --lf-danger-soft: rgb(251 113 133 / 12%);
+  --lf-warning: #fbbf24;
+  --lf-warning-soft: rgb(251 191 36 / 12%);
+  --lf-success: #4ade80;
+  --lf-shadow-card: 0 1px 2px rgb(0 0 0 / 30%);
+  --lf-shadow-pop: 0 4px 16px rgb(0 0 0 / 40%), 0 2px 6px rgb(0 0 0 / 30%);
+  --lf-shadow-modal: 0 24px 64px rgb(0 0 0 / 55%), 0 4px 16px rgb(0 0 0 / 40%);
+  --lf-focus-ring: 0 0 0 3px rgb(20 184 166 / 35%);
 }

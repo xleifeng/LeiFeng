@@ -1,0 +1,130 @@
+/* Leifeng Modern — 次级视图：下载记录 / 链接库 / 私人空间 / 诊断 / 设置页 */
+
+.data-page { width: 100%; max-width: 1080px; margin: 0 auto; padding: 20px 28px 48px; }
+.data-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; min-height: 42px; margin-bottom: 18px; }
+.data-page-header h1 { margin: 0; font-size: 19px; font-weight: 650; line-height: 28px; }
+.data-page-header p { margin: 4px 0 0; color: var(--lf-text-3); font-size: 12px; }
+.page-quiet-action, .favorite-filter {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 11px;
+  border-radius: var(--lf-radius-full); color: var(--lf-text-2); font-size: 12.5px; font-weight: 500;
+}
+.page-quiet-action:hover { color: var(--lf-accent-strong); background: var(--lf-accent-soft); }
+.favorite-filter { cursor: pointer; }
+.favorite-filter input { width: 14px; height: 14px; }
+
+.filter-bar, .link-save-bar, .private-out-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.filter-bar select { height: 36px; padding: 0 28px 0 12px; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-md); color: var(--lf-text-2); background: var(--lf-surface); font-size: 12.5px; }
+
+.search-box {
+  display: flex; align-items: center; gap: 8px; width: min(360px, 100%); height: 36px; padding: 0 12px;
+  border: 1px solid transparent; border-radius: var(--lf-radius-full);
+  color: var(--lf-text-3); background: var(--lf-surface-sunken); transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.search-box:focus-within { border-color: var(--lf-accent); background: var(--lf-surface); box-shadow: var(--lf-focus-ring); }
+.search-box.standalone { margin-bottom: 14px; }
+.search-box input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; color: var(--lf-text-1); background: transparent; font-size: 13px; }
+.search-box input::placeholder { color: var(--lf-text-3); }
+
+.data-loading { display: grid; place-items: center; min-height: 300px; color: var(--lf-text-3); font-size: 12.5px; }
+.data-empty { display: flex; min-height: 360px; flex-direction: column; align-items: center; justify-content: center; color: var(--lf-text-3); text-align: center; }
+.data-empty-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; color: var(--lf-accent); background: var(--lf-accent-soft); }
+.data-empty h2 { margin: 16px 0 4px; color: var(--lf-text-1); font-size: 15.5px; font-weight: 600; }
+.data-empty p { margin: 0; font-size: 12.5px; }
+
+.data-list-panel { display: grid; overflow: hidden; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-lg); background: var(--lf-surface); box-shadow: var(--lf-shadow-card); }
+.data-row { display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 10px 16px; border: 0; border-radius: 0; box-shadow: none; }
+.data-row + .data-row { border-top: 1px solid var(--lf-border); }
+.data-row:hover { box-shadow: none; background: rgb(100 116 139 / 5%); }
+.file-icon { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; border-radius: 11px; color: var(--lf-accent); background: var(--lf-accent-soft); }
+.data-row-main { display: grid; min-width: 0; flex: 1; gap: 2px; text-align: left; }
+.data-row-main.is-button { padding: 0; }
+.data-row-main strong { overflow: hidden; font-size: 13.5px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.data-row-main span, .data-row-main small { overflow: hidden; color: var(--lf-text-3); font-size: 11.5px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.data-row-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; opacity: 0; transition: opacity .12s ease; }
+.data-row:hover .data-row-actions, .data-row-actions:focus-within { opacity: 1; }
+.data-row-actions button { display: grid; min-width: 30px; height: 30px; place-items: center; padding: 0 8px; border-radius: var(--lf-radius-md); color: var(--lf-text-2); font-size: 11.5px; }
+.data-row-actions button:hover { color: var(--lf-accent); background: var(--lf-accent-soft); }
+.link-row .tag-list { margin-top: 3px; }
+
+/* 链接详情 */
+.link-detail-page { padding-top: 16px; }
+.link-detail-back { margin-bottom: 14px; }
+.link-detail-card { display: grid; gap: 7px; padding: 20px; margin-bottom: 14px; }
+.link-detail-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.link-detail-summary h1 { margin: 0; font-size: 19px; }
+.link-detail-summary p { margin: 5px 0 0; color: var(--lf-text-3); font-size: 12px; }
+.link-detail-section { display: grid; gap: 9px; padding-top: 16px; border-top: 1px solid var(--lf-border); }
+.link-detail-section h2 { margin: 0; font-size: 13px; }
+.link-detail-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.link-detail-tags input { min-width: 220px; }
+.link-file-list { display: grid; max-height: 360px; overflow: auto; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-md); }
+.link-file-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 38px; padding: 0 12px; font-size: 12.5px; }
+.link-file-row + .link-file-row { border-top: 1px solid var(--lf-border); }
+.link-file-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-file-row small { flex: 0 0 auto; color: var(--lf-text-3); font-variant-numeric: tabular-nums; }
+
+/* 私人空间 */
+.private-status-strip { display: flex; align-items: center; gap: 12px; min-height: 52px; margin-bottom: 14px; padding: 0 16px; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-lg); background: var(--lf-surface); box-shadow: var(--lf-shadow-card); }
+.private-status-strip > svg { color: var(--lf-accent); }
+.private-status-strip div { display: grid; flex: 1; gap: 2px; }
+.private-status-strip strong { font-size: 13px; }
+.private-status-strip span { color: var(--lf-text-3); font-size: 11px; }
+.private-task-list { display: grid; overflow: hidden; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-lg); background: var(--lf-surface); box-shadow: var(--lf-shadow-card); }
+.private-task-row { min-height: 60px; padding: 10px 16px; border: 0; border-radius: 0; box-shadow: none; }
+.private-task-row + .private-task-row { border-top: 1px solid var(--lf-border); }
+.private-task-row:hover { box-shadow: none; background: rgb(100 116 139 / 5%); }
+.private-task-row p { margin: 3px 0 0; }
+.private-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.private-tools .search-box { flex: 0 1 360px; }
+.private-path-control { display: flex; flex: 1; align-items: center; min-width: 280px; height: 36px; padding: 0 12px; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-md); background: var(--lf-surface); }
+.private-path-control input { width: 100%; border: 0; outline: 0; background: transparent; font-size: 12.5px; }
+.private-boundary-card { display: grid; gap: 7px; padding: 16px; margin-bottom: 14px; }
+.private-boundary-card span { color: var(--lf-text-3); font-size: 12px; }
+
+/* 诊断 */
+.diagnostics-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.diagnostics-grid .settings-card { display: grid; gap: 5px; margin: 0; padding: 16px; }
+.diagnostics-grid .settings-card span { color: var(--lf-text-3); font-size: 12px; }
+.diagnostic-events { margin-top: 14px; padding: 16px 18px; }
+.diagnostic-events h2 { margin: 0 0 8px; font-size: 14px; }
+.diagnostic-events pre { max-height: 280px; margin: 0; overflow: auto; color: var(--lf-text-3); font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+.diagnostic-task-panel { margin-top: 14px; padding: 16px 18px; }
+.diagnostic-task-panel h2 { margin: 0 0 10px; font-size: 14px; }
+.diagnostic-task-panel pre { max-height: 320px; overflow: auto; color: var(--lf-text-3); font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+.diagnostic-checks { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.diagnostic-checks button { min-height: 30px; padding: 0 12px; border: 1px solid var(--lf-border-strong); border-radius: var(--lf-radius-full); color: var(--lf-text-2); background: var(--lf-surface); font-size: 12px; font-weight: 500; }
+.diagnostic-checks button:hover { border-color: var(--lf-accent); color: var(--lf-accent); }
+.diagnostic-result { max-height: 240px; padding: 12px; overflow: auto; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-md); color: var(--lf-text-2); background: var(--lf-surface); font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+.diagnostic-event-list { display: grid; }
+.diagnostic-event-row { display: grid; gap: 3px; padding: 9px 0; border-bottom: 1px solid var(--lf-border); }
+.diagnostic-event-row strong { font-size: 12.5px; }
+.diagnostic-event-row span { color: var(--lf-text-3); font-size: 10.5px; }
+
+/* 设置页（路由页形态） */
+.settings-page { max-width: 920px; margin: 0 auto; padding: 20px 28px 48px; }
+.settings-page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+.settings-page-heading h1 { margin: 0; font-size: 19px; }
+.settings-page-heading p { margin: 5px 0 0; color: var(--lf-text-3); font-size: 12px; }
+.settings-page-actions, .settings-inline-actions { display: flex; align-items: center; gap: 10px; }
+.settings-notice { color: var(--lf-success); font-size: 12px; }
+.settings-error { margin-bottom: 12px; padding: 10px 14px; border: 1px solid rgb(225 29 72 / 25%); border-radius: var(--lf-radius-md); color: var(--lf-danger); background: var(--lf-danger-soft); font-size: 12px; }
+.settings-card { display: grid; grid-template-columns: minmax(170px, .45fr) minmax(250px, 1fr); align-items: center; gap: 13px 28px; margin-bottom: 14px; padding: 18px 20px; }
+.settings-card h2 { grid-column: 1 / -1; margin: 0 0 2px; font-size: 14.5px; }
+.settings-card label { display: contents; color: var(--lf-text-2); font-size: 12.5px; }
+.settings-card .settings-check { display: flex; grid-column: 1 / -1; align-items: center; gap: 8px; }
+.settings-card .settings-check input { width: 15px; height: 15px; }
+.settings-card > .secondary-button { grid-column: 2; justify-self: start; }
+.link-source { display: block; padding: 10px 12px; overflow-wrap: anywhere; border-radius: var(--lf-radius-md); color: var(--lf-text-2); background: var(--lf-surface-sunken); font-size: 12px; }
+.speed-limit-popover, .queue-position-menu { display: grid; gap: 3px; min-width: 150px; padding: 6px; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-md); background: var(--lf-surface); box-shadow: var(--lf-shadow-pop); }
+.speed-limit-popover button, .queue-position-menu button { padding: 7px 10px; border-radius: var(--lf-radius-sm); color: var(--lf-text-2); text-align: left; font-size: 12px; }
+.speed-limit-popover button:hover, .queue-position-menu button:hover { color: var(--lf-accent-strong); background: var(--lf-accent-soft); }
+
+@media (max-width: 760px) {
+  .data-page, .settings-page { padding: 14px 16px 40px; }
+  .filter-bar, .link-save-bar, .private-tools, .private-out-row { align-items: stretch; flex-direction: column; }
+  .search-box, .private-tools .search-box { width: 100%; flex-basis: auto; }
+  .data-row-actions { opacity: 1; }
+  .diagnostics-grid { grid-template-columns: 1fr; }
+  .settings-card { grid-template-columns: 1fr; gap: 7px; }
+  .settings-card > .secondary-button { grid-column: 1; }
+}

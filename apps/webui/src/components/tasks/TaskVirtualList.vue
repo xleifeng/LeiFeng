@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import type { TaskCommand, TaskListItemV2 } from '../../api/contracts/v2/tasks'
 import TaskGroupHeader from './TaskGroupHeader.vue'
-import NativeTaskRow from './NativeTaskRow.vue'
+import TaskRow from './TaskRow.vue'
 
 export interface TaskGroupHeaderModel { type: 'group'; groupId: string; label: string; count: number }
 export type TaskListRow = TaskListItemV2 | TaskGroupHeaderModel
@@ -44,7 +44,7 @@ function checkNearEnd() {
     <div class="task-virtual-spacer" :style="{ height: `${totalSize}px` }">
       <div v-for="row in virtualRows" :key="String(row.key)" class="task-virtual-item" :data-index="row.index" :style="{ transform: `translateY(${row.start}px)` }">
         <TaskGroupHeader v-if="!isTask(rows[row.index])" :label="(rows[row.index] as TaskGroupHeaderModel).label" :count="(rows[row.index] as TaskGroupHeaderModel).count" />
-        <NativeTaskRow v-else :task="rows[row.index] as TaskListItemV2" :selected="selectedIds.has((rows[row.index] as TaskListItemV2).taskId)" :focused="focusedId === (rows[row.index] as TaskListItemV2).taskId" :pending="pendingIds?.has((rows[row.index] as TaskListItemV2).taskId)" :density="density" @select="emit('select', $event)" @open="emit('open', $event)" @command="emit('command', $event)" @contextmenu="emit('contextmenu', $event)" />
+        <TaskRow v-else :task="rows[row.index] as TaskListItemV2" :selected="selectedIds.has((rows[row.index] as TaskListItemV2).taskId)" :focused="focusedId === (rows[row.index] as TaskListItemV2).taskId" :pending="pendingIds?.has((rows[row.index] as TaskListItemV2).taskId)" :density="density" @select="emit('select', $event)" @open="emit('open', $event)" @command="emit('command', $event)" @contextmenu="emit('contextmenu', $event)" />
       </div>
     </div>
     <div v-if="loadingMore" class="load-more-hint">正在加载更多任务…</div>

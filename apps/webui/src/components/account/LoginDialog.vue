@@ -42,7 +42,7 @@ onBeforeUnmount(() => { if (flow.value === 'awaiting-scan' || flow.value === 'co
       <button class="primary-button" :disabled="starting" @click="start">{{ starting ? '正在准备…' : '扫码登录' }}</button>
     </div>
     <div v-else class="account-login-active">
-      <span class="dialog-eyebrow">设备登录</span><h3>请使用迅雷 App 扫码</h3>
+      <span>设备登录</span><h3>请使用迅雷 App 扫码</h3>
       <div v-if="qrDataUrl" class="login-qr-card">
         <img class="login-qr" :src="qrDataUrl" alt="迅雷登录二维码" />
         <span>二维码有效期内请完成扫码</span>

@@ -85,8 +85,8 @@ test.describe('运行期前端插件（U2）', () => {
     await page.goto(`http://127.0.0.1:${port}/#/hello`)
     await expect(page.locator('.hello-plugin-view')).toBeVisible()
     await expect(page.locator('.hello-plugin-view p')).toContainText('共享 vue 计数: 42')
-    await expect(page.locator('aside.native-sidebar nav.sidebar-nav a[href="#/hello"]')).toHaveCount(1)
-    await expect(page.locator('aside.native-sidebar nav.sidebar-nav a[href="#/hello"]')).toContainText('插件页')
+    await expect(page.locator('aside.side-nav nav.side-section a[href="#/hello"]')).toHaveCount(1)
+    await expect(page.locator('aside.side-nav nav.side-section a[href="#/hello"]')).toContainText('插件页')
   })
 
   test('能力门控：views 缺失能力时插件导航隐藏、路由守卫回退', async ({ page }) => {
@@ -97,9 +97,9 @@ test.describe('运行期前端插件（U2）', () => {
       await page.goto(`http://127.0.0.1:${port}/#/gated`)
       // 路由守卫回退到任务中心
       await expect(page.locator('.gated-plugin-view')).toHaveCount(0)
-      await expect(page.locator('.native-main-area')).toBeVisible()
+      await expect(page.locator('.app-main')).toBeVisible()
       // 导航项被能力过滤
-      await expect(page.locator('aside.native-sidebar nav.sidebar-nav a[href="#/gated"]')).toHaveCount(0)
+      await expect(page.locator('aside.side-nav nav.side-section a[href="#/gated"]')).toHaveCount(0)
     } finally {
       fs.writeFileSync(path.join(gatedDir, 'ui.js'), uiJs)
     }
@@ -108,8 +108,8 @@ test.describe('运行期前端插件（U2）', () => {
   test('设置弹窗合并插件分区', async ({ page }) => {
     await page.goto(`http://127.0.0.1:${port}/#/download`)
     // 原生路径：顶栏菜单开侧栏抽屉 → 侧栏「设置」
-    await page.locator('.native-topbar button[aria-label="打开导航"]').click()
-    await page.locator('.sidebar-link.settings-link').click()
+    await page.locator('.top-bar button[aria-label="打开导航"]').click()
+    await page.locator('.side-link.settings-link').click()
     await expect(page.locator('.settings-window')).toBeVisible()
     await expect(page.locator('.settings-window-nav button', { hasText: '插件设置' })).toHaveCount(1)
     // U3：插件分区带 component 时内容区渲染（此前只有导航项、点击落入「系统集成」兜底）
@@ -134,8 +134,8 @@ test.describe('运行期前端插件（U2）', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: 1, result }) })
     })
     await page.goto(`http://127.0.0.1:${port}/#/download`)
-    await page.locator('.native-topbar button[aria-label="打开导航"]').click()
-    await page.locator('.sidebar-link.settings-link').click()
+    await page.locator('.top-bar button[aria-label="打开导航"]').click()
+    await page.locator('.side-link.settings-link').click()
     await expect(page.locator('.settings-window')).toBeVisible()
     // 核心分区「插件管理」存在且可点入
     await page.locator('.settings-window-nav button', { hasText: '插件管理' }).click()

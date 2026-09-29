@@ -93,7 +93,7 @@ test('task selection toolbar only exposes lifecycle-valid commands', async ({ pa
   const toolbar = page.locator('.task-toolbar')
   await expect(toolbar.getByRole('button', { name: '开始', exact: true })).toBeVisible()
   await expect(toolbar.getByRole('button', { name: '暂停', exact: true })).toHaveCount(0)
-  await page.getByRole('button', { name: /已完成 1/ }).click()
+  await page.getByRole('tab', { name: /已完成 1/ }).click()
   await page.getByText('completed.bin').click()
   await expect(toolbar.getByRole('button', { name: '开始', exact: true })).toHaveCount(0)
 })

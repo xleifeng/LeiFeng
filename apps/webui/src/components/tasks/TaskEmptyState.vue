@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { Search, WifiOff } from '@lucide/vue'
-import downloadEmpty from '@orig/img/download-default.png'
-import trashEmpty from '@orig/img/trash-empty.png'
+// 空态：Lucide 图标 + 灰阶文案（旧版迅雷插画已随重设计移除）
+import { CircleCheckBig, Inbox, Search, Trash2, WifiOff } from '@lucide/vue'
 defineProps<{ kind: 'downloading' | 'completed' | 'trash' | 'search' | 'offline' }>()
 const emit = defineEmits<{ create: [] }>()
 </script>
 
 <template>
-  <div class="task-empty-state" :class="[`is-${kind}-empty`, { 'is-standard-empty': kind === 'offline' || kind === 'search' }]">
-    <img v-if="kind === 'trash'" class="empty-art empty-art-trash" :src="trashEmpty" alt="暂无下载任务" />
-    <img v-else-if="kind === 'downloading' || kind === 'completed'" class="empty-art empty-art-download" :src="downloadEmpty" alt="暂无内容" />
-    <span v-else class="empty-icon"><WifiOff v-if="kind === 'offline'" :size="32" /><Search v-else :size="32" /></span>
-    <h2>{{ kind === 'offline' ? 'daemon 暂时离线' : kind === 'search' ? '没有匹配的任务' : kind === 'trash' ? '暂无下载任务' : '暂无内容' }}</h2>
-    <p v-if="kind === 'offline' || kind === 'search'">{{ kind === 'offline' ? '重连后会自动恢复任务列表。' : '换个关键词试试。' }}</p>
-    <button v-if="kind === 'downloading'" class="primary-button" @click="emit('create')">新建任务</button>
+  <div class="task-empty-state" :class="`is-${kind}-empty`" data-testid="task-empty-state">
+    <span class="empty-icon">
+      <WifiOff v-if="kind === 'offline'" :size="30" :stroke-width="1.6" />
+      <Search v-else-if="kind === 'search'" :size="30" :stroke-width="1.6" />
+      <Trash2 v-else-if="kind === 'trash'" :size="30" :stroke-width="1.6" />
+      <CircleCheckBig v-else-if="kind === 'completed'" :size="30" :stroke-width="1.6" />
+      <Inbox v-else :size="30" :stroke-width="1.6" />
+    </span>
+    <h2>{{ kind === 'offline' ? 'daemon 暂时离线' : kind === 'search' ? '没有匹配的任务' : kind === 'trash' ? '回收站是空的' : kind === 'completed' ? '还没有已完成的任务' : '暂无下载任务' }}</h2>
+    <p>{{ kind === 'offline' ? '重连后会自动恢复任务列表。' : kind === 'search' ? '换个关键词试试。' : kind === 'trash' ? '被移除的任务会先来到这里。' : kind === 'completed' ? '完成的下载会出现在这里。' : '新建一个任务开始下载。' }}</p>
+    <button v-if="kind === 'downloading'" class="primary-button" data-testid="empty-create" @click="emit('create')">新建任务</button>
   </div>
 </template>

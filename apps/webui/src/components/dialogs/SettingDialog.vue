@@ -127,11 +127,12 @@ async function restore() {
 </script>
 
 <template>
-  <section class="settings-window" role="dialog" aria-modal="true" aria-label="设置">
+  <div class="settings-window" role="presentation" @mousedown.self="overlay.close">
+    <section class="settings-dialog" role="dialog" aria-modal="true" aria-label="设置" data-testid="settings-dialog">
     <button class="settings-window-close" aria-label="关闭设置" @click="overlay.close"><X :size="16" :stroke-width="1.6" /></button>
 
     <aside class="settings-window-nav" aria-label="设置分类">
-      <button v-for="item in visibleNavigation" :key="item.id" :class="{ active: activeSection === item.id }" @click="activeSection = item.id">{{ item.label }}</button>
+      <button v-for="item in visibleNavigation" :key="item.id" :class="{ active: activeSection === item.id }" :data-testid="`settings-nav-${item.id}`" @click="activeSection = item.id">{{ item.label }}</button>
       <span class="settings-window-nav-spacer" />
       <button class="settings-about-entry" @click="openAbout">关于 Leifeng</button>
     </aside>
@@ -231,16 +232,6 @@ async function restore() {
             <button class="settings-inline-button" @click="openLimitSpeed">修改配置</button>
             <button v-if="limited" class="settings-text-button" @click="restore">恢复运行时限速</button>
           </div>
-
-          <div class="settings-rule settings-first-section-divider" />
-          <h1>下载设置</h1>
-          <h2>目录与资源</h2>
-          <label class="settings-field-row is-wide is-reference-row"><span>默认下载目录</span><input :value="form.draft.defaultDownloadPath" placeholder="请选择下载目录" @input="form.patch({ defaultDownloadPath: ($event.target as HTMLInputElement).value })" /></label>
-
-          <div class="settings-rule settings-section-divider" />
-          <h1>任务管理</h1>
-          <h2>队列与并发</h2>
-          <label class="settings-field-row"><span>同时下载最大任务数</span><input type="number" min="1" max="100" :value="form.draft.maxConcurrentTasks" @input="form.patch({ maxConcurrentTasks: Math.min(100, Math.max(1, Math.round(numberValue($event, 5)))) })" /></label>
         </section>
 
         <section v-else-if="activeSection === 'download'" class="settings-section">
@@ -285,5 +276,6 @@ async function restore() {
         </footer>
       </template>
     </main>
-  </section>
+    </section>
+  </div>
 </template>

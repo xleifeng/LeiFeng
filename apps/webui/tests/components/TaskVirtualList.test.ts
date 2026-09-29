@@ -11,6 +11,6 @@ describe('TaskVirtualList', () => {
   it('uses task ids as row keys and exposes a bounded virtual scroll container', () => {
     const wrapper = mount(TaskVirtualList, { props: { rows: Array.from({ length: 1000 }, (_, index) => task(`task-${index}`)), selectedIds: new Set<string>() } })
     expect(wrapper.find('.task-virtual-scroll').exists()).toBe(true)
-    expect(wrapper.findAll('.native-task-row').length).toBeLessThan(1000)
+    expect(wrapper.findAll('.task-row').length).toBeLessThan(1000)
   })
 })

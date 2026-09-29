@@ -65,7 +65,7 @@ test('trash toolbar opens confirmation and clears through the dedicated RPC', as
   const dialog = page.getByRole('dialog', { name: '清空回收站' })
   await expect(dialog).toBeVisible()
   await dialog.getByRole('button', { name: '清空回收站' }).click()
-  await expect(page.getByText('暂无下载任务')).toBeVisible()
+  await expect(page.getByText('回收站是空的')).toBeVisible()
 })
 
 test('mobile keeps task center usable without desktop drag selection', async ({ page }, testInfo) => {
@@ -86,7 +86,7 @@ test('1000 tasks remain virtualized while scrolling without console errors', asy
     await scroll.evaluate((element) => { element.scrollTop = element.scrollHeight })
     await page.waitForTimeout(120)
   }
-  await expect(page.locator('.native-task-row')).not.toHaveCount(1000)
+  await expect(page.locator('[data-testid="task-row"]')).not.toHaveCount(1000)
   expect(errors).toEqual([])
 })
 

@@ -1,0 +1,30 @@
+:root {
+  --xl-sidebar-width: 180px;
+  --xl-topbar-height: 70px;
+  --xl-content-bg: #f6f6f6; /* 原版实渲染顶栏/侧栏底色（像素实测，原 tokens-orig 覆盖层收口） */
+  --xl-panel-bg: #fff;
+  --xl-text-primary: #272e3b; /* 原版三级灰阶（收口自 tokens-orig） */
+  --xl-text-secondary: #86909c;
+  --xl-text-tertiary: #c9cdd4;
+  --xl-border: #e5e6eb;
+  --xl-blue: #226df5; /* 主色（收口自 tokens-orig 原版视觉令牌；侧栏激活、链接、按钮 hover 用 hover 色） */
+  --xl-blue-hover: #1a5fd8;
+  --xl-danger: #ff4d4f;
+  --xl-success: #1bd08d;
+  --xl-radius-control: 8px;
+  --xl-radius-panel: 12px;
+  --xl-row-height: 72px;
+  --xl-row-height-compact: 56px;
+  --xl-focus-ring: 0 0 0 3px rgb(52 120 246 / 22%);
+  --xl-shadow-panel: 0 1px 3px rgb(31 35 41 / 5%), 0 8px 24px rgb(31 35 41 / 3%);
+}
+
+:root[data-theme='dark'] {
+  --xl-content-bg: #181a1f;
+  --xl-panel-bg: #23262d;
+  --xl-text-primary: #f3f4f6;
+  --xl-text-secondary: #a7adb8;
+  --xl-text-tertiary: #737a86;
+  --xl-border: #343841;
+  --xl-shadow-panel: 0 1px 3px rgb(0 0 0 / 20%);
+}

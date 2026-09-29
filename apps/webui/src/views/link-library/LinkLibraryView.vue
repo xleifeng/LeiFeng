@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { Link2, Search, Star, Trash2 } from '@lucide/vue'
 import { useRouter } from 'vue-router'
-import emptyIllustration from '@orig/img/newlink_empty.png'
 import type { LinkItem } from '../../api/contracts/v2/links'
 import { queryLinks, removeLinks, saveLink, setLinkFavorite } from '../../api/native-download/links'
 import { formatBytes, formatDateTime } from '../../domain/format'
@@ -24,18 +23,18 @@ function details(item: LinkItem) { void router.push({ name: 'link-details', para
 </script>
 
 <template>
-  <section class="feature-data-page replica-data-page link-library-page">
-    <header class="replica-page-header"><div><h1>链接库</h1><p>本地保存下载来源，便于再次下载</p></div><label class="favorite-filter"><input v-model="favoriteOnly" type="checkbox" /><Star :size="15" />只看收藏</label></header>
-    <div class="link-save-bar replica-save-bar"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><button class="primary-button" @click="save">保存链接</button></div>
-    <label class="replica-search standalone"><Search :size="16" /><input v-model="search" placeholder="搜索链接库" /></label>
+  <section class="data-page link-library-page">
+    <header class="data-page-header"><div><h1>链接库</h1><p>本地保存下载来源，便于再次下载</p></div><label class="favorite-filter"><input v-model="favoriteOnly" type="checkbox" /><Star :size="15" />只看收藏</label></header>
+    <div class="link-save-bar"><input v-model="linkInput" placeholder="粘贴 HTTP、FTP、磁力、ED2K、迅雷链接或种子 hash" @keyup.enter="save" /><button class="primary-button" @click="save">保存链接</button></div>
+    <label class="search-box standalone"><Search :size="16" /><input v-model="search" placeholder="搜索链接库" /></label>
     <p v-if="error" class="settings-error">{{ error }}</p>
-    <div v-if="query.isPending.value" class="replica-loading">正在读取链接库…</div>
-    <div v-else-if="!query.data.value?.items.length" class="replica-empty-state"><img :src="emptyIllustration" alt="" /><h2>暂无链接</h2><p>保存的下载链接会显示在这里。</p></div>
-    <div v-else class="replica-data-list">
-      <article v-for="item in query.data.value.items" :key="item.id" class="replica-data-row link-row">
-        <span class="replica-file-icon"><Link2 :size="20" /></span>
-        <button class="replica-data-main is-button" @click="details(item)"><strong>{{ item.locked ? '私人链接（已锁定）' : item.title }}</strong><span>{{ item.kind.toUpperCase() }} · {{ formatBytes(item.totalBytes) }} · {{ formatDateTime(item.lastDownloadedAt) }}</span><small v-if="!item.locked">{{ item.source || '来源已加密' }}</small><span v-if="item.tags?.length" class="tag-list"><em v-for="tag in item.tags" :key="tag.id">{{ tag.name }}</em></span></button>
-        <div class="replica-row-actions"><button :aria-label="item.favorite ? '取消收藏' : '收藏'" @click="favorite(item)"><Star :size="16" :fill="item.favorite ? 'currentColor' : 'none'" /></button><button aria-label="删除链接" @click="remove(item)"><Trash2 :size="16" /></button></div>
+    <div v-if="query.isPending.value" class="data-loading">正在读取链接库…</div>
+    <div v-else-if="!query.data.value?.items.length" class="data-empty"><span class="data-empty-icon"><Link2 :size="30" :stroke-width="1.6" /></span><h2>暂无链接</h2><p>保存的下载链接会显示在这里。</p></div>
+    <div v-else class="data-list-panel">
+      <article v-for="item in query.data.value.items" :key="item.id" class="data-row link-row">
+        <span class="file-icon"><Link2 :size="20" /></span>
+        <button class="data-row-main is-button" @click="details(item)"><strong>{{ item.locked ? '私人链接（已锁定）' : item.title }}</strong><span>{{ item.kind.toUpperCase() }} · {{ formatBytes(item.totalBytes) }} · {{ formatDateTime(item.lastDownloadedAt) }}</span><small v-if="!item.locked">{{ item.source || '来源已加密' }}</small><span v-if="item.tags?.length" class="tag-list"><em v-for="tag in item.tags" :key="tag.id">{{ tag.name }}</em></span></button>
+        <div class="data-row-actions"><button :aria-label="item.favorite ? '取消收藏' : '收藏'" @click="favorite(item)"><Star :size="16" :fill="item.favorite ? 'currentColor' : 'none'" /></button><button aria-label="删除链接" @click="remove(item)"><Trash2 :size="16" /></button></div>
       </article>
     </div>
   </section>

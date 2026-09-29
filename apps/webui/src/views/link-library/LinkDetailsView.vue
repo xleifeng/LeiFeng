@@ -44,9 +44,9 @@ async function redownload() {
 </script>
 
 <template>
-  <section class="feature-data-page replica-data-page link-detail-page">
+  <section class="data-page link-detail-page">
     <button class="page-quiet-action link-detail-back" @click="router.back"><ArrowLeft :size="16" />返回链接库</button>
-    <div v-if="query.isPending.value" class="replica-loading">正在读取链接详情…</div>
+    <div v-if="query.isPending.value" class="data-loading">正在读取链接详情…</div>
     <div v-else-if="query.isError.value" class="settings-error">链接详情不可用：{{ query.error.value?.message }}</div>
     <article v-else-if="query.data.value" class="link-detail-card">
       <div class="link-detail-summary"><div><h1>{{ query.data.value.title }}</h1><p>{{ query.data.value.kind.toUpperCase() }} · {{ formatBytes(query.data.value.totalBytes) }} · 最近下载 {{ formatDateTime(query.data.value.lastDownloadedAt) }}</p></div><button class="primary-button" :disabled="query.data.value.locked" @click="redownload"><Download :size="15" />重新下载</button></div>

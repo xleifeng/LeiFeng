@@ -9,8 +9,6 @@ export interface NavItemDef {
   label: string
   capability?: ViewCapabilityId
   icon?: Component
-  /** 回收站页时保持高亮引用（沿用核心项语义） */
-  trashActive?: boolean
 }
 
 /** 设置弹窗分区定义（核心项见 SettingDialog，插件贡献追加）。component 缺省时渲染标题空态。 */
