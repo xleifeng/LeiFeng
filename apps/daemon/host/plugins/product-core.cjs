@@ -9,7 +9,7 @@ const { createDiagnosticsControlMethods } = require('../src/rpc/diagnostics-cont
 const { createSystemMethods } = require('../src/rpc/system-methods');
 const { plugin } = require('./shared.cjs');
 
-const productCore = plugin('leifeng-product-core', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengPrivateSpace', 'leifengMediaCapture', 'leifengRemoteAccess', 'leifengHistoryLinks', 'leifengUiRegistry'], (ctx) => {
+const productCore = plugin('leifeng-product-core', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengUiRegistry'], (ctx) => {
   const { appConfig } = ctx.leifengConfig;
   const { taskRepository, settingsRepository, operationRepository } = ctx.leifengRepositories;
   // 零内核装配：hub 返回 NullKernel slot（bootstrap/diagnostics 诚实降级，
@@ -19,9 +19,11 @@ const productCore = plugin('leifeng-product-core', ['leifengConfig', 'leifengRep
   const { kernel: driver, eventBus, diagnosticEvents } = kernelSlot;
   const { auth = null, vipManager = null, accountService = null } = kernelSlot.account || {};
   const { policyService } = ctx.leifengTasks;
-  const { privateSpace } = ctx.leifengPrivateSpace;
-  const { mediaService } = ctx.leifengMediaCapture;
-  const { remoteNodeService, remoteCredentialsReady, linkSyncService } = ctx.leifengRemoteAccess;
+  // 四域插件可选消费（域插件被禁用时聚合视图逐段诚实降级——P4 拆分时各服务
+  // 构造器已带 = null 缺省，此处只是把「装配期硬依赖」放成运行期缺席）。
+  const { privateSpace } = ctx.reflect.get('leifengPrivateSpace', false) ?? { privateSpace: null };
+  const { mediaService } = ctx.reflect.get('leifengMediaCapture', false) ?? { mediaService: null };
+  const { remoteNodeService = null, remoteCredentialsReady = null, linkSyncService = null } = ctx.reflect.get('leifengRemoteAccess', false) ?? {};
   const { requestAuth } = ctx.leifengRequestPolicy;
 
   const diagnosticsService = new DiagnosticsService({

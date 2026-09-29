@@ -8,12 +8,13 @@ const { LinkLibraryService } = require('../src/services/link-library-service');
 const { createHistoryLinkMethods } = require('../src/rpc/history-link-methods');
 const { plugin } = require('./shared.cjs');
 
-const historyLinks = plugin('leifeng-history-links', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengPrivateSpace', 'leifengUiRegistry'], (ctx) => {
+const historyLinks = plugin('leifeng-history-links', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengUiRegistry'], (ctx) => {
   const { taskRepository, historyRepository, linkRepository } = ctx.leifengRepositories;
   const kernelSlot = ctx.leifengKernelHub.default();
   const { eventBus } = kernelSlot;
   const { createDraftService } = ctx.leifengTasks;
-  const { privateSpace } = ctx.leifengPrivateSpace;
+  // privateSpace 可选消费（禁用 private-space 插件时本插件仍成在——历史/链接照常，私密任务拒绝访问）
+  const { privateSpace } = ctx.reflect.get('leifengPrivateSpace', false) ?? { privateSpace: null };
   const withdrawUiCapabilities = ctx.leifengUiRegistry.contribute('history-links', ['history', 'link-library']);
 
   const historyService = new HistoryService({

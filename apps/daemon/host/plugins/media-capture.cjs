@@ -8,11 +8,12 @@ const { createMediaCaptureControlMethods } = require('../src/rpc/media-capture-c
 const { createSystemMethods } = require('../src/rpc/system-methods');
 const { plugin } = require('./shared.cjs');
 
-const mediaCapture = plugin('leifeng-media-capture', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengPrivateSpace', 'leifengUiRegistry'], (ctx) => {
+const mediaCapture = plugin('leifeng-media-capture', ['leifengConfig', 'leifengRepositories', 'leifengKernelHub', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengUiRegistry'], (ctx) => {
   const { appConfig } = ctx.leifengConfig;
   const { taskRepository, mediaSecretStore, captureTokenStore } = ctx.leifengRepositories;
   const { createDraftService, safePathResolver } = ctx.leifengTasks;
-  const { privateSpace } = ctx.leifengPrivateSpace;
+  // privateSpace 可选消费（禁用 private-space 时媒体私密门失效——私有任务流拒发 token，公网流照常）
+  const { privateSpace } = ctx.reflect.get('leifengPrivateSpace', false) ?? { privateSpace: null };
   const withdrawUiCapabilities = ctx.leifengUiRegistry.contribute('media-capture', ['media', 'capture']);
 
   const mediaService = new MediaService({

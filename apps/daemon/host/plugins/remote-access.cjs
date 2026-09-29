@@ -17,11 +17,12 @@ const { createRemoteControlMethods } = require('../src/rpc/remote-control-method
 const { parseListenAddress } = require('../src/config');
 const { plugin } = require('./shared.cjs');
 
-const remoteAccess = plugin('leifeng-remote-access', ['leifengConfig', 'leifengRepositories', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengMediaCapture', 'leifengUiRegistry'], (ctx) => {
+const remoteAccess = plugin('leifeng-remote-access', ['leifengConfig', 'leifengRepositories', 'leifengTasks', 'leifengRpc', 'leifengRequestPolicy', 'leifengUiRegistry'], (ctx) => {
   const { appConfig, env } = ctx.leifengConfig;
   const { remoteNodeRepository } = ctx.leifengRepositories;
   const { taskQueryService, operationService, createDraftService } = ctx.leifengTasks;
-  const { mediaService } = ctx.leifengMediaCapture;
+  // mediaService 可选消费（禁用 media-capture 时远程流媒体方法不注册——remote-mtls 插件注释已声明此语义）
+  const { mediaService } = ctx.reflect.get('leifengMediaCapture', false) ?? { mediaService: null };
   const withdrawUiCapabilities = ctx.leifengUiRegistry.contribute('remote-access', ['remote']);
 
   const remoteListen = parseListenAddress(env.THUNDERD_REMOTE_LISTEN);
