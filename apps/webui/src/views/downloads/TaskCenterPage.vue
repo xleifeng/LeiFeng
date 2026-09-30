@@ -99,11 +99,11 @@ function emptyTrash() {
   if (total) overlay.open({ type: 'empty-trash', total })
 }
 function openTask(taskId: string) { overlay.open({ type: 'task-details', taskId }) }
-function openContext(payload: { taskId: string; x: number; y: number }) {
+function openContext(payload: { taskId: string; x: number; y: number; select?: boolean }) {
   const task = taskQuery.items.value.find((item) => item.taskId === payload.taskId)
   if (!task) return
   context.value = { task, x: payload.x || Math.max(12, window.innerWidth - 250), y: payload.y || 120 }
-  selection.selectOnly(task.taskId)
+  if (payload.select !== false) selection.selectOnly(task.taskId)
 }
 async function copyLinks() {
   if (!selectedTasks.value.length) return

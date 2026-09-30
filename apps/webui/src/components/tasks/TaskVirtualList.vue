@@ -13,7 +13,7 @@ const emit = defineEmits<{
   select: [payload: { taskId: string; mode: 'toggle' | 'range' | 'only' }]
   open: [taskId: string]
   command: [payload: { taskId: string; command: TaskCommand }]
-  contextmenu: [payload: { taskId: string; x: number; y: number }]
+  contextmenu: [payload: { taskId: string; x: number; y: number; select?: boolean }]
   loadMore: []
 }>()
 

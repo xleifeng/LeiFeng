@@ -26,11 +26,15 @@ mdui-select.select-control { width: 148px; }
 .trash-file-tab.active { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
 .trash-file-tab:disabled { opacity: 1; cursor: default; }
 
-/* ---- 选择条（M3 banner 式） ---- */
+/* ---- 选择条（M3 banner 式） ----
+   fixed 底部浮条：不占文档流——插入/移除不推动列表布局（根因修复：文档流内插入时
+   双击第一下选中 → 列表下移 54px → 第二下落空，详情打不开；真机与 Playwright 同症）。 */
 .selection-toolbar {
-  display: flex; align-items: center; gap: 12px; min-height: 44px; margin-bottom: 10px; padding: 0 8px 0 18px;
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 30;
+  display: flex; align-items: center; gap: 12px; min-height: 44px; margin-bottom: 0; padding: 0 8px 0 18px;
   border-radius: var(--md-shape-full); color: var(--md-on-primary-container);
   background: var(--md-primary-container); font-size: 13px; font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18), 0 1px 3px rgba(0, 0, 0, .12);
 }
 .selection-toolbar .toolbar-button { margin-left: auto; color: var(--md-on-primary-container); }
 .selection-toolbar .toolbar-button:hover { background: color-mix(in srgb, var(--md-on-primary-container) 10%, transparent); }

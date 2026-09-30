@@ -7,7 +7,7 @@ const emit = defineEmits<{
   select: [payload: { taskId: string; mode: 'toggle' | 'range' | 'only' }]
   open: [taskId: string]
   command: [payload: { taskId: string; command: TaskCommand }]
-  contextmenu: [payload: { taskId: string; x: number; y: number }]
+  contextmenu: [payload: { taskId: string; x: number; y: number; select?: boolean }]
 }>()
 
 const statusText: Record<TaskListItemV2['lifecycle'], string> = {
@@ -43,6 +43,11 @@ function onSelect(event: Event) {
   emit('select', { taskId: props.task.taskId, mode })
 }
 function onContext(event: MouseEvent) { event.preventDefault(); emit('contextmenu', { taskId: props.task.taskId, x: event.clientX, y: event.clientY }) }
+// 三点按钮：菜单锚定按钮右下角，且不改动当前选中集（区别于右键的「先选中再弹菜单」桌面惯例）
+function onMore(event: MouseEvent) {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  emit('contextmenu', { taskId: props.task.taskId, x: rect.right, y: rect.bottom + 4, select: false })
+}
 </script>
 
 <template>
@@ -59,7 +64,7 @@ function onContext(event: MouseEvent) { event.preventDefault(); emit('contextmen
       <mdui-button-icon v-if="has('pause')" class="row-action" aria-label="暂停" @click="send('pause')"><Pause :size="16" /></mdui-button-icon>
       <mdui-button-icon v-else-if="has('start')" class="row-action" aria-label="开始" @click="send('start')"><Play :size="16" /></mdui-button-icon>
       <mdui-button-icon v-else-if="task.lifecycle === 'failed' && has('retry')" class="row-action" aria-label="重试" @click="send('redownload')"><RotateCcw :size="16" /></mdui-button-icon>
-      <mdui-button-icon class="row-action" aria-label="更多操作" @click="emit('contextmenu', { taskId: task.taskId, x: 0, y: 0 })"><MoreHorizontal :size="18" /></mdui-button-icon>
+      <mdui-button-icon class="row-action" aria-label="更多操作" @click="onMore"><MoreHorizontal :size="18" /></mdui-button-icon>
     </div>
     <span v-if="pending" class="task-pending" aria-label="操作处理中"><Ellipsis :size="17" /></span>
   </article>

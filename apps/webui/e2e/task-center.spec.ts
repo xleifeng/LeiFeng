@@ -149,3 +149,26 @@ test('task group option creates a group and group view keeps parent before child
   await page.locator('mdui-menu-item', { hasText: '按任务组' }).click()
   await expect(page.getByText('批量下载组')).toBeVisible()
 })
+
+test('more-actions menu anchors to the button and does not select the row', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'desktop workflow project only')
+  await page.goto('/#/download/downloading')
+  const row = page.locator('[data-testid="task-row"]').first()
+  await expect(row).toBeVisible()
+  const moreButton = row.getByLabel('更多操作')
+  await moreButton.click()
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  // 点三点不选中任务
+  await expect(row).not.toHaveClass(/selected/)
+  // 菜单贴合按钮右下角：右边缘对齐（flip）或左边缘贴按钮右缘，顶部在按钮下方
+  const buttonBox = (await moreButton.boundingBox())!
+  const menuBox = (await menu.boundingBox())!
+  const buttonRight = buttonBox.x + buttonBox.width
+  expect(Math.min(Math.abs(menuBox.x + menuBox.width - buttonRight), Math.abs(menuBox.x - buttonRight))).toBeLessThanOrEqual(8)
+  expect(menuBox.y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height)
+  expect(menuBox.y).toBeLessThanOrEqual(buttonBox.y + buttonBox.height + 8)
+  // 右键仍保留桌面惯例：先选中再弹菜单
+  await row.click({ button: 'right' })
+  await expect(row).toHaveClass(/selected/)
+})
