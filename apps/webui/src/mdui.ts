@@ -34,6 +34,9 @@ import 'mdui/components/navigation-rail.js'
 import 'mdui/components/navigation-rail-item.js'
 import 'mdui/components/navigation-bar.js'
 import 'mdui/components/navigation-bar-item.js'
+// 任务详情内核面板折叠区（kernel-detail-panels：次要信息默认折叠，不一股脑全铺）
+import 'mdui/components/collapse.js'
+import 'mdui/components/collapse-item.js'
 
 import { setColorScheme } from 'mdui/functions/setColorScheme.js'
 import { setTheme } from 'mdui/functions/setTheme.js'

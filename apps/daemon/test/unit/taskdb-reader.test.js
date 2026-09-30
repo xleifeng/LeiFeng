@@ -30,28 +30,30 @@ test('readVipTasks 读取 TaskBase VIP 字段和 BtFile 子文件元数据', { s
       TaskId BIGINT PRIMARY KEY, Type INT, Status INT, Url TEXT, Name TEXT,
       ResourceSize BIGINT, Cid BLOB, Gcid BLOB,
       VipReceiveSize BIGINT, FreeDcdnReceiveSize BIGINT,
-      VipResourceEnableNecessary INT, Forbidden INT
+      VipResourceEnableNecessary INT, Forbidden INT,
+      P2pReceiveSize BIGINT, P2sReceiveSize BIGINT, OriginReceiveSize BIGINT
     );
     CREATE TABLE BtFile(
       BtFileId INTEGER PRIMARY KEY, BtTaskId BIGINT, FileIndex INT,
-      Download INT, FileName TEXT, FileSize BIGINT, Cid BLOB, Gcid BLOB
+      Download INT, FileName TEXT, FileSize BIGINT, ReceivedSize BIGINT, Cid BLOB, Gcid BLOB
     );
     INSERT INTO TaskBase VALUES
-      (201,1,5,'https://example.test/a.bin','a.bin',4096,X'0102',X'A0B0',123,45,1,0),
-      (202,2,5,'','bundle',8192,X'AA',X'BB',0,0,0,0);
+      (201,1,5,'https://example.test/a.bin','a.bin',4096,X'0102',X'A0B0',123,45,1,0,111,222,333),
+      (202,2,5,'','bundle',8192,X'AA',X'BB',0,0,0,0,0,0,0);
     INSERT INTO BtFile VALUES
-      (1,202,0,1,'one.bin',1024,X'1112',X'2122'),
-      (2,202,1,0,'two.bin',2048,X'',NULL);
+      (1,202,0,1,'one.bin',1024,512,X'1112',X'2122'),
+      (2,202,1,0,'two.bin',2048,0,X'',NULL);
   `]);
   const m = await readVipTasks(db, [201, 202]);
   assert.deepStrictEqual(m.get(201), {
     engineId: 201, type: 1, status: 5, url: 'https://example.test/a.bin', name: 'a.bin',
     resourceSize: 4096, cid: '0102', gcid: 'A0B0', vipReceiveSize: 123,
-    freeDcdnReceiveSize: 45, vipResourceEnableNecessary: 1, forbidden: 0, btFiles: [],
+    freeDcdnReceiveSize: 45, vipResourceEnableNecessary: 1, forbidden: 0,
+    p2pReceiveSize: 111, p2sReceiveSize: 222, originReceiveSize: 333, btFiles: [],
   });
   assert.deepStrictEqual(m.get(202).btFiles, [
-    { fileIndex: 0, download: 1, fileName: 'one.bin', fileSize: 1024, cid: '1112', gcid: '2122' },
-    { fileIndex: 1, download: 0, fileName: 'two.bin', fileSize: 2048, cid: null, gcid: null },
+    { fileIndex: 0, download: 1, fileName: 'one.bin', fileSize: 1024, receivedSize: 512, cid: '1112', gcid: '2122' },
+    { fileIndex: 1, download: 0, fileName: 'two.bin', fileSize: 2048, receivedSize: 0, cid: null, gcid: null },
   ]);
 });
 
@@ -97,14 +99,15 @@ test('node:sqlite reader 与 CLI reader 行为对齐（tasks/vip/native-bt）', 
     CREATE TABLE TaskBase (TaskId INTEGER PRIMARY KEY, Type INTEGER, Status INTEGER, Url TEXT, Name TEXT,
       ResourceSize INTEGER, Cid BLOB, Gcid BLOB, VipReceiveSize INTEGER, FreeDcdnReceiveSize INTEGER,
       VipResourceEnableNecessary INTEGER, Forbidden INTEGER, TotalReceiveSize INTEGER,
-      FailureErrorCode INTEGER, SavePath TEXT);
+      FailureErrorCode INTEGER, SavePath TEXT,
+      P2pReceiveSize INTEGER, P2sReceiveSize INTEGER, OriginReceiveSize INTEGER);
     CREATE TABLE BtTask (TaskId INTEGER PRIMARY KEY, InfoId BLOB);
-    CREATE TABLE BtFile (BtTaskId INTEGER, FileIndex INTEGER, Download INTEGER, FileName TEXT, FileSize INTEGER, Cid BLOB, Gcid BLOB);
-    INSERT INTO TaskBase VALUES (7, 2, 5, 'magnet:?x', 'bundle', 1024, x'AA', x'BB', 64, 8, 1, 0, 128, 0, 'C:\\d');
-    INSERT INTO TaskBase VALUES (8, 5, 5, '', 'other', 10, NULL, NULL, 0, 0, 0, 0, 10, 0, 'C:\\d');
+    CREATE TABLE BtFile (BtTaskId INTEGER, FileIndex INTEGER, Download INTEGER, FileName TEXT, FileSize INTEGER, ReceivedSize INTEGER, Cid BLOB, Gcid BLOB);
+    INSERT INTO TaskBase VALUES (7, 2, 5, 'magnet:?x', 'bundle', 1024, x'AA', x'BB', 64, 8, 1, 0, 128, 0, 'C:\\d', 10, 20, 30);
+    INSERT INTO TaskBase VALUES (8, 5, 5, '', 'other', 10, NULL, NULL, 0, 0, 0, 0, 10, 0, 'C:\\d', 0, 0, 0);
     INSERT INTO BtTask VALUES (7, x'${'AA'.repeat(20)}');
     INSERT INTO BtTask VALUES (8, x'${'CC'.repeat(20)}');
-    INSERT INTO BtFile VALUES (7, 3, 1, 'file.bin', 1024, x'CC', x'DD');
+    INSERT INTO BtFile VALUES (7, 3, 1, 'file.bin', 1024, 256, x'CC', x'DD');
   `);
   setup.close();
 
@@ -117,7 +120,10 @@ test('node:sqlite reader 与 CLI reader 行为对齐（tasks/vip/native-bt）', 
   const vip = await reader.readVipTasks(dbPath, [7]);
   assert.equal(vip.get(7).vipReceiveSize, 64);
   assert.equal(vip.get(7).cid, 'AA');
-  assert.deepEqual(vip.get(7).btFiles[0], { fileIndex: 3, download: 1, fileName: 'file.bin', fileSize: 1024, cid: 'CC', gcid: 'DD' });
+  assert.equal(vip.get(7).p2pReceiveSize, 10);
+  assert.equal(vip.get(7).p2sReceiveSize, 20);
+  assert.equal(vip.get(7).originReceiveSize, 30);
+  assert.deepEqual(vip.get(7).btFiles[0], { fileIndex: 3, download: 1, fileName: 'file.bin', fileSize: 1024, receivedSize: 256, cid: 'CC', gcid: 'DD' });
 
   const bt = await reader.readNativeBtTasks(dbPath, 'aa'.repeat(20), { savePath: 'c:\\D', taskName: 'bundle' });
   assert.equal(bt.length, 1);

@@ -57,19 +57,20 @@ const kernelThunder = plugin('leifeng-kernel-thunder', ['leifengConfig', 'leifen
     peerIdCandidates = [env.LOCALAPPDATA, env.TEMP, env.SystemRoot && path.join(env.SystemRoot, 'Temp')]
       .filter(Boolean).map((dir) => path.join(dir, 'Thunder Network', 'XLSDK'));
     const sdkPeer = readSdkPeerId({ explicitPath: crashInfoPath || undefined, candidateDirs: peerIdCandidates });
+    taskDbReaders = createNodeSqliteTaskDbReader();
+    if (!taskDbReaders.available) {
+      console.error('[thunderd] WARN: node:sqlite unavailable; native TaskDb observation degrades');
+    }
     driver = new WindowsNodeDriver({
       repoRoot, programDir, profileDir: runtimeDir,
       sdkVersionName: appConfig.sdkVersionName, sdkVersionCode: appConfig.sdkVersionCode,
       sdkPlatform: appConfig.sdkPlatform,
       sdkGuid: env.THUNDERD_SDK_GUID || (sdkPeer.ok ? sdkPeer.peerId : ''),
+      readVipTasks: taskDbReaders.available ? taskDbReaders.readVipTasks : null,
     });
-    taskDbReaders = createNodeSqliteTaskDbReader();
-    if (!taskDbReaders.available) {
-      console.error('[thunderd] WARN: node:sqlite unavailable; native TaskDb observation degrades');
-    }
   } else {
-    driver = new WineNodeDriver({ repoRoot, profileDir: runtimeDir, winePrefix });
     taskDbReaders = { readVipTasks, readNativeBtTasks };
+    driver = new WineNodeDriver({ repoRoot, profileDir: runtimeDir, winePrefix, readVipTasks });
     peerIdCandidates = [winePrefix];
   }
   const kernel = assertKernel(driver);

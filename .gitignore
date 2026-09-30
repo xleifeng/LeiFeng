@@ -7,7 +7,12 @@
 /.runtime*/
 /.superpowers/
 # 运行时前端插件目录（用户把示例拷贝/软链进来，不入库；样例在 examples/frontend-plugins/）
-/plugins-frontend/
+# 例外：任务详情内核/桥面板三插件是产品功能本体（kernel-detail-panels，面板由插件
+# 本体提供而非 webui 壳内置），收编入库里外一致。
+/plugins-frontend/*
+!/plugins-frontend/panel-thunder/
+!/plugins-frontend/panel-qbit/
+!/plugins-frontend/panel-bridge/
 # spec/plan 与报告属本地过程文档，不入库（2026-09-24 拍板）
 /docs/
 /downloads/

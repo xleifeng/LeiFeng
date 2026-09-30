@@ -6,7 +6,7 @@ export const taskCapabilitySchema = z.record(z.string(), z.boolean())
 export const taskListCapabilitySchema = z.enum(['start', 'pause', 'removeRecord', 'recycle', 'recover', 'retry', 'rename', 'move', 'redownload', 'deletePermanently', 'setSpeedLimit', 'updateBtSelection', 'setBtScheduler', 'open', 'showInFolder', 'copyInfo', 'perTaskRateLimit', 'btSelection', 'btSequential'])
 
 export const taskV2Schema = z.object({
-  taskId: z.string(), parentId: z.string().nullable(), kind: z.string(), lifecycle: z.enum(['preparing', 'metadata', 'queued', 'downloading', 'paused', 'completed', 'failed', 'recycled', 'missing']),
+  taskId: z.string(), parentId: z.string().nullable(), kernelId: z.string().default('thunder'), kind: z.string(), lifecycle: z.enum(['preparing', 'metadata', 'queued', 'downloading', 'paused', 'completed', 'failed', 'recycled', 'missing']),
   source: z.string().nullable(), sourceFingerprint: z.string(), displayName: z.string(), savePath: z.string(),
   totalBytes: z.number(), completedBytes: z.number(), downloadBytesPerSecond: z.number(), uploadBytesPerSecond: z.number(), progress: z.number(),
   queuePosition: z.number(), taskSpeedLimit: z.number().nullable(), btScheduler: z.enum(['normal', 'sequential']).default('normal'), privateSpace: z.boolean(), createdAt: z.number(), startedAt: z.number().nullable(),
@@ -15,8 +15,25 @@ export const taskV2Schema = z.object({
   revision: z.number().int().positive(), observationRevision: z.number().int().positive(), fileRevision: z.number().int().positive(), capabilities: taskCapabilitySchema,
 })
 
-export const taskFileV2Schema = z.object({ index: z.number().int().nonnegative(), name: z.string(), path: z.string(), size: z.number(), offset: z.number(), selected: z.boolean() })
-export const taskDetailV2Schema = taskV2Schema.extend({ files: z.array(taskFileV2Schema) })
+export const taskFileV2Schema = z.object({ index: z.number().int().nonnegative(), name: z.string(), path: z.string(), size: z.number(), offset: z.number(), selected: z.boolean(), completedBytes: z.number().nonnegative().optional() })
+// 内核详情富化（kernel-detail-panels）：通道归因（thunder TaskDb 直读）与桥会话
+// 快照（bridge-status 内存库）均为可选——无数据时键缺席，前端按「无」渲染而非显示 0。
+export const taskChannelsV2Schema = z.object({ p2p: z.number().nonnegative(), p2s: z.number().nonnegative(), origin: z.number().nonnegative(), vip: z.number().nonnegative(), freeDcdn: z.number().nonnegative() })
+export const bridgeSessionV2Schema = z.object({
+  infohash: z.string(), taskId: z.string().nullable(),
+  verifiedPieces: z.number().nonnegative(), totalPieces: z.number().nonnegative(), verifiedBytes: z.number().nonnegative(),
+  serveBytesTotal: z.number().nonnegative(), serveRateBps: z.number().nonnegative(),
+  lifecycle: z.string(), stale: z.boolean(), updatedAt: z.number(),
+})
+export const taskDetailV2Schema = taskV2Schema.extend({
+  files: z.array(taskFileV2Schema),
+  channels: taskChannelsV2Schema.nullable().optional(),
+  bridge: bridgeSessionV2Schema.nullable().optional(),
+})
+// peers / 做种统计（内核插件注册的 RPC 面，thunder 缺席）：qbit 面板数据源
+export const taskPeerV2Schema = z.object({ endpoint: z.string(), client: z.string(), progress: z.number(), downloadBytesPerSecond: z.number().nonnegative(), uploadBytesPerSecond: z.number().nonnegative(), flags: z.string(), connection: z.string() })
+export const taskPeersV2Schema = z.object({ peers: z.array(taskPeerV2Schema) })
+export const seedingStatsV2Schema = z.object({ seedingSeconds: z.number().nonnegative(), ratio: z.number().nonnegative(), uploadedBytes: z.number().nonnegative(), uploadBytesPerSecond: z.number().nonnegative(), seedsConnected: z.number().int().nonnegative(), peersConnected: z.number().int().nonnegative(), state: z.string() })
 export const taskQueryV2Schema = z.object({
   view: z.enum(['downloading', 'completed', 'search', 'all', 'trash', 'private']).optional(),
   scope: z.enum(['all', 'active', 'completed', 'trash', 'private']).optional(),
@@ -46,6 +63,10 @@ export const commandResultV2Schema = z.object({
 export const batchCommandResponseV2Schema = z.object({ operationId: z.string(), acceptedAt: z.number(), results: z.array(commandResultV2Schema) })
 export type TaskV2 = z.infer<typeof taskV2Schema>
 export type TaskDetailV2 = z.infer<typeof taskDetailV2Schema>
+export type TaskChannelsV2 = z.infer<typeof taskChannelsV2Schema>
+export type BridgeSessionV2 = z.infer<typeof bridgeSessionV2Schema>
+export type TaskPeerV2 = z.infer<typeof taskPeerV2Schema>
+export type SeedingStatsV2 = z.infer<typeof seedingStatsV2Schema>
 export type TaskListItemV2 = z.infer<typeof taskListItemV2Schema>
 export type TaskQueryRequestV2 = z.infer<typeof taskQueryV2Schema>
 export type TaskCommand = 'start' | 'pause' | 'remove-record' | 'recycle' | 'recover' | 'delete-permanently' | 'redownload' | 'rename' | 'move' | 'set-speed-limit' | 'update-bt-selection' | 'set-bt-scheduler' | 'open' | 'show-in-folder' | 'copy-info'

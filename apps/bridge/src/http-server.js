@@ -123,8 +123,18 @@ function createServer({ sessions, inputResults = [], port = 7127, host = '127.0.
     // absPath 惰性解析：引擎把 .bt.xltd 改名正主后固化路径会 ENOENT，此处每次现解。
     const abs = resolveOnDisk(session.rootDir, entry.physPath) || path.join(session.rootDir, entry.physPath);
     const stream = fs.createReadStream(abs, code === 206 ? { start: fStart, end: fEnd - 1 } : {});
-    // 客户端断开（libtorrent 取消请求常见）：销毁源流防 fd 挂到 GC
-    res.on('close', () => stream.destroy());
+    // 客户端断开（libtorrent 取消请求常见）：销毁源流防 fd 挂到 GC。
+    // 同钩记账：供出字节累计 + 滑动窗口样本（daemon 桥面板速率数据源，
+    // kernel-detail-panels；bytesRead 按实际读出计，取消请求不虚增）。
+    res.on('close', () => {
+      stream.destroy();
+      const sent = Number(stream.bytesRead) || 0;
+      if (sent > 0) {
+        session.servedBytesTotal = (session.servedBytesTotal || 0) + sent;
+        (session.serveSamples ||= []).push({ at: Date.now(), bytes: sent });
+        if (session.serveSamples.length > 256) session.serveSamples.splice(0, session.serveSamples.length - 256);
+      }
+    });
     stream.on('error', (err) => { logger(`[http] stream error ${session.parsed.infoHash.slice(0, 8)} ${entry.file.path}: ${err.message}`); res.destroy(); });
     stream.pipe(res);
     logger(`[http] ${code} ${session.parsed.infoHash.slice(0, 8)} ${entry.file.path}${code === 206 ? ` bytes=${fStart}-${fEnd - 1}` : ''}`);
@@ -139,6 +149,7 @@ function createServer({ sessions, inputResults = [], port = 7127, host = '127.0.
         verifiedPieces: s.verifier.verifiedCount,
         totalPieces: s.verifier.pieceCount,
         verifiedBytes: s.verifier.verifiedBytes(),
+        servedBytesTotal: s.servedBytesTotal || 0,
       };
     }
     res.writeHead(200, { 'content-type': 'application/json' });

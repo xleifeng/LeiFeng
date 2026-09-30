@@ -258,3 +258,33 @@ mdui-dialog.create-dialog::part(panel) { width: min(680px, calc(100vw - 48px)); 
   .overlay-backdrop { justify-content: stretch; }
   .task-details-panel { width: 100%; border-radius: 0; }
 }
+/* 文件级进度（kernel-detail-panels）：completedBytes 有数据时替换裸字节数 */
+.detail-file-size { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.detail-file-progress-bar { width: 72px; }
+
+/* ---- 任务详情内核/桥面板基座（kernel-detail-panels）----
+   壳只提供布局基座（卡片/图例/KV/通道条），面板内容与数据由插件贡献。 */
+.kdp-panel { display: flex; flex-direction: column; gap: 14px; }
+.kdp-card { padding: 12px 14px; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-medium, 12px); background: var(--md-surface); }
+.kdp-card .kdp-title { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--md-on-surface); }
+.kdp-empty { margin: 0; color: var(--md-on-surface-variant); font-size: 12.5px; }
+.kdp-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; font-size: 12.5px; }
+.kdp-kv dt { color: var(--md-on-surface-variant); }
+.kdp-kv dd { margin: 0; color: var(--md-on-surface); overflow-wrap: anywhere; }
+.kdp-channel-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--md-surface-variant, rgba(0,0,0,.06)); }
+.kdp-channel-bar .kdp-seg { display: block; height: 100%; }
+.kdp-seg-1 { background: rgb(var(--mdui-color-primary, 11, 87, 208)); }
+.kdp-seg-2 { background: rgb(var(--mdui-color-tertiary, 153, 69, 255)); }
+.kdp-seg-3 { background: rgb(var(--mdui-color-secondary, 0, 99, 154)); }
+.kdp-seg-4 { background: rgb(var(--mdui-color-error, 179, 38, 30)); }
+.kdp-seg-5 { background: rgb(var(--mdui-color-outline, 117, 117, 117)); }
+.kdp-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--md-on-surface-variant); }
+.kdp-legend li { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.kdp-dot { width: 8px; height: 8px; border-radius: 50%; }
+.kdp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.kdp-table th { text-align: left; padding: 6px 8px; color: var(--md-on-surface-variant); font-weight: 500; border-bottom: 1px solid var(--md-outline-variant); }
+.kdp-table td { padding: 6px 8px; border-bottom: 1px solid var(--md-outline-variant); font-variant-numeric: tabular-nums; }
+.kdp-stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.kdp-stat b { display: block; font-size: 15px; color: var(--md-on-surface); font-variant-numeric: tabular-nums; }
+.kdp-stat span { font-size: 11.5px; color: var(--md-on-surface-variant); }
+.kdp-stale { color: rgb(var(--mdui-color-error, 179, 38, 30)); font-size: 11.5px; }

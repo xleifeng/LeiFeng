@@ -84,11 +84,14 @@ function decodeCursor(value) {
 }
 
 class TaskQueryService {
-  constructor({ tasks, taskDbReader = null, runtimeCapabilities = {} } = {}) {
+  constructor({ tasks, taskDbReader = null, runtimeCapabilities = {}, enrichDetail = null } = {}) {
     if (!tasks) throw new Error('TaskQueryService tasks is required');
     this.tasks = tasks;
     this.taskDbReader = taskDbReader;
     this.runtimeCapabilities = runtimeCapabilities;
+    // 详情富化钩子（kernel-detail-panels）：装配层注入，presenter 之后按内核补
+    // files[].completedBytes / channels / bridge 等运行时字段；缺席即不富化。
+    this.enrichDetail = typeof enrichDetail === 'function' ? enrichDetail : null;
     this.snapshotCache = new Map();
     this.maxSnapshots = 5;
     this.snapshotTtlMs = 30 * 1000;
@@ -207,7 +210,13 @@ class TaskQueryService {
   async get({ taskId, includeFiles = true } = {}) {
     const task = this.tasks.require(taskId);
     if (task.privateSpace === true) throw queryError('PRIVATE_SPACE_LOCKED', '私人空间已锁定');
-    return presentTask(task, { includeFiles, runtime: this._runtime() });
+    const dto = presentTask(task, { includeFiles, runtime: this._runtime() });
+    if (this.enrichDetail) {
+      // 富化失败（内核缺方法/TaskDb 读失败/桥未上报）不阻塞详情主数据
+      try { await this.enrichDetail(task, dto); }
+      catch (error) { console.error('[thunderd] task detail enrich failed:', error && error.message || error); }
+    }
+    return dto;
   }
 
   async counts() {

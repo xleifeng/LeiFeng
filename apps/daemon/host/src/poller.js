@@ -168,6 +168,8 @@ class ProgressPoller {
         receivedSize: size,
         // 引擎实时报速（快照内存态，TaskDb TotalReceiveSize 冻结时的速度兜底，reduceObservation 消费）
         engineDownloadBps: row && Math.max(0, Number(row.downloadSpeed) || 0),
+        // 上传速度：仅内核快照提供时写入（qbit upspeed；thunder 无此数据源不缺省伪装 0）
+        engineUploadBps: row && row.uploadSpeed !== undefined ? Math.max(0, Number(row.uploadSpeed) || 0) : undefined,
         measuredDownloadBps: metadataPending ? 0 : measured,
         receivedGrew: grew,
         realTaskName: row && row.name,

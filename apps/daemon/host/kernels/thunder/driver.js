@@ -86,6 +86,7 @@ class EngineDriverBase extends EventEmitter {
     this.toEnginePath = opts.toEnginePath || ((value) => value);
     this.engineMode = opts.engineMode || 'wine';
     this.taskDbPath = path.join(this.profileDir, 'profile', 'TaskDb.dat');
+    this.readVipTasks = typeof opts.readVipTasks === 'function' ? opts.readVipTasks : null;
     this.spawnImpl = opts.spawnImpl || ((cmd, args, o) => spawn(cmd, args, o));
     this.backoffMs = opts.backoffMs || DEFAULT_BACKOFF_MS;
     this.listenerFactory = opts.listenerFactory || createTcpEngineListener;
@@ -271,6 +272,25 @@ class EngineDriverBase extends EventEmitter {
   async setBtScheduler(engineId, scheduler) { return this._call('setBtScheduler', { engineId, scheduler }, 10000); }
   async getBtFileRuntime(engineId) { return this._call('getBtFileRuntime', { engineId }, 10000); }
   async getSeedDescriptor(engineId) { return this._call('getSeedDescriptor', { engineId }, 10000); }
+  // 任务详情富化（kernel-detail-panels）：TaskDb 直读文件级进度 + 通道归因。
+  // 不经引擎 RPC（SDK 无此聚合面）；reader 缺席/任务无引擎行时返回 null 诚实降级。
+  async getTaskDetailExtras(task) {
+    const engineId = Number(task && task.engineId);
+    if (typeof this.readVipTasks !== 'function' || !Number.isSafeInteger(engineId) || engineId <= 0) return null;
+    const rows = await this.readVipTasks(this.taskDbPath, [engineId]).catch(() => null);
+    const snapshot = rows && rows.get(engineId);
+    if (!snapshot) return null;
+    return {
+      files: (snapshot.btFiles || []).map((file) => ({ index: file.fileIndex, completedBytes: file.receivedSize || 0 })),
+      channels: {
+        p2p: snapshot.p2pReceiveSize || 0,
+        p2s: snapshot.p2sReceiveSize || 0,
+        origin: snapshot.originReceiveSize || 0,
+        vip: snapshot.vipReceiveSize || 0,
+        freeDcdn: snapshot.freeDcdnReceiveSize || 0,
+      },
+    };
+  }
   async getTaskSnapshots(ids) {
     const response = await this._call('getTaskSnapshots', { ids }, 10000);
     const map = new Map();

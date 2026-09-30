@@ -114,7 +114,8 @@ async function readVipTasks(dbPath, ids, timeoutMs = 5000) {
   const inList = safeIds.join(',');
   const baseSql = `SELECT TaskId,Type,Status,Url,Name,ResourceSize,` +
     `NULLIF(hex(Cid),'') AS CidHex,NULLIF(hex(Gcid),'') AS GcidHex,` +
-    `VipReceiveSize,FreeDcdnReceiveSize,VipResourceEnableNecessary,Forbidden ` +
+    `VipReceiveSize,FreeDcdnReceiveSize,VipResourceEnableNecessary,Forbidden,` +
+    `P2pReceiveSize,P2sReceiveSize,OriginReceiveSize ` +
     `FROM TaskBase WHERE TaskId IN (${inList})`;
   const baseRows = await execJson(dbPath, baseSql, timeoutMs);
   for (const row of baseRows) {
@@ -131,11 +132,14 @@ async function readVipTasks(dbPath, ids, timeoutMs = 5000) {
       freeDcdnReceiveSize: numberOrZero(row.FreeDcdnReceiveSize),
       vipResourceEnableNecessary: numberOrZero(row.VipResourceEnableNecessary),
       forbidden: numberOrZero(row.Forbidden),
+      p2pReceiveSize: numberOrZero(row.P2pReceiveSize),
+      p2sReceiveSize: numberOrZero(row.P2sReceiveSize),
+      originReceiveSize: numberOrZero(row.OriginReceiveSize),
       btFiles: [],
     });
   }
   if (!map.size) return map;
-  const fileSql = `SELECT BtTaskId,FileIndex,Download,FileName,FileSize,` +
+  const fileSql = `SELECT BtTaskId,FileIndex,Download,FileName,FileSize,ReceivedSize,` +
     `NULLIF(hex(Cid),'') AS CidHex,NULLIF(hex(Gcid),'') AS GcidHex ` +
     `FROM BtFile WHERE BtTaskId IN (${inList}) ORDER BY BtTaskId,FileIndex`;
   let fileRows = [];
@@ -152,6 +156,7 @@ async function readVipTasks(dbPath, ids, timeoutMs = 5000) {
       download: numberOrZero(row.Download),
       fileName: row.FileName || null,
       fileSize: numberOrZero(row.FileSize),
+      receivedSize: numberOrZero(row.ReceivedSize),
       cid: normalizeHex(row.CidHex),
       gcid: normalizeHex(row.GcidHex),
     });
@@ -165,8 +170,9 @@ async function readVipTasks(dbPath, ids, timeoutMs = 5000) {
 const TASKS_COLUMNS = 'TaskId,Status,TotalReceiveSize,ResourceSize,FailureErrorCode,Name';
 const VIP_BASE_COLUMNS = 'TaskId,Type,Status,Url,Name,ResourceSize,' +
   "NULLIF(hex(Cid),'') AS CidHex,NULLIF(hex(Gcid),'') AS GcidHex," +
-  'VipReceiveSize,FreeDcdnReceiveSize,VipResourceEnableNecessary,Forbidden';
-const VIP_FILE_COLUMNS = 'BtTaskId,FileIndex,Download,FileName,FileSize,' +
+  'VipReceiveSize,FreeDcdnReceiveSize,VipResourceEnableNecessary,Forbidden,' +
+  'P2pReceiveSize,P2sReceiveSize,OriginReceiveSize';
+const VIP_FILE_COLUMNS = 'BtTaskId,FileIndex,Download,FileName,FileSize,ReceivedSize,' +
   "NULLIF(hex(Cid),'') AS CidHex,NULLIF(hex(Gcid),'') AS GcidHex";
 const NATIVE_BT_SQL = 'SELECT b.TaskId, t.Status, t.SavePath, t.Name, t.TotalReceiveSize, t.ResourceSize, t.FailureErrorCode ' +
   'FROM BtTask b JOIN TaskBase t ON t.TaskId=b.TaskId WHERE upper(hex(b.InfoId)) = ? ' +
@@ -246,6 +252,9 @@ function createNodeSqliteTaskDbReader({ DatabaseSync } = {}) {
         freeDcdnReceiveSize: numberOrZero(row.FreeDcdnReceiveSize),
         vipResourceEnableNecessary: numberOrZero(row.VipResourceEnableNecessary),
         forbidden: numberOrZero(row.Forbidden),
+        p2pReceiveSize: numberOrZero(row.P2pReceiveSize),
+        p2sReceiveSize: numberOrZero(row.P2sReceiveSize),
+        originReceiveSize: numberOrZero(row.OriginReceiveSize),
         btFiles: [],
       });
     }
@@ -266,6 +275,7 @@ function createNodeSqliteTaskDbReader({ DatabaseSync } = {}) {
         download: numberOrZero(row.Download),
         fileName: row.FileName || null,
         fileSize: numberOrZero(row.FileSize),
+        receivedSize: numberOrZero(row.ReceivedSize),
         cid: normalizeHex(row.CidHex),
         gcid: normalizeHex(row.GcidHex),
       });

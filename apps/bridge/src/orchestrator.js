@@ -433,7 +433,35 @@ function createOrchestrator({
     } catch (e) { log('orch', `止损检查失败: ${e.message}`); return false; }
   }
 
+  // ---- daemon 状态上报（kernel-detail-panels）：会话快照 → daemon 内存库， ----
+  // 任务详情页桥面板数据源。独立于恢复轮询（恢复链在任务终态后停，供种期仍要上报）；
+  // daemon 不可达（serve 模式/重启窗口）静默跳过，绝不阻塞输血主流程。
+  const reportTimer = setInterval(async () => {
+    const now = Date.now();
+    for (const session of sessions.values()) {
+      try {
+        const samples = (session.serveSamples || []).filter((s) => now - s.at <= recoveryIntervalMs);
+        session.serveSamples = samples;
+        const windowBytes = samples.reduce((sum, s) => sum + s.bytes, 0);
+        const total = Number(session.verifier.pieceCount) || 0;
+        const verified = Number(session.verifier.verifiedCount) || 0;
+        await daemon.rpc('leifeng.ui.v2.bridge.report', [{
+          infohash: session.infohash,
+          taskId: session.taskId || null,
+          verifiedPieces: verified,
+          totalPieces: total,
+          verifiedBytes: Number(session.verifier.verifiedBytes()) || 0,
+          serveBytesTotal: Number(session.servedBytesTotal) || 0,
+          serveRateBps: Math.round(windowBytes / Math.max(1, recoveryIntervalMs / 1000)),
+          lifecycle: total > 0 && verified >= total ? 'seeding' : 'verifying',
+        }]);
+      } catch { /* daemon 不可达静默跳过 */ }
+    }
+  }, recoveryIntervalMs);
+  reportTimer.unref?.();
+
   function close() {
+    clearInterval(reportTimer);
     for (const s of sessions.values()) {
       if (s.recoveryTimer) clearTimeout(s.recoveryTimer);
       s.verifier.close();

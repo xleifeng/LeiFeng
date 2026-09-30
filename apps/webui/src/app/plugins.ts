@@ -20,6 +20,20 @@ export interface SettingSectionDef {
 }
 
 /**
+ * 任务详情抽屉贡献面板（kernel-detail-panels）：面板本体由插件提供（webui 壳
+ * 不内置内核专属展示）。component 接收 props：{ detail: TaskDetailV2 }。
+ * kernelIds 限定面板只对指定内核的任务出现；requiresBridge 时仅当详情带桥
+ * 会话快照（detail.bridge）才出现。
+ */
+export interface TaskDetailPanelDef {
+  id: string
+  label: string
+  component: Component
+  kernelIds?: string[]
+  requiresBridge?: boolean
+}
+
+/**
  * 前端 UI 插件注册表（运行期）。响应式：loader 在 fetch /plugins-registry.json
  * + 动态 import 后 registerFrontendPlugin，消费方（侧栏/设置/路由）经派生
  * computed 自动重渲染。
@@ -34,6 +48,7 @@ export interface UiPlugin {
   navItems?: NavItemDef[]
   routes?: RouteRecordRaw[]
   settingSections?: SettingSectionDef[]
+  taskDetailPanels?: TaskDetailPanelDef[]
 }
 
 const registry = reactive<{ plugins: UiPlugin[] }>({ plugins: [] })
@@ -61,3 +76,9 @@ export const routeContributions = computed(() => registry.plugins.flatMap((p) =>
 
 /** 全部插件贡献的设置分区（能力过滤在渲染点做） */
 export const settingSectionContributions = computed(() => registry.plugins.flatMap((p) => p.settingSections ?? []))
+
+/**
+ * 全部插件贡献的任务详情面板。按任务过滤（kernelIds / requiresBridge）在
+ * TaskDetailsDrawer 渲染点做——此处只汇总。
+ */
+export const taskDetailPanelContributions = computed(() => registry.plugins.flatMap((p) => p.taskDetailPanels ?? []))

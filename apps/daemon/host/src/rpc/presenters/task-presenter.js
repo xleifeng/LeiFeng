@@ -27,6 +27,7 @@ function presentTask(task, { includeFiles = false, runtime = {} } = {}) {
   const dto = {
     taskId: task.id,
     parentId: task.parentId,
+    kernelId: typeof task.kernelId === 'string' && task.kernelId ? task.kernelId : 'thunder',
     kind: task.kind,
     lifecycle: task.lifecycle,
     source: task.source,

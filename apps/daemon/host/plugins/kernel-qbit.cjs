@@ -11,7 +11,7 @@ const { DomainEventBus } = require('../src/services/domain-event-bus');
 const { DiagnosticEventBuffer } = require('../src/domain/diagnostic-events');
 const { plugin } = require('./shared.cjs');
 
-const kernelQbit = plugin('leifeng-kernel-qbit', ['leifengConfig', 'leifengKernelHub'], (ctx) => {
+const kernelQbit = plugin('leifeng-kernel-qbit', ['leifengConfig', 'leifengKernelHub', 'leifengRepositories', 'leifengRpc'], (ctx) => {
   const { env } = ctx.leifengConfig;
   const driver = new QbitDriver({
     origin: env.THUNDERD_QBIT_ORIGIN || 'http://127.0.0.1:8085',
@@ -29,6 +29,18 @@ const kernelQbit = plugin('leifeng-kernel-qbit', ['leifengConfig', 'leifengKerne
   driver.on('down', onDown);
   driver.on('bootError', onBootError);
 
+  // peers/做种统计 RPC 面（kernel-detail-panels）：仅 qbit 内核有能力，thunder-only
+  // 装配下方法缺席（-32601）——前端 peers/做种面板只挂在 kernelId==='qbit' 的任务上。
+  const requireTask = (params) => {
+    const taskId = String((params && params[0] && params[0].taskId) || '');
+    if (!taskId) { const e = new Error('taskId is required'); e.code = 'INVALID_PARAMS'; throw e; }
+    return ctx.leifengRepositories.taskRepository.require(taskId);
+  };
+  const withdrawRpc = ctx.leifengRpc.registry.register('kernel-qbit', [
+    ['leifeng.ui.v2.tasks.peers', async (params) => kernel.getTaskPeers(requireTask(params))],
+    ['leifeng.ui.v2.tasks.seeding', async (params) => kernel.getSeedingStats(requireTask(params))],
+  ]);
+
   const qbitSlot = {
     kernelId: 'qbit',
     kernel,
@@ -40,6 +52,7 @@ const kernelQbit = plugin('leifeng-kernel-qbit', ['leifengConfig', 'leifengKerne
   ctx.provide('leifengKernel:qbit', qbitSlot);
   return async () => {
     withdrawHub();
+    withdrawRpc();
     driver.off('up', onUp); driver.off('down', onDown); driver.off('bootError', onBootError);
     eventBus.close();
     await driver.shutdown();

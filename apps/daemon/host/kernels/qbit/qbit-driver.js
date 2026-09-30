@@ -252,6 +252,7 @@ class QbitDriver extends EventEmitter {
         url: t.magnet_uri || '',
         cid: null, gcid: null,
         downloadSpeed: Number(t.dlspeed) || 0,
+        uploadSpeed: Number(t.upspeed) || 0,
         vipSpeed: 0,
         channelInfo: null,
       });
@@ -265,6 +266,64 @@ class QbitDriver extends EventEmitter {
   }
 
   async getDhtNodeCount() { return 0; } // 缺口：qbit 无 DHT 计数 API
+
+  // ---- 任务详情富化（kernel-detail-panels 契约可选方法）----
+  // 入参为壳层任务记录（id/infoHash/engineId），hash 经 _idToHash/任务 infoHash 解析。
+  _hashOfTask(task) {
+    const byEngine = this._idToHash.get(Number(task && task.engineId));
+    if (byEngine) return byEngine;
+    const direct = String(task && task.infoHash || '').toLowerCase();
+    return /^[a-f0-9]{40}$/.test(direct) ? direct : null;
+  }
+
+  async getTaskDetailExtras(task) {
+    const hash = this._hashOfTask(task);
+    if (!hash) return null;
+    const files = await this._request(`/api/v2/torrents/files?hash=${hash}`).catch(() => null);
+    if (!Array.isArray(files)) return null;
+    return {
+      files: files.map((file, index) => ({
+        index,
+        completedBytes: Math.round((Number(file && file.size) || 0) * Math.max(0, Math.min(1, Number(file && file.progress) || 0))),
+      })),
+      channels: null, // qbit 无 P2SP 通道概念
+    };
+  }
+
+  async getTaskPeers(task) {
+    const hash = this._hashOfTask(task);
+    if (!hash) return { peers: [] };
+    const data = await this._request(`/api/v2/sync/torrentPeers?hash=${hash}`).catch(() => null);
+    const peers = data && data.peers && typeof data.peers === 'object' ? data.peers : {};
+    return {
+      peers: Object.entries(peers).map(([endpoint, p]) => ({
+        endpoint,
+        client: String(p && p.client || ''),
+        progress: Math.max(0, Math.min(1, Number(p && p.progress) || 0)),
+        downloadBytesPerSecond: Math.max(0, Number(p && p.dl_speed) || 0),
+        uploadBytesPerSecond: Math.max(0, Number(p && p.up_speed) || 0),
+        flags: String(p && p.flags || ''),
+        connection: String(p && p.connection || ''),
+      })),
+    };
+  }
+
+  async getSeedingStats(task) {
+    const hash = this._hashOfTask(task);
+    if (!hash) return null;
+    const list = await this._request(`/api/v2/torrents/info?hashes=${hash}`).catch(() => null);
+    const t = Array.isArray(list) && list[0];
+    if (!t) return null;
+    return {
+      seedingSeconds: Math.max(0, Number(t.seeding_time) || 0),
+      ratio: Math.max(0, Number(t.ratio) || 0),
+      uploadedBytes: Math.max(0, Number(t.uploaded) || 0),
+      uploadBytesPerSecond: Math.max(0, Number(t.upspeed) || 0),
+      seedsConnected: Math.max(0, Number(t.num_seeds) || 0),
+      peersConnected: Math.max(0, Number(t.num_leechs) || 0),
+      state: String(t.state || ''),
+    };
+  }
 
   // ---- 能力与状态 ----
   async getNativeCapabilities() { return {}; } // 缺口：迅雷探测形态

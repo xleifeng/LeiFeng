@@ -17,6 +17,7 @@ const { mediaCapture } = require('./media-capture.cjs');
 const { productCore } = require('./product-core.cjs');
 const { pluginAdmin } = require('./plugin-admin.cjs');
 const { daemonAdmin } = require('./daemon-admin.cjs');
+const { bridgeStatus } = require('./bridge-status.cjs');
 const { webApiProcess } = require('./web-api-process.cjs');
 
 function daemonRegistry() {
@@ -44,6 +45,9 @@ function daemonRegistry() {
     ['product-core', productCore, 'leifengProducts'],
     ['plugin-admin', pluginAdmin, 'leifengPluginAdmin'],
     ['daemon-admin', daemonAdmin, 'leifengDaemonAdmin'],
+    // 桥会话实时快照内存库（kernel-detail-panels）：task-shell 经 reflect 可选消费，
+    // 无 inject 依赖耦合；禁用它仅使详情页桥面板不出现。
+    ['bridge-status', bridgeStatus, 'leifengBridgeStatus'],
     ['web-api-process', webApiProcess, 'leifengWebApi'],
   ];
   return Object.fromEntries(definitions.map(([id, definition, provided, extraProvides, defaultEnabled]) => [id, {

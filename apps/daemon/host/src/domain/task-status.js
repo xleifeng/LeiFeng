@@ -109,6 +109,8 @@ function reduceObservation(record = {}, observation = {}, now = Date.now()) {
   if (observation.receivedSize !== undefined) patch.completedBytes = receivedSize;
   if (observation.resourceSize !== undefined && resourceSize > 0) patch.totalBytes = resourceSize;
   if (observation.measuredDownloadBps !== undefined) patch.downloadBytesPerSecond = measuredBps;
+  // 上传速度内核直报（qbit upspeed）；内核不提供时键缺席，存量值保持（thunder 恒无）
+  if (observation.engineUploadBps !== undefined) patch.uploadBytesPerSecond = Math.max(0, Number(observation.engineUploadBps) || 0);
   if (observation.realTaskName && typeof observation.realTaskName === 'string') {
     const name = observation.realTaskName.replace(/\\/g, '/').split('/').pop();
     if (name && name !== '.' && name !== '..') patch.displayName = name;

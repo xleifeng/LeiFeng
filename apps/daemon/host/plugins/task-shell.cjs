@@ -69,7 +69,28 @@ const taskShell = plugin('leifeng-task-shell', ['leifengConfig', 'leifengReposit
   const systemIntegrationService = new SystemIntegrationService({ resolver: safePathResolver, tasks: r.taskRepository, processRunner });
   const taskQueryService = new TaskQueryService({ tasks: r.taskRepository,
     runtimeCapabilities: () => ({ native: driver.nativeCapabilities && driver.nativeCapabilities.flat || driver.nativeCapabilities || {},
-      fallbackOperations: shellFallbackOperations(systemIntegrationService) }) });
+      fallbackOperations: shellFallbackOperations(systemIntegrationService) }),
+    // 任务详情富化（kernel-detail-panels）：内核 extras（文件进度/通道归因）+
+    // 桥会话快照（bridge-status 插件可选消费，缺席即无 bridge 字段）。
+    enrichDetail: async (task, dto) => {
+      const slot = (task.kernelId && ctx.leifengKernelHub.get(task.kernelId)) || kernelSlot;
+      const kernel = slot && slot.kernel;
+      if (kernel && typeof kernel.getTaskDetailExtras === 'function') {
+        const extras = await kernel.getTaskDetailExtras(task);
+        if (extras && typeof extras === 'object') {
+          if (Array.isArray(extras.files) && Array.isArray(dto.files)) {
+            const byIndex = new Map(extras.files.map((f) => [Number(f && f.index), Math.max(0, Number(f && f.completedBytes) || 0)]));
+            for (const file of dto.files) if (byIndex.has(file.index)) file.completedBytes = byIndex.get(file.index);
+          }
+          if (extras.channels && typeof extras.channels === 'object') dto.channels = extras.channels;
+        }
+      }
+      const bridgeStatus = ctx.reflect.get('leifengBridgeStatus', false);
+      if (bridgeStatus && typeof bridgeStatus.forTask === 'function') {
+        const bridge = bridgeStatus.forTask(task);
+        if (bridge) dto.bridge = bridge;
+      }
+    } });
   const protocolParser = new ProtocolParser({ driver });
   const magnetMetadata = new MagnetMetadataService({ drafts: r.draftRepository, driver, seedStore: r.seedStore,
     runtimeDir, timeoutMs: appConfig.magnetTimeoutSec * 1000 });

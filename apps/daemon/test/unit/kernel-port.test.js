@@ -49,12 +49,13 @@ test('assertKernel 拒绝缺核心属性与缺事件接口', () => {
 });
 
 test('契约清单冻结且分层汇总一致', () => {
-  assert.equal(KERNEL_METHODS.length, 36);
+  assert.equal(KERNEL_METHODS.length, 39);
   assert.equal(KERNEL_PROPERTIES.length, 7);
   assert.deepEqual(KERNEL_EVENTS, ['up', 'down', 'bootError']);
-  // 分层：核心 32 方法 + 可选 4；核心 6 属性 + 可选 1（taskDbPath）
+  // 分层：核心 32 方法 + 可选 7（2026-09-30 增详情面板三方法）；核心 6 属性 + 可选 1（taskDbPath）
   assert.equal(KERNEL_CORE_METHODS.length, 32);
-  assert.deepEqual(KERNEL_OPTIONAL_METHODS, ['notifyAuth', 'notifyLogout', 'getBtFileRuntime', 'getSeedDescriptor']);
+  assert.deepEqual(KERNEL_OPTIONAL_METHODS, ['notifyAuth', 'notifyLogout', 'getBtFileRuntime', 'getSeedDescriptor',
+    'getTaskDetailExtras', 'getTaskPeers', 'getSeedingStats']);
   assert.equal(KERNEL_CORE_PROPERTIES.length, 6);
   assert.deepEqual(KERNEL_OPTIONAL_PROPERTIES, ['taskDbPath']);
   // 汇总表 = 核心 + 可选（顺序拼接，无交叠）
@@ -66,7 +67,12 @@ test('契约清单冻结且分层汇总一致', () => {
 
 test('WineNodeDriver 与 WindowsNodeDriver 双实现满足契约（prototype 面自证）', () => {
   for (const Ctor of [WineNodeDriver, WindowsNodeDriver]) {
-    const missing = KERNEL_METHODS.filter((name) => typeof Ctor.prototype[name] !== 'function');
+    // 核心方法强校验；可选方法允许缺席（thunder 不实现 getTaskPeers/getSeedingStats 即无入口语义），
+    // 「若在则函数」形态由 assertKernel 校验覆盖。
+    const missing = KERNEL_CORE_METHODS.filter((name) => typeof Ctor.prototype[name] !== 'function');
     assert.deepEqual(missing, [], `${Ctor.name} 缺失: ${missing.join(', ')}`);
+    for (const name of KERNEL_OPTIONAL_METHODS) {
+      if (Ctor.prototype[name] !== undefined) assert.equal(typeof Ctor.prototype[name], 'function', `${Ctor.name}.${name} 形态错误`);
+    }
   }
 });

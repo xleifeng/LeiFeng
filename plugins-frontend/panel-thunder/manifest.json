@@ -1,0 +1,5 @@
+{
+  "id": "panel-thunder",
+  "capabilities": [],
+  "taskDetailPanels": [{ "id": "thunder-kernel", "label": "内核", "kernelIds": ["thunder"] }]
+}

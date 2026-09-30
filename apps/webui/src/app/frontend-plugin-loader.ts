@@ -12,7 +12,8 @@
 import * as vue from 'vue'
 import type { Router } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { registerFrontendPlugin, type NavItemDef, type SettingSectionDef } from './plugins'
+import { registerFrontendPlugin, type NavItemDef, type SettingSectionDef, type TaskDetailPanelDef } from './plugins'
+import { rpcV2 } from '../api/native-download/client'
 import type { ViewCapabilityId } from '../stores/ui-capabilities'
 
 /** web-api 聚合的 manifest（见 apps/web-api/src/server.js serveFrontendPlugins） */
@@ -23,17 +24,22 @@ interface PluginManifest {
   entry?: string
   navItems?: { to: string; label: string; capability?: string }[]
   settingSections?: { id: string; label: string; capability?: string }[]
+  /** 任务详情面板声明（component 由 activate 经宿主槽注入） */
+  taskDetailPanels?: { id: string; label: string; kernelIds?: string[]; requiresBridge?: boolean }[]
 }
 
 /**
  * 宿主注入面：插件 ui.js 导出 activate(host)，从宿主取 vue 实例引用与贡献槽。
  * 插件内组件用 `const { h, ref } = host.vue`，不得 `import 'vue'`（CSP 下不可解析）。
+ * rpc：面板插件拉取内核/桥数据的唯一通道（方法缺席即内核无能力，诚实降级）。
  */
 export interface PluginHost {
   vue: typeof vue
+  rpc: <T = unknown>(method: string, params?: unknown[]) => Promise<T>
   navItems: NavItemDef[]
   routes: RouteRecordRaw[]
   settingSections: SettingSectionDef[]
+  taskDetailPanels: TaskDetailPanelDef[]
 }
 
 interface PluginModule {
@@ -88,6 +94,7 @@ export async function loadFrontendPlugins(router: Router, registryUrl = '/plugin
       navItems: [] as NavItemDef[],
       routes: [] as RouteRecordRaw[],
       settingSections: [] as SettingSectionDef[],
+      taskDetailPanels: [] as TaskDetailPanelDef[],
     }
     let activateDisposer: (() => void) | undefined
     try {
@@ -96,9 +103,11 @@ export async function loadFrontendPlugins(router: Router, registryUrl = '/plugin
       if (typeof module.activate === 'function') {
         const returned = await module.activate({
           vue,
+          rpc: rpcV2,
           navItems: contribution.navItems,
           routes: contribution.routes,
           settingSections: contribution.settingSections,
+          taskDetailPanels: contribution.taskDetailPanels,
         })
         if (typeof returned === 'function') activateDisposer = returned
       }

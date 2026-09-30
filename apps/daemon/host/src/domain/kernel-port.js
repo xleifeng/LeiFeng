@@ -35,9 +35,15 @@ const KERNEL_CORE_METHODS = Object.freeze([
   'restart', 'shutdown', 'start',
 ]);
 
-/** 迅雷账号/BT 扩展：可选能力，缺席方（qbit 等）不实现即缺席 */
+/** 迅雷账号/BT 扩展：可选能力，缺席方（qbit 等）不实现即缺席。
+ *  2026-09-30 增任务详情面板三方法（kernel-detail-panels）：
+ *  - getTaskDetailExtras(task)：详情富化（文件级 completedBytes + 通道归因等），
+ *    入参为壳层任务记录（id/engineId/infoHash/kind），返回 null 表示无富化数据；
+ *  - getTaskPeers(task) / getSeedingStats(task)：peers 列表与做种统计，
+ *    thunder 侧 SDK 无数据源不实现（前端无入口），qbit 实现。 */
 const KERNEL_OPTIONAL_METHODS = Object.freeze([
   'notifyAuth', 'notifyLogout', 'getBtFileRuntime', 'getSeedDescriptor',
+  'getTaskDetailExtras', 'getTaskPeers', 'getSeedingStats',
 ]);
 
 const KERNEL_METHODS = Object.freeze([...KERNEL_CORE_METHODS, ...KERNEL_OPTIONAL_METHODS]);

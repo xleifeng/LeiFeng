@@ -32,6 +32,8 @@ declare module 'vue' {
     'mdui-navigation-rail-item': typeof import('mdui/components/navigation-rail-item.js').NavigationRailItem
     'mdui-navigation-bar': typeof import('mdui/components/navigation-bar.js').NavigationBar
     'mdui-navigation-bar-item': typeof import('mdui/components/navigation-bar-item.js').NavigationBarItem
+    'mdui-collapse': typeof import('mdui/components/collapse.js').Collapse
+    'mdui-collapse-item': typeof import('mdui/components/collapse-item.js').CollapseItem
   }
 }
 
