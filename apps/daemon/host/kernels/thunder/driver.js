@@ -280,8 +280,15 @@ class EngineDriverBase extends EventEmitter {
     const rows = await this.readVipTasks(this.taskDbPath, [engineId]).catch(() => null);
     const snapshot = rows && rows.get(engineId);
     if (!snapshot) return null;
+    // 已完成任务的已选（Download=1）文件必然完整落盘——TaskDb ReceivedSize 在完成后
+    // 引擎不回写（实测恒 0），按 completed 领域语义推导，避免「任务 100% 文件全 0%」
+    // 的自相矛盾（真机走查抓出）。未完成/未选文件保持 TaskDb 实读值。
+    const completed = task && task.lifecycle === 'completed';
     return {
-      files: (snapshot.btFiles || []).map((file) => ({ index: file.fileIndex, completedBytes: file.receivedSize || 0 })),
+      files: (snapshot.btFiles || []).map((file) => ({
+        index: file.fileIndex,
+        completedBytes: completed && file.download ? file.fileSize : (file.receivedSize || 0),
+      })),
       channels: {
         p2p: snapshot.p2pReceiveSize || 0,
         p2s: snapshot.p2sReceiveSize || 0,

@@ -288,3 +288,10 @@ mdui-dialog.create-dialog::part(panel) { width: min(680px, calc(100vw - 48px)); 
 .kdp-stat b { display: block; font-size: 15px; color: var(--md-on-surface); font-variant-numeric: tabular-nums; }
 .kdp-stat span { font-size: 11.5px; color: var(--md-on-surface-variant); }
 .kdp-stale { color: rgb(var(--mdui-color-error, 179, 38, 30)); font-size: 11.5px; }
+/* 折叠区头部可点击暗示（mdui collapse 本体无样式） */
+.kdp-collapse-head { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--md-on-surface-variant); }
+.kdp-chevron { display: inline-block; font-size: 10px; transition: transform var(--md-motion-fast); }
+.kdp-chevron.open { transform: rotate(180deg); }
+.kdp-collapse-head:hover { color: var(--md-on-surface); }
+/* 双击开详情不触发浏览器选词高亮（走查抓出的副作用） */
+.task-name { user-select: none; }

@@ -18,6 +18,7 @@ export function activate(host) {
     props: { detail: { type: Object, required: true } },
     setup(props) {
       const session = ref(props.detail.bridge)
+      const detailOpen = ref(false)
       let timer = null
       async function pull() {
         const current = session.value || props.detail.bridge
@@ -50,9 +51,18 @@ export function activate(host) {
               : h('p', { class: 'kdp-empty', style: 'margin-top:8px' }, `最近上报 ${new Date(s.updatedAt).toLocaleTimeString()}`),
           ]),
           h('mdui-collapse', { class: 'kdp-collapse' }, () => [
-            h('mdui-collapse-item', { header: '会话详情' }, () => h('dl', { class: 'kdp-kv' }, [
-              ['InfoHash', s.infohash], ['关联任务', s.taskId || '（未关联）'], ['会话状态', s.lifecycle],
-            ].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)]))),
+            h('mdui-collapse-item', {
+              onOpen: () => { detailOpen.value = true },
+              onClose: () => { detailOpen.value = false },
+            }, {
+              header: () => h('span', { class: 'kdp-collapse-head' }, [
+                '会话详情',
+                h('span', { class: ['kdp-chevron', detailOpen.value && 'open'], 'aria-hidden': 'true' }, '▾'),
+              ]),
+              default: () => h('dl', { class: 'kdp-kv' }, [
+                ['InfoHash', s.infohash], ['关联任务', s.taskId || '（未关联）'], ['会话状态', s.lifecycle],
+              ].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+            }),
           ]),
         ])
       }

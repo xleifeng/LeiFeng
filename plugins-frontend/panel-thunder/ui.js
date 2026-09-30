@@ -3,7 +3,7 @@
 // 诚实纪律：thunder SDK 无 peers/上传统计面——本面板不渲染这些区块（非置灰，是不存在）。
 // 宿主注入：不 import 'vue'（CSP），一切经 host。
 export function activate(host) {
-  const { h } = host.vue
+  const { h, ref } = host.vue
 
   function bytes(value) {
     if (!value) return '0 B'
@@ -21,6 +21,7 @@ export function activate(host) {
     name: 'ThunderKernelPanel',
     props: { detail: { type: Object, required: true } },
     setup(props) {
+      const engineOpen = ref(false)
       return () => {
         const d = props.detail
         const channels = d.channels && typeof d.channels === 'object' ? d.channels : null
@@ -50,10 +51,20 @@ export function activate(host) {
               d.seedAvailable ? '种子描述符可用——切到「概览」页可导出 .torrent。' : '该任务无可用种子描述符。'),
           ]),
           h('mdui-collapse', { class: 'kdp-collapse' }, () => [
-            h('mdui-collapse-item', { header: '引擎详情' }, () => h('dl', { class: 'kdp-kv' }, [
-              ['任务 ID', d.taskId], ['内核', d.kernelId], ['类型', d.kind], ['生命周期', d.lifecycle],
-              ['队列位置', String(d.queuePosition ?? 0)], ['修订', String(d.revision)], ['观测修订', String(d.observationRevision)],
-            ].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)]))),
+            h('mdui-collapse-item', {
+              onOpen: () => { engineOpen.value = true },
+              onClose: () => { engineOpen.value = false },
+            }, {
+              // header slot：chevron 旋转暗示可展开（mdui collapse 本体无样式，走查抓出裸文本不像可点）
+              header: () => h('span', { class: 'kdp-collapse-head' }, [
+                '引擎详情',
+                h('span', { class: ['kdp-chevron', engineOpen.value && 'open'], 'aria-hidden': 'true' }, '▾'),
+              ]),
+              default: () => h('dl', { class: 'kdp-kv' }, [
+                ['任务 ID', d.taskId], ['内核', d.kernelId], ['类型', d.kind], ['生命周期', d.lifecycle],
+                ['队列位置', String(d.queuePosition ?? 0)], ['修订', String(d.revision)], ['观测修订', String(d.observationRevision)],
+              ].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+            }),
           ]),
         ])
       }
