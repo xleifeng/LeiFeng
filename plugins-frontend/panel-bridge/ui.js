@@ -54,15 +54,15 @@ export function activate(host) {
             h('mdui-collapse-item', {
               onOpen: () => { detailOpen.value = true },
               onClose: () => { detailOpen.value = false },
-            }, {
-              header: () => h('span', { class: 'kdp-collapse-head' }, [
+            }, [
+              h('span', { slot: 'header', class: 'kdp-collapse-head' }, [
                 '会话详情',
                 h('span', { class: ['kdp-chevron', detailOpen.value && 'open'], 'aria-hidden': 'true' }, '▾'),
               ]),
-              default: () => h('dl', { class: 'kdp-kv' }, [
+              h('dl', { class: 'kdp-kv' }, [
                 ['InfoHash', s.infohash], ['关联任务', s.taskId || '（未关联）'], ['会话状态', s.lifecycle],
               ].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
-            }),
+            ]),
           ]),
         ])
       }

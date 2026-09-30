@@ -54,17 +54,17 @@ export function activate(host) {
             h('mdui-collapse-item', {
               onOpen: () => { engineOpen.value = true },
               onClose: () => { engineOpen.value = false },
-            }, {
-              // header slot：chevron 旋转暗示可展开（mdui collapse 本体无样式，走查抓出裸文本不像可点）
-              header: () => h('span', { class: 'kdp-collapse-head' }, [
+            }, [
+              // 自定义元素无 Vue slot 对象语义——slot 内容必须带 slot 属性的子节点
+              h('span', { slot: 'header', class: 'kdp-collapse-head' }, [
                 '引擎详情',
                 h('span', { class: ['kdp-chevron', engineOpen.value && 'open'], 'aria-hidden': 'true' }, '▾'),
               ]),
-              default: () => h('dl', { class: 'kdp-kv' }, [
+              h('dl', { class: 'kdp-kv' }, [
                 ['任务 ID', d.taskId], ['内核', d.kernelId], ['类型', d.kind], ['生命周期', d.lifecycle],
                 ['队列位置', String(d.queuePosition ?? 0)], ['修订', String(d.revision)], ['观测修订', String(d.observationRevision)],
               ].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
-            }),
+            ]),
           ]),
         ])
       }

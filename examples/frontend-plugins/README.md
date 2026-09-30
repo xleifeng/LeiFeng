@@ -24,9 +24,13 @@ plugins-frontend/<id>/ui.js           # ESM，导出 activate(host)；【禁止 
 
 ## host 面
 
-`{ vue, navItems, routes, settingSections }`——`vue` 为宿主共享实例（172 个语义
-导出：h / ref / computed / onMounted / Teleport / watchEffect / …）；三个数组是
-贡献槽，push 即注册。能力门控（bootstrap `capabilities.views`）与路由守卫由宿主
+`{ vue, rpc, navItems, routes, settingSections, taskDetailPanels }`——`vue` 为宿主共享实例
+（172 个语义导出：h / ref / computed / onMounted / Teleport / watchEffect / …）；
+`rpc(method, params)` 直调 daemon JSON-RPC 面；其余数组是贡献槽，push 即注册。
+`taskDetailPanels` 项形如 `{ id, label, component, kernelIds?, requiresBridge? }`——
+任务详情抽屉按内核/桥会话过滤挂载（参考仓库根 plugins-frontend/panel-* 产品面板）。
+注意：mdui 等自定义元素在 h() 里**没有 Vue slot 对象语义**，slot 内容用带
+`slot` 属性的子节点（`h('span', { slot: 'header' }, ...)`）。能力门控（bootstrap `capabilities.views`）与路由守卫由宿主
 统一执行，插件不用关心。
 
 完整契约与实施背景见 `docs/specs/2026-09-28-pluggable-frontend-u2-design.md`（§5）
