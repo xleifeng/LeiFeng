@@ -1,5 +1,5 @@
 {
   "id": "panel-qbit",
   "capabilities": [],
-  "taskDetailPanels": [{ "id": "qbit-kernel", "label": "内核", "kernelIds": ["qbit"] }]
+  "taskDetailPanels": [{ "id": "qbit-seeding", "label": "qbit 做种", "requiresField": "qbit" }]
 }

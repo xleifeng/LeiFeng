@@ -73,5 +73,8 @@ export function activate(host) {
     },
   }
 
-  host.taskDetailPanels.push({ id: 'qbit-kernel', label: '内核', kernelIds: ['qbit'], component: QbitKernelPanel })
+  // 挂载条件=详情带 qbit 字段（daemon enrichDetail 按 infoHash 探测 qbit 槽命中才注入）：
+  // qbit 内核任务恒有；thunder 任务在 hybrid 输血（qbit 同 hash 副本做种）时也有——
+  // 跨内核呈现正是本面板的价值。peers/seeding RPC 经壳层 taskId→infoHash 解析，双内核任务通吃。
+  host.taskDetailPanels.push({ id: 'qbit-seeding', label: 'qbit 做种', requiresField: 'qbit', component: QbitKernelPanel })
 }

@@ -6,7 +6,7 @@ export const taskCapabilitySchema = z.record(z.string(), z.boolean())
 export const taskListCapabilitySchema = z.enum(['start', 'pause', 'removeRecord', 'recycle', 'recover', 'retry', 'rename', 'move', 'redownload', 'deletePermanently', 'setSpeedLimit', 'updateBtSelection', 'setBtScheduler', 'open', 'showInFolder', 'copyInfo', 'perTaskRateLimit', 'btSelection', 'btSequential'])
 
 export const taskV2Schema = z.object({
-  taskId: z.string(), parentId: z.string().nullable(), kernelId: z.string().default('thunder'), kind: z.string(), lifecycle: z.enum(['preparing', 'metadata', 'queued', 'downloading', 'paused', 'completed', 'failed', 'recycled', 'missing']),
+  taskId: z.string(), parentId: z.string().nullable(), kernelId: z.string().default('thunder'), infoHash: z.string().nullable().default(null), kind: z.string(), lifecycle: z.enum(['preparing', 'metadata', 'queued', 'downloading', 'paused', 'completed', 'failed', 'recycled', 'missing']),
   source: z.string().nullable(), sourceFingerprint: z.string(), displayName: z.string(), savePath: z.string(),
   totalBytes: z.number(), completedBytes: z.number(), downloadBytesPerSecond: z.number(), uploadBytesPerSecond: z.number(), progress: z.number(),
   queuePosition: z.number(), taskSpeedLimit: z.number().nullable(), btScheduler: z.enum(['normal', 'sequential']).default('normal'), privateSpace: z.boolean(), createdAt: z.number(), startedAt: z.number().nullable(),
@@ -25,15 +25,17 @@ export const bridgeSessionV2Schema = z.object({
   serveBytesTotal: z.number().nonnegative(), serveRateBps: z.number().nonnegative(),
   lifecycle: z.string(), stale: z.boolean(), updatedAt: z.number(),
 })
+export const seedingStatsV2Schema = z.object({ seedingSeconds: z.number().nonnegative(), ratio: z.number().nonnegative(), uploadedBytes: z.number().nonnegative(), uploadBytesPerSecond: z.number().nonnegative(), seedsConnected: z.number().int().nonnegative(), peersConnected: z.number().int().nonnegative(), state: z.string() })
 export const taskDetailV2Schema = taskV2Schema.extend({
   files: z.array(taskFileV2Schema),
   channels: taskChannelsV2Schema.nullable().optional(),
   bridge: bridgeSessionV2Schema.nullable().optional(),
+  // 跨内核做种关联：BT 任务且 qbit 侧有同 infohash torrent 时由 enrichDetail 注入
+  qbit: seedingStatsV2Schema.nullable().optional(),
 })
-// peers / 做种统计（内核插件注册的 RPC 面，thunder 缺席）：qbit 面板数据源
+// peers（内核插件注册的 RPC 面，thunder 缺席）：qbit 面板数据源
 export const taskPeerV2Schema = z.object({ endpoint: z.string(), client: z.string(), progress: z.number(), downloadBytesPerSecond: z.number().nonnegative(), uploadBytesPerSecond: z.number().nonnegative(), flags: z.string(), connection: z.string() })
 export const taskPeersV2Schema = z.object({ peers: z.array(taskPeerV2Schema) })
-export const seedingStatsV2Schema = z.object({ seedingSeconds: z.number().nonnegative(), ratio: z.number().nonnegative(), uploadedBytes: z.number().nonnegative(), uploadBytesPerSecond: z.number().nonnegative(), seedsConnected: z.number().int().nonnegative(), peersConnected: z.number().int().nonnegative(), state: z.string() })
 export const taskQueryV2Schema = z.object({
   view: z.enum(['downloading', 'completed', 'search', 'all', 'trash', 'private']).optional(),
   scope: z.enum(['all', 'active', 'completed', 'trash', 'private']).optional(),

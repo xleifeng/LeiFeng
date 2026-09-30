@@ -24,7 +24,7 @@ const pluginPanels = computed(() => {
   if (!d) return []
   return taskDetailPanelContributions.value.filter((panel) => {
     if (panel.kernelIds?.length && !panel.kernelIds.includes(d.kernelId)) return false
-    if (panel.requiresBridge && !d.bridge) return false
+    if (panel.requiresField && !d[panel.requiresField]) return false
     return true
   })
 })

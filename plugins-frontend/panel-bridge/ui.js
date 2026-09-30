@@ -69,5 +69,5 @@ export function activate(host) {
     },
   }
 
-  host.taskDetailPanels.push({ id: 'bridge-session', label: '输血桥', requiresBridge: true, component: BridgePanel })
+  host.taskDetailPanels.push({ id: 'bridge-session', label: '输血桥', requiresField: 'bridge', component: BridgePanel })
 }

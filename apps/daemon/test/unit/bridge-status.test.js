@@ -91,3 +91,30 @@ test('enrichDetail 抛错不阻塞详情主数据（富化失败诚实降级）'
   assert.equal(dto.channels, undefined);
   assert.equal(dto.bridge, undefined);
 });
+
+test('跨内核 qbit 探测：BT 任务 + qbit 槽命中则 dto.qbit 带做种统计，未命中无字段（Q1 形态）', async () => {
+  const { TaskQueryService } = require('../../host/src/services/task-query-service');
+  const btTask = {
+    id: 't-3', kernelId: 'thunder', kind: 'magnet', lifecycle: 'completed', sourceFingerprint: 'x',
+    displayName: 'x', savePath: '/d', totalBytes: 100, completedBytes: 100, infoHash: VALID_HASH,
+    selectedFileIndices: [], revision: 1, observationRevision: 1, fileRevision: 1, createdAt: 1, updatedAt: 1,
+    files: [], vip: null, error: null, capabilities: {},
+  };
+  const tasks = { require: () => btTask };
+  const seeding = { seedingSeconds: 3600, ratio: 1.5, uploadedBytes: 150, uploadBytesPerSecond: 0, seedsConnected: 2, peersConnected: 0, state: 'uploading' };
+  // 与 task-shell.cjs 的 qbit 探测逻辑同构直测
+  const makeEnrich = (qbitSlot) => async (task, dto) => {
+    if (task.infoHash && (task.kind === 'bt' || task.kind === 'magnet')) {
+      if (qbitSlot && typeof qbitSlot.kernel.getSeedingStats === 'function') {
+        const stats = await qbitSlot.kernel.getSeedingStats(task).catch(() => null);
+        if (stats) dto.qbit = stats;
+      }
+    }
+  };
+  const hit = new TaskQueryService({ tasks, enrichDetail: makeEnrich({ kernel: { getSeedingStats: async () => seeding } }) });
+  assert.deepEqual((await hit.get({ taskId: 't-3' })).qbit, seeding);
+  const miss = new TaskQueryService({ tasks, enrichDetail: makeEnrich({ kernel: { getSeedingStats: async () => null } }) });
+  assert.equal((await miss.get({ taskId: 't-3' })).qbit, undefined);
+  const noSlot = new TaskQueryService({ tasks, enrichDetail: makeEnrich(null) });
+  assert.equal((await noSlot.get({ taskId: 't-3' })).qbit, undefined);
+});

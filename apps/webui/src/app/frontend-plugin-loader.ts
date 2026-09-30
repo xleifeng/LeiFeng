@@ -25,7 +25,7 @@ interface PluginManifest {
   navItems?: { to: string; label: string; capability?: string }[]
   settingSections?: { id: string; label: string; capability?: string }[]
   /** 任务详情面板声明（component 由 activate 经宿主槽注入） */
-  taskDetailPanels?: { id: string; label: string; kernelIds?: string[]; requiresBridge?: boolean }[]
+  taskDetailPanels?: { id: string; label: string; kernelIds?: string[]; requiresField?: 'bridge' | 'qbit' }[]
 }
 
 /**

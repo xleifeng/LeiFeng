@@ -28,6 +28,7 @@ function presentTask(task, { includeFiles = false, runtime = {} } = {}) {
     taskId: task.id,
     parentId: task.parentId,
     kernelId: typeof task.kernelId === 'string' && task.kernelId ? task.kernelId : 'thunder',
+    infoHash: typeof task.infoHash === 'string' && task.infoHash ? task.infoHash : null,
     kind: task.kind,
     lifecycle: task.lifecycle,
     source: task.source,

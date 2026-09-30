@@ -1,5 +1,5 @@
 {
   "id": "panel-bridge",
   "capabilities": [],
-  "taskDetailPanels": [{ "id": "bridge-session", "label": "输血桥", "requiresBridge": true }]
+  "taskDetailPanels": [{ "id": "bridge-session", "label": "输血桥", "requiresField": "bridge" }]
 }

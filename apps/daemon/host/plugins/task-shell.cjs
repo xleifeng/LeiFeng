@@ -90,6 +90,16 @@ const taskShell = plugin('leifeng-task-shell', ['leifengConfig', 'leifengReposit
         const bridge = bridgeStatus.forTask(task);
         if (bridge) dto.bridge = bridge;
       }
+      // 跨内核做种关联（Q1 用户拍板）：BT 类任务且 qbit 槽在役时，按 infoHash 探测
+      // qbit 侧同 hash torrent——命中则 dto.qbit 带做种统计，qbit 面板跨内核挂载
+      // （thunder 下载 + qbit 输血做种的 hybrid 场景主路径）。探测失败静默无字段。
+      if (task.infoHash && (task.kind === 'bt' || task.kind === 'magnet')) {
+        const qbitSlot = ctx.leifengKernelHub.get('qbit');
+        if (qbitSlot && qbitSlot.kernel && typeof qbitSlot.kernel.getSeedingStats === 'function') {
+          const stats = await qbitSlot.kernel.getSeedingStats(task).catch(() => null);
+          if (stats) dto.qbit = stats;
+        }
+      }
     } });
   const protocolParser = new ProtocolParser({ driver });
   const magnetMetadata = new MagnetMetadataService({ drafts: r.draftRepository, driver, seedStore: r.seedStore,

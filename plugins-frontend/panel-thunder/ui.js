@@ -22,6 +22,35 @@ export function activate(host) {
     props: { detail: { type: Object, required: true } },
     setup(props) {
       const engineOpen = ref(false)
+      const seedFeedback = ref('')
+      let feedbackTimer = null
+      const note = (text) => {
+        seedFeedback.value = text
+        clearTimeout(feedbackTimer)
+        feedbackTimer = setTimeout(() => { seedFeedback.value = '' }, 2500)
+      }
+      async function exportTorrent() {
+        const d = props.detail
+        try {
+          const response = await fetch(`/api/v2/tasks/${encodeURIComponent(d.taskId)}/torrent`)
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          const blobUrl = URL.createObjectURL(await response.blob())
+          const link = document.createElement('a')
+          link.href = blobUrl
+          link.download = `${String(d.displayName || 'task').replace(/[\\/:*?"<>|]+/g, '_').replace(/\.torrent$/i, '') || 'task'}.torrent`
+          link.click()
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 0)
+          note('已导出 .torrent')
+        } catch (error) { note(`导出失败：${error.message}`) }
+      }
+      async function copyMagnet() {
+        const d = props.detail
+        if (!d.infoHash) return
+        try {
+          await navigator.clipboard.writeText(`magnet:?xt=urn:btih:${d.infoHash}`)
+          note('磁链已复制')
+        } catch { note('复制失败') }
+      }
       return () => {
         const d = props.detail
         const channels = d.channels && typeof d.channels === 'object' ? d.channels : null
@@ -47,9 +76,19 @@ export function activate(host) {
           ]),
           h('section', { class: 'kdp-card' }, [
             h('h3', { class: 'kdp-title' }, '种子'),
-            h('p', { class: channels ? undefined : 'kdp-empty' },
-              d.seedAvailable ? '种子描述符可用——切到「概览」页可导出 .torrent。' : '该任务无可用种子描述符。'),
-          ]),
+            d.infoHash
+              ? h('p', { class: 'kdp-hash', title: d.infoHash }, `infohash：${d.infoHash}`)
+              : null,
+            h('div', { class: 'kdp-actions' }, [
+              d.seedAvailable
+                ? h('mdui-button', { variant: 'tonal', onClick: exportTorrent }, () => '导出 .torrent')
+                : h('span', { class: 'kdp-empty' }, '无可用种子描述符'),
+              d.infoHash
+                ? h('mdui-button', { variant: 'text', onClick: copyMagnet }, () => '复制磁链')
+                : null,
+            ]),
+            seedFeedback.value ? h('p', { class: 'kdp-feedback' }, seedFeedback.value) : null,
+          ].filter(Boolean)),
           h('mdui-collapse', { class: 'kdp-collapse' }, () => [
             h('mdui-collapse-item', {
               onOpen: () => { engineOpen.value = true },

@@ -159,12 +159,15 @@ test.describe('运行期前端插件（U2）', () => {
       host.taskDetailPanels.push({ id: 'test-kernel', label: '内核', kernelIds: ['thunder'], component: { name: 'TestKernelPanel', props: ['detail'], setup(props) {
         return () => h('div', { class: 'test-kernel-panel' }, 'P2P ' + (props.detail.channels?.p2p ?? 'none'))
       } } })
-      host.taskDetailPanels.push({ id: 'test-bridge', label: '输血桥', requiresBridge: true, component: { name: 'TestBridgePanel', props: ['detail'], setup(props) {
+      host.taskDetailPanels.push({ id: 'test-bridge', label: '输血桥', requiresField: 'bridge', component: { name: 'TestBridgePanel', props: ['detail'], setup(props) {
         return () => h('div', { class: 'test-bridge-panel' }, '桥 ' + (props.detail.bridge?.lifecycle ?? 'none'))
+      } } })
+      host.taskDetailPanels.push({ id: 'test-qbit', label: 'qbit 做种', requiresField: 'qbit', component: { name: 'TestQbitPanel', props: ['detail'], setup(props) {
+        return () => h('div', { class: 'test-qbit-panel' }, '分享率 ' + (props.detail.qbit?.ratio ?? 'none'))
       } } })
     }`)
     const taskItem = { taskId: 'e2e-task-1', parentTaskId: null, kind: 'bt', lifecycle: 'downloading', displayName: 'fixture.bin', totalBytes: 1000, completedBytes: 400, downloadBytesPerSecond: 10, uploadBytesPerSecond: 0, progress: .4, etaSeconds: 60, createdAt: 1, completedAt: null, error: null, group: null, badges: ['bt'], capabilities: [], pendingOperation: null, revision: 1, observationRevision: 1 }
-    const detail = { taskId: 'e2e-task-1', parentId: null, kernelId: 'thunder', kind: 'bt', lifecycle: 'downloading', source: 'magnet:?xt=urn:btih:' + 'a'.repeat(40), sourceFingerprint: 'bt:hash:' + 'a'.repeat(40), displayName: 'fixture.bin', savePath: '/downloads', totalBytes: 1000, completedBytes: 400, downloadBytesPerSecond: 10, uploadBytesPerSecond: 0, progress: .4, queuePosition: 0, taskSpeedLimit: null, btScheduler: 'normal', privateSpace: false, createdAt: 1, startedAt: null, completedAt: null, recycledAt: null, updatedAt: 2, error: null, vip: null, seedAvailable: true, revision: 1, observationRevision: 1, fileRevision: 1, capabilities: {}, files: [{ index: 0, name: 'a.bin', path: 'a.bin', size: 1000, offset: 0, selected: true, completedBytes: 512 }], channels: { p2p: 50, p2s: 10, origin: 4, vip: 0, freeDcdn: 0 } }
+    const detail = { taskId: 'e2e-task-1', parentId: null, kernelId: 'thunder', kind: 'bt', lifecycle: 'downloading', source: 'magnet:?xt=urn:btih:' + 'a'.repeat(40), sourceFingerprint: 'bt:hash:' + 'a'.repeat(40), displayName: 'fixture.bin', savePath: '/downloads', totalBytes: 1000, completedBytes: 400, downloadBytesPerSecond: 10, uploadBytesPerSecond: 0, progress: .4, queuePosition: 0, taskSpeedLimit: null, btScheduler: 'normal', privateSpace: false, createdAt: 1, startedAt: null, completedAt: null, recycledAt: null, updatedAt: 2, error: null, vip: null, seedAvailable: true, revision: 1, observationRevision: 1, fileRevision: 1, capabilities: {}, files: [{ index: 0, name: 'a.bin', path: 'a.bin', size: 1000, offset: 0, selected: true, completedBytes: 512 }], channels: { p2p: 50, p2s: 10, origin: 4, vip: 0, freeDcdn: 0 }, qbit: { seedingSeconds: 3600, ratio: 1.5, uploadedBytes: 150, uploadBytesPerSecond: 0, seedsConnected: 2, peersConnected: 0, state: 'uploading' } }
     await page.route('**/jsonrpc', async (route) => {
       const body = route.request().postDataJSON() as { method?: string }
       const result = body.method === 'leifeng.ui.v2.bootstrap' ? bootstrapResult
@@ -182,6 +185,9 @@ test.describe('运行期前端插件（U2）', () => {
       await expect(page.getByTestId('detail-tab-test-bridge')).toHaveCount(0)
       await page.getByTestId('detail-tab-test-kernel').click()
       await expect(page.locator('.test-kernel-panel')).toContainText('P2P 50')
+      // qbit 面板跨内核挂载：thunder 任务 + detail.qbit 命中（hybrid 输血场景）
+      await page.getByTestId('detail-tab-test-qbit').click()
+      await expect(page.locator('.test-qbit-panel')).toContainText('分享率 1.5')
       // 文件 tab：completedBytes 进度条渲染（富化字段直达壳内置文件面板）
       await page.locator('.detail-tabs button', { hasText: '文件' }).click()
       await expect(page.locator('.detail-file-progress-bar')).toHaveCount(1)

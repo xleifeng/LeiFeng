@@ -22,15 +22,15 @@ export interface SettingSectionDef {
 /**
  * 任务详情抽屉贡献面板（kernel-detail-panels）：面板本体由插件提供（webui 壳
  * 不内置内核专属展示）。component 接收 props：{ detail: TaskDetailV2 }。
- * kernelIds 限定面板只对指定内核的任务出现；requiresBridge 时仅当详情带桥
- * 会话快照（detail.bridge）才出现。
+ * kernelIds 限定面板只对指定内核的任务出现；requiresField 限定详情 DTO 带该
+ * 字段（如 bridge 桥会话 / qbit 跨内核做种关联）才出现。
  */
 export interface TaskDetailPanelDef {
   id: string
   label: string
   component: Component
   kernelIds?: string[]
-  requiresBridge?: boolean
+  requiresField?: 'bridge' | 'qbit'
 }
 
 /**
